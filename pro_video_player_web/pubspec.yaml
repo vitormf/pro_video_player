@@ -1,0 +1,30 @@
+name: pro_video_player_web
+description: Web implementation of pro_video_player.
+version: 0.0.1
+repository: https://github.com/user/pro_video_player/tree/main/pro_video_player_web
+
+environment:
+  sdk: ^3.8.0
+  flutter: ">=3.32.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_web_plugins:
+    sdk: flutter
+  pro_video_player_platform_interface:
+    path: ../pro_video_player_platform_interface
+  web: ^1.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  mocktail: ^1.0.4
+
+flutter:
+  plugin:
+    implements: pro_video_player
+    platforms:
+      web:
+        pluginClass: ProVideoPlayerWeb
+        fileName: pro_video_player_web.dart

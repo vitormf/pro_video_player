@@ -1,0 +1,15 @@
+1
+00:00:01.500 --> 00:00:04.000
+Using period as millisecond separator
+
+2
+00:00:05.250 --> 00:00:08.750
+This is common in some regions
+
+3
+00:00:09.123 --> 00:00:12.456
+Precise millisecond timing
+
+4
+00:00:13.000 --> 00:00:16.999
+End of sample with dots

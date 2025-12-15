@@ -1,0 +1,15 @@
+1
+00:00:01,000 --> 00:00:03,000
+ALICE: How are you?
+
+2
+00:00:03,500 --> 00:00:05,000
+BOB: I'm fine, thanks!
+
+3
+00:00:05,500 --> 00:00:07,000
+ALICE: Great to hear.
+
+4
+00:00:07,500 --> 00:00:09,000
+[NARRATOR]: They continued talking.

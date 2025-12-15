@@ -1,0 +1,7 @@
+1
+00:00:01,000 --> 00:00:05,000
+This is a very long subtitle that contains multiple sentences and goes on for quite a while to test how the parser handles very long text content. It should continue reading all the way to the end without truncating or causing errors. This tests the parser's ability to handle lengthy dialogue or description that might appear in documentary or educational content where detailed explanations are necessary.
+
+2
+00:00:06,000 --> 00:00:08,000
+Normal text after long text

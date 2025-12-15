@@ -1,3 +1,10 @@
+# Force-include files that may be globally ignored
+!CLAUDE.md
+
+# Claude Code local settings (keep personal, share team settings)
+.claude/settings.local.json
+.claude/CLAUDE.local.md
+
 # Miscellaneous
 *.class
 *.lock
@@ -6,8 +13,13 @@
 *.swp
 .buildlog/
 .history
+.DS_Store
+*.backup
+*.old
+*_old.dart
+*_backup.dart
 
-
+# FVM (Flutter Version Manager)
 
 # Flutter repo-specific
 /bin/cache/
@@ -117,3 +129,6 @@ app.*.symbols
 !**/ios/**/default.perspectivev3
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 !/dev/ci/**/Gemfile.lock
+
+# FVM Version Cache
+.fvm/

@@ -1,0 +1,24 @@
+{
+  "playlist": {
+    "title": "Licensed Content Playlist",
+    "license": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "attribution": [
+      {
+        "identifier": "https://example.com/creator1",
+        "location": "https://example.com/creator1/profile"
+      },
+      {
+        "identifier": "https://example.com/creator2",
+        "location": "https://example.com/creator2/profile"
+      }
+    ],
+    "track": [
+      {
+        "location": ["https://example.com/cc/track1.mp3"],
+        "title": "Creative Commons Track",
+        "creator": "Open Source Artist",
+        "info": "https://example.com/cc/track1/info"
+      }
+    ]
+  }
+}

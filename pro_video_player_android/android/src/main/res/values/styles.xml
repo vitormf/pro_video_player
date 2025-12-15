@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Theme for MediaRouteButton that ensures opaque background.
+         MediaRouter library requires non-transparent colorBackground for theme calculations.
+         Flutter Activity themes often have transparent backgrounds, so we need to override.
+
+         Note: We use Theme.AppCompat.Light as parent because MediaRouter (AndroidX) expects
+         AppCompat theming and resolves colorBackground through AppCompat mechanisms. -->
+    <style name="Theme.MediaRouteButton" parent="Theme.AppCompat.Light">
+        <item name="colorPrimary">@android:color/white</item>
+        <item name="colorPrimaryDark">@android:color/white</item>
+        <item name="colorAccent">@android:color/white</item>
+        <item name="android:colorBackground">@android:color/white</item>
+        <item name="android:windowBackground">@android:color/white</item>
+        <!-- colorControlNormal controls the MediaRouteButton icon color -->
+        <item name="colorControlNormal">@android:color/white</item>
+    </style>
+
+    <!-- Dark variant for use on dark backgrounds (white icons) -->
+    <style name="Theme.MediaRouteButton.Dark" parent="Theme.AppCompat">
+        <item name="colorPrimary">@android:color/white</item>
+        <item name="colorPrimaryDark">@android:color/white</item>
+        <item name="colorAccent">@android:color/white</item>
+        <item name="android:colorBackground">@android:color/black</item>
+        <item name="android:windowBackground">@android:color/black</item>
+        <!-- colorControlNormal controls the MediaRouteButton icon color -->
+        <item name="colorControlNormal">@android:color/white</item>
+    </style>
+</resources>

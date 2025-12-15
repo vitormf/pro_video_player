@@ -1,0 +1,437 @@
+// ignore_for_file: cascade_invocations
+
+import 'package:flutter_test/flutter_test.dart';
+import 'package:pro_video_player/src/video_controls_state.dart';
+
+void main() {
+  group('VideoControlsState', () {
+    late VideoControlsState state;
+
+    setUp(() {
+      state = VideoControlsState();
+    });
+
+    tearDown(() {
+      state.dispose();
+    });
+
+    group('Visibility', () {
+      test('initial visibility is true', () {
+        expect(state.visible, isTrue);
+      });
+
+      test('showControls sets visible to true and notifies listeners', () {
+        var notified = false;
+        state.addListener(() => notified = true);
+
+        state.hideControls();
+        notified = false;
+
+        state.showControls();
+
+        expect(state.visible, isTrue);
+        expect(notified, isTrue);
+      });
+
+      test('hideControls sets visible to false and notifies listeners', () {
+        var notified = false;
+        state.addListener(() => notified = true);
+
+        state.hideControls();
+
+        expect(state.visible, isFalse);
+        expect(notified, isTrue);
+      });
+
+      test('toggleVisibility toggles visible state', () {
+        expect(state.visible, isTrue);
+
+        state.toggleVisibility();
+        expect(state.visible, isFalse);
+
+        state.toggleVisibility();
+        expect(state.visible, isTrue);
+      });
+
+      test('isFullyVisible initial value is true', () {
+        expect(state.isFullyVisible, isTrue);
+      });
+
+      test('setFullyVisible updates state and notifies listeners', () {
+        var notified = false;
+        state
+          ..addListener(() => notified = true)
+          ..setFullyVisible(fullyVisible: false);
+
+        expect(state.isFullyVisible, isFalse);
+        expect(notified, isTrue);
+      });
+    });
+
+    group('Hide Timer', () {
+      test('initial hideTimer is null', () {
+        expect(state.hideTimer, isNull);
+      });
+
+      test('startHideTimer creates a timer', () {
+        state.startHideTimer(const Duration(milliseconds: 100), () {});
+
+        expect(state.hideTimer, isNotNull);
+        expect(state.hideTimer!.isActive, isTrue);
+      });
+
+      test('startHideTimer executes callback after duration', () async {
+        var callbackExecuted = false;
+
+        state.startHideTimer(const Duration(milliseconds: 50), () => callbackExecuted = true);
+
+        expect(callbackExecuted, isFalse);
+
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+
+        expect(callbackExecuted, isTrue);
+      });
+
+      test('cancelHideTimer cancels existing timer', () {
+        var callbackExecuted = false;
+
+        state.startHideTimer(const Duration(milliseconds: 50), () => callbackExecuted = true);
+
+        state.cancelHideTimer();
+
+        expect(state.hideTimer, isNull);
+
+        // Wait to ensure callback doesn't execute
+        return Future<void>.delayed(const Duration(milliseconds: 100)).then((_) {
+          expect(callbackExecuted, isFalse);
+        });
+      });
+
+      test('resetHideTimer cancels old timer and starts new one', () async {
+        var firstCallbackExecuted = false;
+        var secondCallbackExecuted = false;
+
+        state.startHideTimer(const Duration(milliseconds: 50), () => firstCallbackExecuted = true);
+
+        state.resetHideTimer(const Duration(milliseconds: 100), () => secondCallbackExecuted = true);
+
+        await Future<void>.delayed(const Duration(milliseconds: 75));
+
+        expect(firstCallbackExecuted, isFalse);
+        expect(secondCallbackExecuted, isFalse);
+
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+
+        expect(firstCallbackExecuted, isFalse);
+        expect(secondCallbackExecuted, isTrue);
+      });
+    });
+
+    group('Feature Support', () {
+      test('initial isPipAvailable is false', () {
+        expect(state.isPipAvailable, isFalse);
+      });
+
+      test('setIsPipAvailable updates state and notifies listeners', () {
+        var notified = false;
+        state
+          ..addListener(() => notified = true)
+          ..setIsPipAvailable(available: true);
+
+        expect(state.isPipAvailable, isTrue);
+        expect(notified, isTrue);
+      });
+
+      test('initial isBackgroundPlaybackSupported is false', () {
+        expect(state.isBackgroundPlaybackSupported, isFalse);
+      });
+
+      test('setIsBackgroundPlaybackSupported updates state and notifies listeners', () {
+        var notified = false;
+        state
+          ..addListener(() => notified = true)
+          ..setIsBackgroundPlaybackSupported(supported: true);
+
+        expect(state.isBackgroundPlaybackSupported, isTrue);
+        expect(notified, isTrue);
+      });
+
+      test('initial isCastingSupported is false', () {
+        expect(state.isCastingSupported, isFalse);
+      });
+
+      test('setIsCastingSupported updates state and notifies listeners', () {
+        var notified = false;
+        state
+          ..addListener(() => notified = true)
+          ..setIsCastingSupported(supported: true);
+
+        expect(state.isCastingSupported, isTrue);
+        expect(notified, isTrue);
+      });
+    });
+
+    group('Time Display', () {
+      test('initial showRemainingTime is false', () {
+        expect(state.showRemainingTime, isFalse);
+      });
+
+      test('toggleTimeDisplay toggles showRemainingTime', () {
+        expect(state.showRemainingTime, isFalse);
+
+        state.toggleTimeDisplay();
+        expect(state.showRemainingTime, isTrue);
+
+        state.toggleTimeDisplay();
+        expect(state.showRemainingTime, isFalse);
+      });
+
+      test('toggleTimeDisplay notifies listeners', () {
+        var notified = false;
+        state.addListener(() => notified = true);
+
+        state.toggleTimeDisplay();
+
+        expect(notified, isTrue);
+      });
+    });
+
+    group('Drag State', () {
+      test('initial isDragging is false', () {
+        expect(state.isDragging, isFalse);
+      });
+
+      test('initial dragProgress is null', () {
+        expect(state.dragProgress, isNull);
+      });
+
+      test('startDragging sets isDragging to true', () {
+        state.startDragging();
+
+        expect(state.isDragging, isTrue);
+      });
+
+      test('startDragging notifies listeners', () {
+        var notified = false;
+        state.addListener(() => notified = true);
+
+        state.startDragging();
+
+        expect(notified, isTrue);
+      });
+
+      test('updateDragProgress updates dragProgress', () {
+        state.updateDragProgress(0.5);
+
+        expect(state.dragProgress, equals(0.5));
+      });
+
+      test('updateDragProgress notifies listeners', () {
+        var notified = false;
+        state.addListener(() => notified = true);
+
+        state.updateDragProgress(0.75);
+
+        expect(notified, isTrue);
+      });
+
+      test('endDragging sets isDragging to false and clears dragProgress', () {
+        state.startDragging();
+        state.updateDragProgress(0.3);
+
+        state.endDragging();
+
+        expect(state.isDragging, isFalse);
+        expect(state.dragProgress, isNull);
+      });
+
+      test('endDragging notifies listeners', () {
+        state.startDragging();
+        var notified = false;
+        state.addListener(() => notified = true);
+
+        state.endDragging();
+
+        expect(notified, isTrue);
+      });
+    });
+
+    group('Playback State Tracking', () {
+      test('initial lastIsPlaying is null', () {
+        expect(state.lastIsPlaying, isNull);
+      });
+
+      test('lastIsPlaying setter updates state', () {
+        state.lastIsPlaying = true;
+
+        expect(state.lastIsPlaying, isTrue);
+      });
+
+      test('lastIsPlaying setter does not notify listeners', () {
+        // This is just tracking state, not triggering UI updates
+        var notified = false;
+        state.addListener(() => notified = true);
+
+        state.lastIsPlaying = false;
+
+        expect(notified, isFalse);
+      });
+    });
+
+    group('Mouse Hover', () {
+      test('initial isMouseOverControls is false', () {
+        expect(state.isMouseOverControls, isFalse);
+      });
+
+      test('setMouseOverControls updates state and notifies listeners', () {
+        var notified = false;
+        state
+          ..addListener(() => notified = true)
+          ..setMouseOverControls(isOver: true);
+
+        expect(state.isMouseOverControls, isTrue);
+        expect(notified, isTrue);
+      });
+    });
+
+    group('Context Menu Position', () {
+      test('initial lastContextMenuPosition is null', () {
+        expect(state.lastContextMenuPosition, isNull);
+      });
+
+      test('lastContextMenuPosition setter updates state', () {
+        const position = Offset(100, 200);
+
+        state.lastContextMenuPosition = position;
+
+        expect(state.lastContextMenuPosition, equals(position));
+      });
+
+      test('lastContextMenuPosition setter does not notify listeners', () {
+        // Position tracking doesn't require UI rebuild
+        var notified = false;
+        state.addListener(() => notified = true);
+
+        state.lastContextMenuPosition = const Offset(50, 75);
+
+        expect(notified, isFalse);
+      });
+
+      test('clearLastContextMenuPosition sets position to null', () {
+        state.lastContextMenuPosition = const Offset(100, 200);
+
+        state.clearLastContextMenuPosition();
+
+        expect(state.lastContextMenuPosition, isNull);
+      });
+    });
+
+    group('Keyboard Overlay', () {
+      test('initial keyboardOverlayTimer is null', () {
+        expect(state.keyboardOverlayTimer, isNull);
+      });
+
+      test('initial keyboardOverlayValue is null', () {
+        expect(state.keyboardOverlayValue, isNull);
+      });
+
+      test('initial keyboardOverlayType is null', () {
+        expect(state.keyboardOverlayType, isNull);
+      });
+
+      test('showKeyboardOverlay sets type, value and creates timer', () {
+        state.showKeyboardOverlay(KeyboardOverlayType.volume, 1, const Duration(milliseconds: 100), () {});
+
+        expect(state.keyboardOverlayType, equals(KeyboardOverlayType.volume));
+        expect(state.keyboardOverlayValue, equals(1));
+        expect(state.keyboardOverlayTimer, isNotNull);
+        expect(state.keyboardOverlayTimer!.isActive, isTrue);
+      });
+
+      test('showKeyboardOverlay notifies listeners', () {
+        var notified = false;
+        state.addListener(() => notified = true);
+
+        state.showKeyboardOverlay(KeyboardOverlayType.seek, 1, const Duration(milliseconds: 100), () {});
+
+        expect(notified, isTrue);
+      });
+
+      test('showKeyboardOverlay executes callback after duration', () async {
+        var callbackExecuted = false;
+
+        state.showKeyboardOverlay(
+          KeyboardOverlayType.speed,
+          1,
+          const Duration(milliseconds: 50),
+          () => callbackExecuted = true,
+        );
+
+        expect(callbackExecuted, isFalse);
+
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+
+        expect(callbackExecuted, isTrue);
+      });
+
+      test('hideKeyboardOverlay cancels timer and clears type and value', () {
+        var callbackExecuted = false;
+
+        state.showKeyboardOverlay(
+          KeyboardOverlayType.volume,
+          1,
+          const Duration(milliseconds: 50),
+          () => callbackExecuted = true,
+        );
+
+        state.hideKeyboardOverlay();
+
+        expect(state.keyboardOverlayTimer, isNull);
+        expect(state.keyboardOverlayType, isNull);
+        expect(state.keyboardOverlayValue, isNull);
+
+        // Ensure callback doesn't execute
+        return Future<void>.delayed(const Duration(milliseconds: 100)).then((_) {
+          expect(callbackExecuted, isFalse);
+        });
+      });
+
+      test('hideKeyboardOverlay notifies listeners', () {
+        state.showKeyboardOverlay(KeyboardOverlayType.speed, 1, const Duration(milliseconds: 100), () {});
+
+        var notified = false;
+        state.addListener(() => notified = true);
+
+        state.hideKeyboardOverlay();
+
+        expect(notified, isTrue);
+      });
+    });
+
+    group('Dispose', () {
+      test('dispose cancels hideTimer', () {
+        // Create separate state instance for this test to avoid double-dispose
+        final testState = VideoControlsState();
+        testState.startHideTimer(const Duration(seconds: 10), () {});
+
+        expect(testState.hideTimer, isNotNull);
+
+        testState.dispose();
+
+        expect(testState.hideTimer, isNull);
+      });
+
+      test('dispose cancels keyboardOverlayTimer', () {
+        // Create separate state instance for this test to avoid double-dispose
+        final testState = VideoControlsState();
+        testState.showKeyboardOverlay(KeyboardOverlayType.volume, 1, const Duration(seconds: 10), () {});
+
+        expect(testState.keyboardOverlayTimer, isNotNull);
+
+        testState.dispose();
+
+        expect(testState.keyboardOverlayTimer, isNull);
+      });
+    });
+  });
+}

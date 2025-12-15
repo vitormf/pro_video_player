@@ -1,0 +1,43 @@
+{
+  "playlist": {
+    "title": "Example Album",
+    "creator": "Album Artist",
+    "annotation": "Full album playlist",
+    "image": "https://example.com/albums/example-album/cover.jpg",
+    "date": "2024-06-15T00:00:00Z",
+    "track": [
+      {
+        "location": ["https://example.com/albums/example/01.mp3"],
+        "title": "Opening Track",
+        "creator": "Album Artist",
+        "album": "Example Album",
+        "trackNum": 1,
+        "duration": 180000
+      },
+      {
+        "location": ["https://example.com/albums/example/02.mp3"],
+        "title": "Second Song",
+        "creator": "Album Artist",
+        "album": "Example Album",
+        "trackNum": 2,
+        "duration": 210000
+      },
+      {
+        "location": ["https://example.com/albums/example/03.mp3"],
+        "title": "Third Track",
+        "creator": "Album Artist",
+        "album": "Example Album",
+        "trackNum": 3,
+        "duration": 195000
+      },
+      {
+        "location": ["https://example.com/albums/example/04.mp3"],
+        "title": "Final Song",
+        "creator": "Album Artist",
+        "album": "Example Album",
+        "trackNum": 4,
+        "duration": 240000
+      }
+    ]
+  }
+}

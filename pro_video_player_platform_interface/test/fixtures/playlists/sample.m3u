@@ -1,0 +1,11 @@
+#EXTM3U
+#PLAYLIST:Sample M3U Playlist
+
+#EXTINF:596,Big Buck Bunny - Blender Foundation
+https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4
+
+#EXTINF:653,Elephants Dream - Blender Foundation
+https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4
+
+#EXTINF:15,For Bigger Blazes - Google
+https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4

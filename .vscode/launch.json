@@ -1,0 +1,51 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Showcase App",
+            "type": "dart",
+            "request": "launch",
+            "program": "${workspaceFolder}/example-showcase/lib/main.dart",
+            "cwd": "${workspaceFolder}/example-showcase"
+        },
+        {
+            "name": "Showcase App (Profile)",
+            "type": "dart",
+            "request": "launch",
+            "program": "${workspaceFolder}/example-showcase/lib/main.dart",
+            "cwd": "${workspaceFolder}/example-showcase",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "Showcase App (Release)",
+            "type": "dart",
+            "request": "launch",
+            "program": "${workspaceFolder}/example-showcase/lib/main.dart",
+            "cwd": "${workspaceFolder}/example-showcase",
+            "flutterMode": "release"
+        },
+        {
+            "name": "Simple Player",
+            "type": "dart",
+            "request": "launch",
+            "program": "${workspaceFolder}/example-simple-player/lib/main.dart",
+            "cwd": "${workspaceFolder}/example-simple-player"
+        },
+        {
+            "name": "Simple Player (Profile)",
+            "type": "dart",
+            "request": "launch",
+            "program": "${workspaceFolder}/example-simple-player/lib/main.dart",
+            "cwd": "${workspaceFolder}/example-simple-player",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "Simple Player (Release)",
+            "type": "dart",
+            "request": "launch",
+            "program": "${workspaceFolder}/example-simple-player/lib/main.dart",
+            "cwd": "${workspaceFolder}/example-simple-player",
+            "flutterMode": "release"
+        }
+    ]
+}

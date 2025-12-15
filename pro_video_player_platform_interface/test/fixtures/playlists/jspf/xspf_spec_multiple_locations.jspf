@@ -1,0 +1,16 @@
+{
+  "playlist": {
+    "title": "Multi-location Playlist",
+    "track": [
+      {
+        "location": [
+          "https://cdn1.example.com/audio/track1.mp3",
+          "https://cdn2.example.com/audio/track1.mp3",
+          "https://backup.example.com/audio/track1.mp3"
+        ],
+        "title": "Redundant Track",
+        "creator": "Reliable Artist"
+      }
+    ]
+  }
+}

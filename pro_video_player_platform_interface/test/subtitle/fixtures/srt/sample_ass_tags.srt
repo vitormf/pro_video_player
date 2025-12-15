@@ -1,0 +1,31 @@
+1
+00:00:01,000 --> 00:00:04,000
+{\an8}Top center aligned
+
+2
+00:00:05,000 --> 00:00:08,000
+{\an2}Bottom center (default position)
+
+3
+00:00:09,000 --> 00:00:12,000
+{\an7}Top left aligned
+
+4
+00:00:13,000 --> 00:00:16,000
+{\an9}Top right aligned
+
+5
+00:00:17,000 --> 00:00:20,000
+{\pos(320,50)}Custom position
+
+6
+00:00:21,000 --> 00:00:25,000
+{\fad(500,500)}Fade in and out effect
+
+7
+00:00:26,000 --> 00:00:30,000
+{\c&HFF0000&}Blue colored text
+
+8
+00:00:31,000 --> 00:00:35,000
+{\fs24}Larger font size text

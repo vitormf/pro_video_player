@@ -1,0 +1,21 @@
+#!/bin/bash
+# Pre-commit hook to verify shared iOS/macOS Swift sources are in sync
+#
+# This hook prevents commits if shared_apple_sources/ has diverged from
+# the platform-specific Shared/ directories.
+
+# Only check if any Swift files in shared directories are staged
+staged_shared=$(git diff --cached --name-only | grep -E "(shared_apple_sources|ios/Classes/Shared|macos/Classes/Shared)/.*\.swift$" || true)
+
+if [ -n "$staged_shared" ]; then
+    echo "Checking shared Swift sources are in sync..."
+
+    if ! ./makefiles/scripts/verify-shared-links.sh; then
+        echo ""
+        echo "Commit blocked: Shared sources are out of sync."
+        echo "Run 'make setup-shared-links' to fix, then re-stage your changes."
+        exit 1
+    fi
+fi
+
+exit 0

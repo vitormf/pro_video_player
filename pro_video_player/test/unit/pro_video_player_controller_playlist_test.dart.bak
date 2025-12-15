@@ -1,0 +1,291 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:pro_video_player/pro_video_player.dart';
+import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
+
+import 'test_helpers.dart';
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  late ControllerTestFixture fixture;
+
+  setUpAll(registerFallbackValues);
+
+  setUp(() {
+    fixture = ControllerTestFixture();
+  });
+
+  tearDown(() async {
+    await fixture.dispose();
+  });
+
+  group('ProVideoPlayerController playlist management', () {
+    setUp(() async {
+      when(
+        () => fixture.mockPlatform.create(
+          source: any(named: 'source'),
+          options: any(named: 'options'),
+        ),
+      ).thenAnswer((_) async => 1);
+      when(() => fixture.mockPlatform.dispose(any())).thenAnswer((_) async {});
+      when(() => fixture.mockPlatform.play(any())).thenAnswer((_) async {});
+    });
+
+    test('initializeWithPlaylist throws on empty playlist', () async {
+      expect(
+        () => fixture.controller.initializeWithPlaylist(playlist: Playlist(items: const [])),
+        throwsA(isA<AssertionError>()),
+      );
+    });
+
+    test('initializeWithPlaylist sets playlist state', () async {
+      final playlist = Playlist(
+        items: [
+          const VideoSource.network('https://example.com/video1.mp4'),
+          const VideoSource.network('https://example.com/video2.mp4'),
+        ],
+      );
+
+      await fixture.controller.initializeWithPlaylist(playlist: playlist);
+
+      expect(fixture.controller.value.playlist, equals(playlist));
+      expect(fixture.controller.value.playlistIndex, equals(0));
+      expect(fixture.controller.value.playlistRepeatMode, equals(PlaylistRepeatMode.none));
+      expect(fixture.controller.value.isShuffled, isFalse);
+    });
+
+    test('initializeWithPlaylist respects initialIndex', () async {
+      final playlist = Playlist(
+        items: [
+          const VideoSource.network('https://example.com/video1.mp4'),
+          const VideoSource.network('https://example.com/video2.mp4'),
+        ],
+        initialIndex: 1,
+      );
+
+      await fixture.controller.initializeWithPlaylist(playlist: playlist);
+
+      expect(fixture.controller.value.playlistIndex, equals(1));
+    });
+
+    test('initializeWithPlaylist clamps invalid initialIndex', () async {
+      final playlist = Playlist(
+        items: [
+          const VideoSource.network('https://example.com/video1.mp4'),
+          const VideoSource.network('https://example.com/video2.mp4'),
+        ],
+        initialIndex: 99,
+      );
+
+      await fixture.controller.initializeWithPlaylist(playlist: playlist);
+
+      expect(fixture.controller.value.playlistIndex, equals(1)); // Clamped to last index
+    });
+
+    test('playlistNext throws when no playlist', () async {
+      await fixture.controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+
+      expect(fixture.controller.playlistNext, throwsA(isA<StateError>()));
+    });
+
+    test('playlistNext moves to next track', () async {
+      final playlist = Playlist(
+        items: [
+          const VideoSource.network('https://example.com/video1.mp4'),
+          const VideoSource.network('https://example.com/video2.mp4'),
+        ],
+      );
+
+      when(
+        () => fixture.mockPlatform.create(
+          source: any(named: 'source'),
+          options: any(named: 'options'),
+        ),
+      ).thenAnswer((_) async => 2);
+
+      await fixture.controller.initializeWithPlaylist(playlist: playlist);
+
+      final result = await fixture.controller.playlistNext();
+
+      expect(result, isTrue);
+      expect(fixture.controller.value.playlistIndex, equals(1));
+    });
+
+    test('playlistNext returns false at end of playlist', () async {
+      final playlist = Playlist(items: [const VideoSource.network('https://example.com/video1.mp4')]);
+
+      await fixture.controller.initializeWithPlaylist(playlist: playlist);
+
+      final result = await fixture.controller.playlistNext();
+
+      expect(result, isFalse);
+      expect(fixture.controller.value.playbackState, PlaybackState.completed);
+    });
+
+    test('playlistNext wraps with repeat all', () async {
+      final playlist = Playlist(
+        items: [
+          const VideoSource.network('https://example.com/video1.mp4'),
+          const VideoSource.network('https://example.com/video2.mp4'),
+        ],
+      );
+
+      when(
+        () => fixture.mockPlatform.create(
+          source: any(named: 'source'),
+          options: any(named: 'options'),
+        ),
+      ).thenAnswer((_) async => 2);
+
+      await fixture.controller.initializeWithPlaylist(playlist: playlist);
+      fixture.controller.setPlaylistRepeatMode(PlaylistRepeatMode.all);
+
+      // Move to last track
+      await fixture.controller.playlistNext();
+      expect(fixture.controller.value.playlistIndex, equals(1));
+
+      // Next should wrap to beginning
+      final result = await fixture.controller.playlistNext();
+      expect(result, isTrue);
+      expect(fixture.controller.value.playlistIndex, equals(0));
+    });
+
+    test('playlistPrevious throws when no playlist', () async {
+      await fixture.controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+
+      expect(fixture.controller.playlistPrevious, throwsA(isA<StateError>()));
+    });
+
+    test('playlistPrevious moves to previous track', () async {
+      final playlist = Playlist(
+        items: [
+          const VideoSource.network('https://example.com/video1.mp4'),
+          const VideoSource.network('https://example.com/video2.mp4'),
+        ],
+        initialIndex: 1,
+      );
+
+      when(
+        () => fixture.mockPlatform.create(
+          source: any(named: 'source'),
+          options: any(named: 'options'),
+        ),
+      ).thenAnswer((_) async => 2);
+
+      await fixture.controller.initializeWithPlaylist(playlist: playlist);
+
+      final result = await fixture.controller.playlistPrevious();
+
+      expect(result, isTrue);
+      expect(fixture.controller.value.playlistIndex, equals(0));
+    });
+
+    test('playlistPrevious returns false at beginning', () async {
+      final playlist = Playlist(items: [const VideoSource.network('https://example.com/video1.mp4')]);
+
+      await fixture.controller.initializeWithPlaylist(playlist: playlist);
+
+      final result = await fixture.controller.playlistPrevious();
+
+      expect(result, isFalse);
+    });
+
+    test('playlistJumpTo throws when no playlist', () async {
+      await fixture.controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+
+      expect(() => fixture.controller.playlistJumpTo(0), throwsA(isA<StateError>()));
+    });
+
+    test('playlistJumpTo throws on invalid index', () async {
+      final playlist = Playlist(items: [const VideoSource.network('https://example.com/video1.mp4')]);
+
+      await fixture.controller.initializeWithPlaylist(playlist: playlist);
+
+      expect(() => fixture.controller.playlistJumpTo(5), throwsA(isA<RangeError>()));
+      expect(() => fixture.controller.playlistJumpTo(-1), throwsA(isA<RangeError>()));
+    });
+
+    test('playlistJumpTo moves to specific track', () async {
+      final playlist = Playlist(
+        items: [
+          const VideoSource.network('https://example.com/video1.mp4'),
+          const VideoSource.network('https://example.com/video2.mp4'),
+          const VideoSource.network('https://example.com/video3.mp4'),
+        ],
+      );
+
+      when(
+        () => fixture.mockPlatform.create(
+          source: any(named: 'source'),
+          options: any(named: 'options'),
+        ),
+      ).thenAnswer((_) async => 2);
+
+      await fixture.controller.initializeWithPlaylist(playlist: playlist);
+
+      await fixture.controller.playlistJumpTo(2);
+
+      expect(fixture.controller.value.playlistIndex, equals(2));
+    });
+
+    test('setPlaylistRepeatMode updates state', () async {
+      final playlist = Playlist(items: [const VideoSource.network('https://example.com/video1.mp4')]);
+
+      await fixture.controller.initializeWithPlaylist(playlist: playlist);
+
+      fixture.controller.setPlaylistRepeatMode(PlaylistRepeatMode.one);
+
+      expect(fixture.controller.value.playlistRepeatMode, equals(PlaylistRepeatMode.one));
+    });
+
+    test('setPlaylistShuffle enables shuffle', () async {
+      final playlist = Playlist(
+        items: [
+          const VideoSource.network('https://example.com/video1.mp4'),
+          const VideoSource.network('https://example.com/video2.mp4'),
+          const VideoSource.network('https://example.com/video3.mp4'),
+        ],
+      );
+
+      await fixture.controller.initializeWithPlaylist(playlist: playlist);
+
+      fixture.controller.setPlaylistShuffle(enabled: true);
+
+      expect(fixture.controller.value.isShuffled, isTrue);
+    });
+
+    test('setPlaylistShuffle disables shuffle', () async {
+      final playlist = Playlist(
+        items: [
+          const VideoSource.network('https://example.com/video1.mp4'),
+          const VideoSource.network('https://example.com/video2.mp4'),
+        ],
+      );
+
+      await fixture.controller.initializeWithPlaylist(playlist: playlist);
+      fixture.controller.setPlaylistShuffle(enabled: true);
+      expect(fixture.controller.value.isShuffled, isTrue);
+
+      fixture.controller.setPlaylistShuffle(enabled: false);
+
+      expect(fixture.controller.value.isShuffled, isFalse);
+    });
+
+    test('updates value on PlaylistTrackChangedEvent', () async {
+      final playlist = Playlist(
+        items: [
+          const VideoSource.network('https://example.com/video1.mp4'),
+          const VideoSource.network('https://example.com/video2.mp4'),
+        ],
+      );
+
+      await fixture.controller.initializeWithPlaylist(playlist: playlist);
+
+      fixture.eventController.add(const PlaylistTrackChangedEvent(1));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(fixture.controller.value.playlistIndex, equals(1));
+    });
+  });
+}

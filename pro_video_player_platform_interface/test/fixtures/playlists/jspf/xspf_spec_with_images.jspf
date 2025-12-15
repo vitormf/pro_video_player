@@ -1,0 +1,20 @@
+{
+  "playlist": {
+    "title": "Visual Playlist",
+    "image": "https://example.com/playlist-cover.jpg",
+    "track": [
+      {
+        "location": ["https://example.com/media/video1.mp4"],
+        "title": "Video Track One",
+        "creator": "Video Creator",
+        "image": "https://example.com/thumbnails/video1.jpg"
+      },
+      {
+        "location": ["https://example.com/media/video2.mp4"],
+        "title": "Video Track Two",
+        "creator": "Video Creator",
+        "image": "https://example.com/thumbnails/video2.jpg"
+      }
+    ]
+  }
+}

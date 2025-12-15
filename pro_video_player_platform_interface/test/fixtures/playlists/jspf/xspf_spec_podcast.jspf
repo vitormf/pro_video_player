@@ -1,0 +1,29 @@
+{
+  "playlist": {
+    "title": "Example Podcast Episodes",
+    "creator": "Podcast Network",
+    "info": "https://example.com/podcasts/example-show",
+    "image": "https://example.com/podcasts/example-show/cover.jpg",
+    "track": [
+      {
+        "location": ["https://example.com/podcasts/episode1.mp3"],
+        "title": "Episode 1: Introduction",
+        "creator": "Host Name",
+        "annotation": "Welcome to our first episode",
+        "duration": 1800000,
+        "link": [
+          {
+            "rel": "https://example.com/rel/show-notes",
+            "content": "https://example.com/podcasts/episode1/notes"
+          }
+        ]
+      },
+      {
+        "location": ["https://example.com/podcasts/episode2.mp3"],
+        "title": "Episode 2: Deep Dive",
+        "creator": "Host Name",
+        "duration": 2400000
+      }
+    ]
+  }
+}

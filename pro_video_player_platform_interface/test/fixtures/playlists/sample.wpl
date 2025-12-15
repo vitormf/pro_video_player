@@ -1,0 +1,16 @@
+<?wpl version="1.0"?>
+<smil>
+  <head>
+    <meta name="Generator" content="Pro Video Player Tests"/>
+    <meta name="ItemCount" content="3"/>
+    <author>Pro Video Player</author>
+    <title>Sample WPL Playlist</title>
+  </head>
+  <body>
+    <seq>
+      <media src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"/>
+      <media src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"/>
+      <media src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"/>
+    </seq>
+  </body>
+</smil>

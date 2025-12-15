@@ -1,0 +1,26 @@
+{
+  "playlist": {
+    "title": "Internet Radio Stations",
+    "annotation": "Collection of streaming radio stations",
+    "track": [
+      {
+        "location": ["https://stream.example.com/jazz"],
+        "title": "Jazz Radio Stream",
+        "creator": "Jazz Network",
+        "annotation": "24/7 Jazz music stream"
+      },
+      {
+        "location": ["https://stream.example.com/classical"],
+        "title": "Classical Music Stream",
+        "creator": "Classical Network",
+        "annotation": "Classical music all day"
+      },
+      {
+        "location": ["https://stream.example.com/news"],
+        "title": "News Radio",
+        "creator": "News Network",
+        "annotation": "Live news coverage"
+      }
+    ]
+  }
+}

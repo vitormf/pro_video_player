@@ -1,0 +1,76 @@
+{
+  "playlist": {
+    "title": "Comprehensive Example Playlist",
+    "creator": "Playlist Creator",
+    "annotation": "A comprehensive example demonstrating JSPF features",
+    "info": "https://example.com/playlist-info",
+    "location": "https://example.com/playlists/comprehensive.jspf",
+    "identifier": "https://example.com/playlists/id/12345",
+    "image": "https://example.com/images/playlist-cover.jpg",
+    "date": "2025-01-15T10:30:00Z",
+    "license": "https://creativecommons.org/licenses/by/4.0/",
+    "attribution": [
+      {
+        "identifier": "https://example.com/source1",
+        "location": "https://example.com/original-playlist1"
+      }
+    ],
+    "link": [
+      {
+        "rel": "https://example.com/rel/website",
+        "content": "https://example.com"
+      }
+    ],
+    "meta": [
+      {
+        "rel": "https://example.com/meta/genre",
+        "content": "Electronic"
+      }
+    ],
+    "extension": {
+      "application": "https://example.com/app",
+      "customField": "customValue"
+    },
+    "track": [
+      {
+        "location": [
+          "https://example.com/tracks/track1.mp3",
+          "https://mirror.example.com/tracks/track1.mp3"
+        ],
+        "identifier": ["https://musicbrainz.org/recording/example1"],
+        "title": "Example Track One",
+        "creator": "Example Artist",
+        "annotation": "First track in the playlist",
+        "info": "https://example.com/tracks/track1-info",
+        "image": "https://example.com/images/track1.jpg",
+        "album": "Example Album",
+        "trackNum": 1,
+        "duration": 245000,
+        "link": [
+          {
+            "rel": "https://example.com/rel/lyrics",
+            "content": "https://example.com/tracks/track1/lyrics"
+          }
+        ],
+        "meta": [
+          {
+            "rel": "https://example.com/meta/year",
+            "content": "2024"
+          }
+        ],
+        "extension": {
+          "application": "https://example.com/app",
+          "rating": 5
+        }
+      },
+      {
+        "location": ["https://example.com/tracks/track2.ogg"],
+        "title": "Example Track Two",
+        "creator": "Example Artist",
+        "album": "Example Album",
+        "trackNum": 2,
+        "duration": 312000
+      }
+    ]
+  }
+}

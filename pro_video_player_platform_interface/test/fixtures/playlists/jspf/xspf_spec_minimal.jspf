@@ -1,0 +1,9 @@
+{
+  "playlist": {
+    "track": [
+      {
+        "location": ["https://example.com/track1.mp3"]
+      }
+    ]
+  }
+}

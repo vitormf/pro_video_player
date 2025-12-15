@@ -1,0 +1,30 @@
+{
+  "playlist": {
+    "title": "Sample JSPF Playlist",
+    "creator": "Pro Video Player Tests",
+    "annotation": "A sample playlist for testing JSPF parsing",
+    "date": "2025-01-01T00:00:00Z",
+    "track": [
+      {
+        "location": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+        "title": "Big Buck Bunny",
+        "creator": "Blender Foundation",
+        "annotation": "A short animated film",
+        "duration": 596000
+      },
+      {
+        "location": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+        "title": "Elephants Dream",
+        "creator": "Blender Foundation",
+        "annotation": "The first Blender Open Movie",
+        "duration": 653000
+      },
+      {
+        "location": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+        "title": "For Bigger Blazes",
+        "creator": "Google",
+        "duration": 15000
+      }
+    ]
+  }
+}

@@ -1,0 +1,23 @@
+name: pro_video_player_platform_interface
+description: A common platform interface for the pro_video_player plugin.
+version: 0.0.1
+repository: https://github.com/user/pro_video_player/tree/main/pro_video_player_platform_interface
+
+environment:
+  sdk: ^3.8.0
+  flutter: ">=3.32.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_test:
+    sdk: flutter
+  http: ^1.2.0
+  plugin_platform_interface: ^2.1.0
+
+dev_dependencies:
+  mocktail: ^1.0.4
+
+flutter:
+  plugin:
+    platforms: {}

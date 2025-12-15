@@ -1,0 +1,36 @@
+name: pro_video_player
+description: A Flutter plugin for video playback using native video players. Supports iOS, Android, and more.
+version: 0.0.1
+repository: https://github.com/user/pro_video_player/tree/main/pro_video_player
+
+environment:
+  sdk: ^3.8.0
+  flutter: ">=3.32.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  pro_video_player_android:
+    path: ../pro_video_player_android
+  pro_video_player_ios:
+    path: ../pro_video_player_ios
+  pro_video_player_macos:
+    path: ../pro_video_player_macos
+  pro_video_player_platform_interface:
+    path: ../pro_video_player_platform_interface
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  mocktail: ^1.0.4
+
+  plugin_platform_interface: any
+flutter:
+  plugin:
+    platforms:
+      android:
+        default_package: pro_video_player_android
+      ios:
+        default_package: pro_video_player_ios
+      macos:
+        default_package: pro_video_player_macos

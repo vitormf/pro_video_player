@@ -1,0 +1,15 @@
+1
+00:00:01,000 --> 00:00:04,000 X1:100 X2:500 Y1:50 Y2:100
+Top positioned subtitle
+
+2
+00:00:05,000 --> 00:00:08,000 X1:50 X2:550 Y1:400 Y2:450
+Bottom positioned subtitle
+
+3
+00:00:09,000 --> 00:00:12,000 X1:400 X2:600 Y1:200 Y2:250
+Right side subtitle
+
+4
+00:00:13,000 --> 00:00:16,000
+Normal subtitle without positioning

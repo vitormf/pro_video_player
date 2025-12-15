@@ -1,0 +1,25 @@
+<asx version="3.0">
+  <title>Sample ASX Playlist</title>
+  <author>Pro Video Player Tests</author>
+  <copyright>Public Domain</copyright>
+
+  <entry>
+    <title>Big Buck Bunny</title>
+    <author>Blender Foundation</author>
+    <ref href="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"/>
+    <abstract>A short animated film about a big rabbit</abstract>
+  </entry>
+
+  <entry>
+    <title>Elephants Dream</title>
+    <author>Blender Foundation</author>
+    <ref href="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"/>
+    <abstract>The first Blender Open Movie</abstract>
+  </entry>
+
+  <entry>
+    <title>For Bigger Blazes</title>
+    <author>Google</author>
+    <ref href="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4"/>
+  </entry>
+</asx>

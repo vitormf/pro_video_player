@@ -1,0 +1,19 @@
+{
+  "playlist": {
+    "title": "My Playlist",
+    "track": [
+      {
+        "location": ["https://example.com/song1.mp3"],
+        "title": "Track One",
+        "creator": "Artist Name",
+        "album": "Album Title"
+      },
+      {
+        "location": ["https://example.com/song2.mp3"],
+        "title": "Track Two",
+        "creator": "Artist Name",
+        "album": "Album Title"
+      }
+    ]
+  }
+}

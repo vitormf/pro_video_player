@@ -1,0 +1,11 @@
+1
+00:00:01,000 --> 00:00:02,000
+First subtitle
+
+5
+00:00:03,000 --> 00:00:04,000
+Fifth subtitle (skipped 2-4)
+
+10
+00:00:05,000 --> 00:00:06,000
+Tenth subtitle (skipped 6-9)

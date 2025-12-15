@@ -1,0 +1,31 @@
+1
+00:00:01,000 --> 00:00:04,000
+This is <b>bold</b> text
+
+2
+00:00:05,000 --> 00:00:08,000
+This is <i>italic</i> text
+
+3
+00:00:09,000 --> 00:00:12,000
+This is <u>underlined</u> text
+
+4
+00:00:13,000 --> 00:00:16,000
+<font color="#FF0000">Red text</font>
+
+5
+00:00:17,000 --> 00:00:20,000
+<font color="yellow">Yellow text</font>
+
+6
+00:00:21,000 --> 00:00:25,000
+Mixed: <b>bold</b>, <i>italic</i>, and <u>underlined</u>
+
+7
+00:00:26,000 --> 00:00:30,000
+<font color="#00FF00"><b>Bold green</b></font> text
+
+8
+00:00:31,000 --> 00:00:35,000
+Nested <b><i>bold italic</i></b> formatting

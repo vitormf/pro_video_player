@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.pro_video_player_android.test">
+
+    <application>
+        <activity
+            android:name="com.example.pro_video_player_android.TestActivity"
+            android:exported="false"
+            android:supportsPictureInPicture="true"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation" />
+
+        <!-- Test activity for MediaRouteButton integration tests -->
+        <activity
+            android:name="com.example.pro_video_player_android.MediaRouteButtonTestActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.DeviceDefault.Light" />
+    </application>
+
+</manifest>
