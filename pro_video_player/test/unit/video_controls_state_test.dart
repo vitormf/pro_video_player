@@ -3,6 +3,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pro_video_player/src/video_controls_state.dart';
 
+import '../shared/test_constants.dart';
+
 void main() {
   group('VideoControlsState', () {
     late VideoControlsState state;
@@ -74,7 +76,7 @@ void main() {
       });
 
       test('startHideTimer creates a timer', () {
-        state.startHideTimer(const Duration(milliseconds: 100), () {});
+        state.startHideTimer(TestDelays.stateUpdate, () {});
 
         expect(state.hideTimer, isNotNull);
         expect(state.hideTimer!.isActive, isTrue);
@@ -83,11 +85,11 @@ void main() {
       test('startHideTimer executes callback after duration', () async {
         var callbackExecuted = false;
 
-        state.startHideTimer(const Duration(milliseconds: 50), () => callbackExecuted = true);
+        state.startHideTimer(TestDelays.eventPropagation, () => callbackExecuted = true);
 
         expect(callbackExecuted, isFalse);
 
-        await Future<void>.delayed(const Duration(milliseconds: 100));
+        await Future<void>.delayed(TestDelays.stateUpdate);
 
         expect(callbackExecuted, isTrue);
       });
@@ -95,14 +97,14 @@ void main() {
       test('cancelHideTimer cancels existing timer', () {
         var callbackExecuted = false;
 
-        state.startHideTimer(const Duration(milliseconds: 50), () => callbackExecuted = true);
+        state.startHideTimer(TestDelays.eventPropagation, () => callbackExecuted = true);
 
         state.cancelHideTimer();
 
         expect(state.hideTimer, isNull);
 
         // Wait to ensure callback doesn't execute
-        return Future<void>.delayed(const Duration(milliseconds: 100)).then((_) {
+        return Future<void>.delayed(TestDelays.stateUpdate).then((_) {
           expect(callbackExecuted, isFalse);
         });
       });
@@ -111,16 +113,16 @@ void main() {
         var firstCallbackExecuted = false;
         var secondCallbackExecuted = false;
 
-        state.startHideTimer(const Duration(milliseconds: 50), () => firstCallbackExecuted = true);
+        state.startHideTimer(TestDelays.eventPropagation, () => firstCallbackExecuted = true);
 
-        state.resetHideTimer(const Duration(milliseconds: 100), () => secondCallbackExecuted = true);
+        state.resetHideTimer(TestDelays.stateUpdate, () => secondCallbackExecuted = true);
 
         await Future<void>.delayed(const Duration(milliseconds: 75));
 
         expect(firstCallbackExecuted, isFalse);
         expect(secondCallbackExecuted, isFalse);
 
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         expect(firstCallbackExecuted, isFalse);
         expect(secondCallbackExecuted, isTrue);
@@ -340,7 +342,7 @@ void main() {
       });
 
       test('showKeyboardOverlay sets type, value and creates timer', () {
-        state.showKeyboardOverlay(KeyboardOverlayType.volume, 1, const Duration(milliseconds: 100), () {});
+        state.showKeyboardOverlay(KeyboardOverlayType.volume, 1, TestDelays.stateUpdate, () {});
 
         expect(state.keyboardOverlayType, equals(KeyboardOverlayType.volume));
         expect(state.keyboardOverlayValue, equals(1));
@@ -352,7 +354,7 @@ void main() {
         var notified = false;
         state.addListener(() => notified = true);
 
-        state.showKeyboardOverlay(KeyboardOverlayType.seek, 1, const Duration(milliseconds: 100), () {});
+        state.showKeyboardOverlay(KeyboardOverlayType.seek, 1, TestDelays.stateUpdate, () {});
 
         expect(notified, isTrue);
       });
@@ -363,13 +365,13 @@ void main() {
         state.showKeyboardOverlay(
           KeyboardOverlayType.speed,
           1,
-          const Duration(milliseconds: 50),
+          TestDelays.eventPropagation,
           () => callbackExecuted = true,
         );
 
         expect(callbackExecuted, isFalse);
 
-        await Future<void>.delayed(const Duration(milliseconds: 100));
+        await Future<void>.delayed(TestDelays.stateUpdate);
 
         expect(callbackExecuted, isTrue);
       });
@@ -380,7 +382,7 @@ void main() {
         state.showKeyboardOverlay(
           KeyboardOverlayType.volume,
           1,
-          const Duration(milliseconds: 50),
+          TestDelays.eventPropagation,
           () => callbackExecuted = true,
         );
 
@@ -391,13 +393,13 @@ void main() {
         expect(state.keyboardOverlayValue, isNull);
 
         // Ensure callback doesn't execute
-        return Future<void>.delayed(const Duration(milliseconds: 100)).then((_) {
+        return Future<void>.delayed(TestDelays.stateUpdate).then((_) {
           expect(callbackExecuted, isFalse);
         });
       });
 
       test('hideKeyboardOverlay notifies listeners', () {
-        state.showKeyboardOverlay(KeyboardOverlayType.speed, 1, const Duration(milliseconds: 100), () {});
+        state.showKeyboardOverlay(KeyboardOverlayType.speed, 1, TestDelays.stateUpdate, () {});
 
         var notified = false;
         state.addListener(() => notified = true);

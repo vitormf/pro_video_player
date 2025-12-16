@@ -4,6 +4,8 @@ import 'package:pro_video_player/src/controls/buttons/repeat_mode_button.dart';
 import 'package:pro_video_player/src/video_player_theme.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
+import '../../../shared/test_helpers.dart';
+
 void main() {
   group('RepeatModeButton', () {
     testWidgets('shows repeat icon with primary color when mode is none', (tester) async {
@@ -13,11 +15,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: RepeatModeButton(theme: customTheme, repeatMode: PlaylistRepeatMode.none, onPressed: () {}),
-          ),
-        ),
+        buildTestWidget(RepeatModeButton(theme: customTheme, repeatMode: PlaylistRepeatMode.none, onPressed: () {})),
       );
 
       expect(find.byIcon(Icons.repeat), findsOneWidget);
@@ -33,11 +31,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: RepeatModeButton(theme: customTheme, repeatMode: PlaylistRepeatMode.all, onPressed: () {}),
-          ),
-        ),
+        buildTestWidget(RepeatModeButton(theme: customTheme, repeatMode: PlaylistRepeatMode.all, onPressed: () {})),
       );
 
       expect(find.byIcon(Icons.repeat), findsOneWidget);
@@ -53,11 +47,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: RepeatModeButton(theme: customTheme, repeatMode: PlaylistRepeatMode.one, onPressed: () {}),
-          ),
-        ),
+        buildTestWidget(RepeatModeButton(theme: customTheme, repeatMode: PlaylistRepeatMode.one, onPressed: () {})),
       );
 
       expect(find.byIcon(Icons.repeat_one), findsOneWidget);
@@ -68,14 +58,8 @@ void main() {
 
     testWidgets('has correct tooltip for none mode', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: RepeatModeButton(
-              theme: VideoPlayerTheme.light(),
-              repeatMode: PlaylistRepeatMode.none,
-              onPressed: () {},
-            ),
-          ),
+        buildTestWidget(
+          RepeatModeButton(theme: VideoPlayerTheme.light(), repeatMode: PlaylistRepeatMode.none, onPressed: () {}),
         ),
       );
 
@@ -85,14 +69,8 @@ void main() {
 
     testWidgets('has correct tooltip for all mode', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: RepeatModeButton(
-              theme: VideoPlayerTheme.light(),
-              repeatMode: PlaylistRepeatMode.all,
-              onPressed: () {},
-            ),
-          ),
+        buildTestWidget(
+          RepeatModeButton(theme: VideoPlayerTheme.light(), repeatMode: PlaylistRepeatMode.all, onPressed: () {}),
         ),
       );
 
@@ -102,14 +80,8 @@ void main() {
 
     testWidgets('has correct tooltip for one mode', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: RepeatModeButton(
-              theme: VideoPlayerTheme.light(),
-              repeatMode: PlaylistRepeatMode.one,
-              onPressed: () {},
-            ),
-          ),
+        buildTestWidget(
+          RepeatModeButton(theme: VideoPlayerTheme.light(), repeatMode: PlaylistRepeatMode.one, onPressed: () {}),
         ),
       );
 
@@ -121,13 +93,11 @@ void main() {
       var pressed = false;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: RepeatModeButton(
-              theme: VideoPlayerTheme.light(),
-              repeatMode: PlaylistRepeatMode.none,
-              onPressed: () => pressed = true,
-            ),
+        buildTestWidget(
+          RepeatModeButton(
+            theme: VideoPlayerTheme.light(),
+            repeatMode: PlaylistRepeatMode.none,
+            onPressed: () => pressed = true,
           ),
         ),
       );
@@ -140,14 +110,8 @@ void main() {
 
     testWidgets('uses correct icon size', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: RepeatModeButton(
-              theme: VideoPlayerTheme.light(),
-              repeatMode: PlaylistRepeatMode.all,
-              onPressed: () {},
-            ),
-          ),
+        buildTestWidget(
+          RepeatModeButton(theme: VideoPlayerTheme.light(), repeatMode: PlaylistRepeatMode.all, onPressed: () {}),
         ),
       );
 

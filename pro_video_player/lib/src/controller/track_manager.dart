@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
+import 'manager_callbacks.dart';
+
 /// Manages track selection (subtitle, audio, video quality) for the video player.
 ///
 /// This manager handles:
@@ -9,7 +11,7 @@ import 'package:pro_video_player_platform_interface/pro_video_player_platform_in
 /// - Audio track selection
 /// - Video quality track selection for adaptive streams
 /// - Subtitle render mode configuration
-class TrackManager {
+class TrackManager with ManagerCallbacks {
   /// Creates a track manager with dependency injection via callbacks.
   TrackManager({
     required this.getValue,
@@ -20,22 +22,22 @@ class TrackManager {
     required this.ensureInitialized,
   });
 
-  /// Gets the current video player value.
+  @override
   final VideoPlayerValue Function() getValue;
 
-  /// Updates the video player value.
+  @override
   final void Function(VideoPlayerValue) setValue;
 
-  /// Gets the player ID (null if not initialized).
+  @override
   final int? Function() getPlayerId;
 
-  /// Gets the video player options.
+  @override
   final VideoPlayerOptions Function() getOptions;
 
-  /// Platform implementation for track operations.
+  @override
   final ProVideoPlayerPlatform platform;
 
-  /// Ensures the controller is initialized before operations.
+  @override
   final void Function() ensureInitialized;
 
   /// Sets the active subtitle track.

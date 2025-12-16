@@ -117,14 +117,14 @@ void main() {
       await controller.initialize(source: source);
 
       // When
-      await controller.setLooping(looping: true);
+      await controller.setLooping(true);
       await tester.pumpAndSettle();
 
       // Then
       expect(controller.value.isLooping, isTrue);
 
       // When
-      await controller.setLooping(looping: false);
+      await controller.setLooping(false);
       await tester.pumpAndSettle();
 
       // Then

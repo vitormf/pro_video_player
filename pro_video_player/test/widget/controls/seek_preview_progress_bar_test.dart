@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 
+import '../../shared/test_constants.dart';
+
 void main() {
   group('SeekPreviewProgressBar', () {
     late VideoPlayerTheme theme;
@@ -353,10 +355,10 @@ void main() {
         await tester.pumpWidget(
           buildTestWidget(
             SeekPreviewProgressBar(
-              currentPosition: const Duration(milliseconds: 50),
-              seekTargetPosition: const Duration(milliseconds: 100),
+              currentPosition: TestDelays.eventPropagation,
+              seekTargetPosition: TestDelays.stateUpdate,
               duration: const Duration(milliseconds: 200),
-              bufferedPosition: const Duration(milliseconds: 150),
+              bufferedPosition: TestDelays.controllerInitialization,
               theme: theme,
             ),
           ),

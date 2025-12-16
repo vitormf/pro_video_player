@@ -36,6 +36,17 @@ abstract class PlaylistParser {
     final basePath = baseUri.path.substring(0, baseUri.path.lastIndexOf('/') + 1);
     return '${baseUri.scheme}://${baseUri.authority}$basePath$url';
   }
+
+  /// Decodes XML entities in text.
+  ///
+  /// Converts &lt;, &gt;, &amp;, &quot;, &apos; back to their character equivalents.
+  /// Used by XML-based playlist parsers (XSPF, ASX, WPL, DASH).
+  String decodeXml(String text) => text
+      .replaceAll('&lt;', '<')
+      .replaceAll('&gt;', '>')
+      .replaceAll('&amp;', '&')
+      .replaceAll('&quot;', '"')
+      .replaceAll('&apos;', "'");
 }
 
 /// Parser for M3U/M3U8 playlists.
@@ -187,7 +198,7 @@ class XSPFPlaylistParser extends PlaylistParser {
     // Extract playlist title
     final titleMatch = RegExp('<title>(.*?)</title>').firstMatch(content);
     if (titleMatch != null) {
-      title = _decodeXml(titleMatch.group(1)!);
+      title = decodeXml(titleMatch.group(1)!);
     }
 
     // Extract all track locations
@@ -199,7 +210,7 @@ class XSPFPlaylistParser extends PlaylistParser {
       final locationMatch = locationPattern.firstMatch(trackContent);
 
       if (locationMatch != null) {
-        final url = _decodeXml(locationMatch.group(1)!);
+        final url = decodeXml(locationMatch.group(1)!);
         final resolvedUrl = resolveUrl(url, baseUrl);
         items.add(VideoSource.network(resolvedUrl));
       }
@@ -207,13 +218,6 @@ class XSPFPlaylistParser extends PlaylistParser {
 
     return PlaylistParseResult(type: PlaylistType.xspf, items: items, title: title);
   }
-
-  String _decodeXml(String text) => text
-      .replaceAll('&lt;', '<')
-      .replaceAll('&gt;', '>')
-      .replaceAll('&amp;', '&')
-      .replaceAll('&quot;', '"')
-      .replaceAll('&apos;', "'");
 }
 
 /// Parser for JSPF playlists (JSON Shareable Playlist Format).
@@ -281,7 +285,7 @@ class ASXPlaylistParser extends PlaylistParser {
     // Extract playlist title (case-insensitive)
     final titleMatch = RegExp('<title>(.*?)</title>', caseSensitive: false).firstMatch(content);
     if (titleMatch != null) {
-      title = _decodeXml(titleMatch.group(1)!);
+      title = decodeXml(titleMatch.group(1)!);
     }
 
     // Extract entries with ref href (case-insensitive)
@@ -293,7 +297,7 @@ class ASXPlaylistParser extends PlaylistParser {
       final refMatch = refPattern.firstMatch(entryContent);
 
       if (refMatch != null) {
-        final url = _decodeXml(refMatch.group(1)!);
+        final url = decodeXml(refMatch.group(1)!);
         final resolvedUrl = resolveUrl(url, baseUrl);
         items.add(VideoSource.network(resolvedUrl));
       }
@@ -301,13 +305,6 @@ class ASXPlaylistParser extends PlaylistParser {
 
     return PlaylistParseResult(type: PlaylistType.asx, items: items, title: title);
   }
-
-  String _decodeXml(String text) => text
-      .replaceAll('&lt;', '<')
-      .replaceAll('&gt;', '>')
-      .replaceAll('&amp;', '&')
-      .replaceAll('&quot;', '"')
-      .replaceAll('&apos;', "'");
 }
 
 /// Parser for WPL playlists (Windows Media Player Playlist).
@@ -323,27 +320,20 @@ class WPLPlaylistParser extends PlaylistParser {
     // Extract title (case-insensitive)
     final titleMatch = RegExp('<title>(.*?)</title>', caseSensitive: false).firstMatch(content);
     if (titleMatch != null) {
-      title = _decodeXml(titleMatch.group(1)!);
+      title = decodeXml(titleMatch.group(1)!);
     }
 
     // Extract media items (case-insensitive)
     final mediaPattern = RegExp(r'<media\s+src\s*=\s*"([^"]*)"', caseSensitive: false);
 
     for (final match in mediaPattern.allMatches(content)) {
-      final url = _decodeXml(match.group(1)!);
+      final url = decodeXml(match.group(1)!);
       final resolvedUrl = resolveUrl(url, baseUrl);
       items.add(VideoSource.network(resolvedUrl));
     }
 
     return PlaylistParseResult(type: PlaylistType.wpl, items: items, title: title);
   }
-
-  String _decodeXml(String text) => text
-      .replaceAll('&lt;', '<')
-      .replaceAll('&gt;', '>')
-      .replaceAll('&amp;', '&')
-      .replaceAll('&quot;', '"')
-      .replaceAll('&apos;', "'");
 }
 
 /// Parser for CUE sheets (describes tracks within a single file).
@@ -489,7 +479,7 @@ class DASHPlaylistParser extends PlaylistParser {
     // Try to extract title from MPD if present
     final titleMatch = RegExp('<Title>(.*?)</Title>', caseSensitive: false).firstMatch(content);
     if (titleMatch != null) {
-      title = _decodeXml(titleMatch.group(1)!);
+      title = decodeXml(titleMatch.group(1)!);
     }
 
     return PlaylistParseResult(
@@ -499,13 +489,6 @@ class DASHPlaylistParser extends PlaylistParser {
       metadata: {'originalUrl': baseUrl},
     );
   }
-
-  String _decodeXml(String text) => text
-      .replaceAll('&lt;', '<')
-      .replaceAll('&gt;', '>')
-      .replaceAll('&amp;', '&')
-      .replaceAll('&quot;', '"')
-      .replaceAll('&apos;', "'");
 }
 
 /// Creates a parser based on file extension or content.

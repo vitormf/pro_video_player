@@ -13,7 +13,7 @@ class macOSPlatformAdapter: PlatformAdapter {
     private weak var videoPlayer: SharedVideoPlayer?
 
     var channelPrefix: String {
-        return "com.example.pro_video_player_macos"
+        return "dev.pro_video_player_macos"
     }
 
     var backgroundNotificationName: Notification.Name {

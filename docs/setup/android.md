@@ -21,7 +21,7 @@ To enable background audio playback, add the following to your `AndroidManifest.
     <application ...>
         <!-- Foreground service for background playback -->
         <service
-            android:name="com.example.pro_video_player_android.MediaPlaybackService"
+            android:name="dev.pro_video_player.android.MediaPlaybackService"
             android:foregroundServiceType="mediaPlayback"
             android:exported="false" />
     </application>

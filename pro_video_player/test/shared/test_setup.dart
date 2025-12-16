@@ -1,16 +1,19 @@
 import 'dart:async';
 
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
 import 'mocks.dart';
+import 'test_constants.dart';
 
 /// Registers all fallback values needed for mocktail.
 ///
-/// Call this in `setUpAll()` before any tests that use mocktail with
-/// video player types.
+/// This registers fallback values for all video player types that may be used
+/// in any() matchers. Call this in `setUpAll()` before any tests that use
+/// mocktail with video player types.
 ///
 /// Example:
 /// ```dart
@@ -19,9 +22,13 @@ import 'mocks.dart';
 /// });
 /// ```
 void registerVideoPlayerFallbackValues() {
+  // Core types
   registerFallbackValue(const VideoSource.network('https://example.com'));
   registerFallbackValue(const VideoPlayerOptions());
   registerFallbackValue(const PipOptions());
+  registerFallbackValue(Duration.zero);
+
+  // Tracks and subtitles
   registerFallbackValue(const SubtitleTrack(id: 'test', label: 'Test'));
   registerFallbackValue(const AudioTrack(id: 'test', label: 'Test'));
   registerFallbackValue(
@@ -34,20 +41,53 @@ void registerVideoPlayerFallbackValues() {
     ),
   );
   registerFallbackValue(const SubtitleSource.network('https://example.com/sub.srt'));
+
+  // Quality and playback
   registerFallbackValue(VideoQualityTrack.auto);
-  registerFallbackValue(Duration.zero);
   registerFallbackValue(VideoScalingMode.fit);
+
+  // Metadata and controls
   registerFallbackValue(MediaMetadata.empty);
   registerFallbackValue(ControlsMode.none);
   registerFallbackValue(FullscreenOrientation.all);
+
+  // Casting
   registerFallbackValue(const CastDevice(id: 'test', name: 'Test Device', type: CastDeviceType.airPlay));
+
+  // Additional types used in manager tests
+  registerFallbackValue(VideoPlayerError.fromCode(message: 'Unknown error', code: 'unknown'));
+  registerFallbackValue(PlaybackState.paused);
+  registerFallbackValue(VideoMetadata.empty);
+  registerFallbackValue(const <Chapter>[]);
+  registerFallbackValue(const <SubtitleTrack>[]);
 }
 
 /// Test fixture for video player tests that use a mock platform.
 ///
 /// Provides common setup and teardown logic for platform mock tests.
 ///
-/// Example:
+/// This fixture creates an uninitialized controller by default, which can be
+/// used immediately in tests. Call [initializeController] to initialize it
+/// with a video source.
+///
+/// Example for controller tests:
+/// ```dart
+/// late VideoPlayerTestFixture fixture;
+///
+/// setUp(() {
+///   fixture = VideoPlayerTestFixture()..setUp();
+///   // fixture.controller is available but uninitialized
+/// });
+///
+/// test('some test', () async {
+///   await fixture.initializeController(); // Initialize with default source
+///   expect(fixture.controller.isInitialized, isTrue);
+/// });
+///
+/// tearDown(() => fixture.tearDown());
+/// ```
+///
+/// Example for widget tests with renderWidget:
 /// ```dart
 /// late VideoPlayerTestFixture fixture;
 ///
@@ -56,31 +96,24 @@ void registerVideoPlayerFallbackValues() {
 ///   await fixture.initializeController();
 /// });
 ///
-/// tearDown(() => fixture.tearDown());
+/// testWidgets('some widget test', (tester) async {
+///   await fixture.renderWidget(tester, MyWidget(controller: fixture.controller));
+///   expect(find.byType(MyWidget), findsOneWidget);
+/// });
 /// ```
 class VideoPlayerTestFixture {
   late MockProVideoPlayerPlatform mockPlatform;
   late StreamController<VideoPlayerEvent> eventController;
-  ProVideoPlayerController? _controller;
+  late ProVideoPlayerController controller;
 
-  /// The video player controller. Only available after [initializeController].
-  ProVideoPlayerController get controller {
-    if (_controller == null) {
-      throw StateError('Controller not initialized. Call initializeController() first.');
-    }
-    return _controller!;
-  }
-
-  /// Whether [initializeController] was called.
-  bool get hasController => _controller != null;
-
-  /// Sets up the mock platform with default stubs.
+  /// Sets up the mock platform with default stubs and creates an uninitialized controller.
   ///
   /// Call this in your test's `setUp()` method.
   void setUp() {
     mockPlatform = MockProVideoPlayerPlatform();
     eventController = StreamController<VideoPlayerEvent>.broadcast();
     ProVideoPlayerPlatform.instance = mockPlatform;
+    controller = ProVideoPlayerController();
 
     _setupDefaultStubs();
   }
@@ -90,25 +123,25 @@ class VideoPlayerTestFixture {
   /// Call this in your test's `tearDown()` method.
   Future<void> tearDown() async {
     await eventController.close();
-    if (_controller != null && !_controller!.isDisposed) {
+    if (!controller.isDisposed) {
       when(() => mockPlatform.dispose(any())).thenAnswer((_) async {});
-      await _controller!.dispose();
+      await controller.dispose();
     }
-    _controller = null;
     ProVideoPlayerPlatform.instance = MockProVideoPlayerPlatform();
   }
 
-  /// Creates and initializes a controller with the mock platform.
+  /// Initializes the controller with a video source.
   ///
   /// [source] defaults to a network video source.
   /// [options] defaults to empty options.
+  ///
+  /// Returns the same controller instance (for convenience).
   Future<ProVideoPlayerController> initializeController({
     VideoSource source = const VideoSource.network('https://example.com/video.mp4'),
     VideoPlayerOptions options = const VideoPlayerOptions(),
   }) async {
-    _controller = ProVideoPlayerController();
-    await _controller!.initialize(source: source, options: options);
-    return _controller!;
+    await controller.initialize(source: source, options: options);
+    return controller;
   }
 
   /// Emits a video player event to the mock event stream.
@@ -136,6 +169,139 @@ class VideoPlayerTestFixture {
     emitEvent(VideoSizeChangedEvent(width: width, height: height));
   }
 
+  /// Emits an error event.
+  void emitError(String message, {String? code}) {
+    emitEvent(ErrorEvent(message, code: code));
+  }
+
+  /// Emits buffering started event.
+  void emitBufferingStarted() {
+    emitEvent(const BufferingStartedEvent());
+  }
+
+  /// Emits buffering ended event.
+  void emitBufferingEnded() {
+    emitEvent(const BufferingEndedEvent());
+  }
+
+  /// Emits volume changed event.
+  void emitVolume(double volume) {
+    emitEvent(VolumeChangedEvent(volume));
+  }
+
+  /// Emits playback speed changed event.
+  void emitPlaybackSpeed(double speed) {
+    emitEvent(PlaybackSpeedChangedEvent(speed));
+  }
+
+  /// Emits PiP state changed event.
+  void emitPipState({required bool isActive}) {
+    emitEvent(PipStateChangedEvent(isActive: isActive));
+  }
+
+  /// Emits fullscreen state changed event.
+  void emitFullscreenState({required bool isFullscreen}) {
+    emitEvent(FullscreenStateChangedEvent(isFullscreen: isFullscreen));
+  }
+
+  /// Builds a test widget wrapped in MaterialApp and Scaffold.
+  ///
+  /// This is the standard wrapper for widget tests.
+  ///
+  /// Example:
+  /// ```dart
+  /// final widget = fixture.buildTestWidget(VideoPlayerControls(controller: controller));
+  /// await tester.pumpWidget(widget);
+  /// ```
+  Widget buildTestWidget(Widget child) => MaterialApp(home: Scaffold(body: child));
+
+  /// Builds a test widget with specific size constraints.
+  ///
+  /// Example:
+  /// ```dart
+  /// final widget = fixture.buildSizedTestWidget(
+  ///   VideoPlayerControls(controller: controller),
+  ///   width: 400,
+  ///   height: 300,
+  /// );
+  /// await tester.pumpWidget(widget);
+  /// ```
+  Widget buildSizedTestWidget(Widget child, {double width = 800, double height = 600}) => MaterialApp(
+    home: Scaffold(
+      body: SizedBox(width: width, height: height, child: child),
+    ),
+  );
+
+  /// Pumps a widget and renders one frame.
+  ///
+  /// This is the standard pattern for widget testing: pumpWidget + pump.
+  /// Use this for most widget rendering scenarios.
+  ///
+  /// Example:
+  /// ```dart
+  /// await fixture.renderWidget(tester, VideoPlayerControls(controller: controller));
+  /// expect(find.byType(VideoPlayerControls), findsOneWidget);
+  /// ```
+  Future<void> renderWidget(WidgetTester tester, Widget child) async {
+    await tester.pumpWidget(buildTestWidget(child));
+    await tester.pump();
+  }
+
+  /// Pumps a sized widget and renders one frame.
+  ///
+  /// Example:
+  /// ```dart
+  /// await fixture.renderSizedWidget(tester, MyWidget(), width: 400, height: 300);
+  /// ```
+  Future<void> renderSizedWidget(WidgetTester tester, Widget child, {double width = 800, double height = 600}) async {
+    await tester.pumpWidget(buildSizedTestWidget(child, width: width, height: height));
+    await tester.pump();
+  }
+
+  /// Taps a widget and pumps one frame.
+  ///
+  /// This is the standard pattern for tap testing: tap + pump.
+  ///
+  /// Example:
+  /// ```dart
+  /// await fixture.tap(tester, find.byIcon(Icons.play_arrow));
+  /// verify(() => mockPlatform.play(1)).called(1);
+  /// ```
+  Future<void> tap(WidgetTester tester, Finder finder) async {
+    await tester.tap(finder);
+    await tester.pump();
+  }
+
+  /// Taps a widget and waits for animations to settle.
+  ///
+  /// Use this for interactions that trigger animations (e.g., opening
+  /// bottom sheets, expanding menus). Do NOT use with modal bottom sheets
+  /// as pumpAndSettle() will hang.
+  ///
+  /// Example:
+  /// ```dart
+  /// await fixture.tapAndSettle(tester, find.byIcon(Icons.expand_more));
+  /// expect(find.text('Expanded Content'), findsOneWidget);
+  /// ```
+  Future<void> tapAndSettle(WidgetTester tester, Finder finder) async {
+    await tester.tap(finder);
+    await tester.pumpAndSettle();
+  }
+
+  /// Waits for animations to complete with a timeout.
+  ///
+  /// Safer alternative to pumpAndSettle() that prevents hanging.
+  /// Use when you need to wait for animations but want protection
+  /// against infinite loops.
+  ///
+  /// Example:
+  /// ```dart
+  /// await fixture.waitForAnimation(tester);
+  /// ```
+  Future<void> waitForAnimation(WidgetTester tester, {Duration timeout = const Duration(seconds: 5)}) async {
+    await tester.pumpAndSettle(const Duration(milliseconds: 100), EnginePhase.sendSemanticsUpdate, timeout);
+  }
+
   void _setupDefaultStubs() {
     // Creation and lifecycle
     when(
@@ -156,11 +322,12 @@ class VideoPlayerTestFixture {
     // Settings
     when(() => mockPlatform.setPlaybackSpeed(any(), any())).thenAnswer((_) async {});
     when(() => mockPlatform.setVolume(any(), any())).thenAnswer((_) async {});
-    when(() => mockPlatform.setLooping(any(), looping: any(named: 'looping'))).thenAnswer((_) async {});
+    when(() => mockPlatform.setLooping(any(), any())).thenAnswer((_) async {});
     when(() => mockPlatform.setScalingMode(any(), any())).thenAnswer((_) async {});
 
     // Track selection
     when(() => mockPlatform.setSubtitleTrack(any(), any())).thenAnswer((_) async {});
+    when(() => mockPlatform.setSubtitleOffset(any(), any())).thenAnswer((_) async {});
     when(() => mockPlatform.setAudioTrack(any(), any())).thenAnswer((_) async {});
     when(() => mockPlatform.setVideoQuality(any(), any())).thenAnswer((_) async => true);
 
@@ -207,6 +374,115 @@ class VideoPlayerTestFixture {
     when(() => mockPlatform.isPipSupported()).thenAnswer((_) async => true);
     when(() => mockPlatform.isBackgroundPlaybackSupported()).thenAnswer((_) async => true);
     when(() => mockPlatform.isCastingSupported()).thenAnswer((_) async => true);
+  }
+
+  // ==================== COMMON TEST PATTERNS ====================
+
+  /// Initializes the controller with a default network source.
+  ///
+  /// This is the most common test setup pattern. Use in group setUp() to
+  /// initialize the controller before each test.
+  ///
+  /// Example:
+  /// ```dart
+  /// group('some feature tests', () {
+  ///   setUp(() async {
+  ///     await fixture.initializeWithDefaultSource();
+  ///   });
+  ///
+  ///   test('some test', () async {
+  ///     // controller is already initialized
+  ///     expect(fixture.controller.isInitialized, isTrue);
+  ///   });
+  /// });
+  /// ```
+  Future<void> initializeWithDefaultSource([String url = TestMedia.networkUrl]) async {
+    await controller.initialize(source: VideoSource.network(url));
+  }
+
+  /// Emits a sequence of events to set up a playing video at a specific position.
+  ///
+  /// This is a common pattern when testing seek, forward/backward, etc.
+  ///
+  /// Example:
+  /// ```dart
+  /// fixture.emitPlayingAt(
+  ///   position: Duration(seconds: 30),
+  ///   duration: Duration(minutes: 5),
+  /// );
+  /// // Controller is now at 30s of a 5-minute video
+  /// ```
+  void emitPlayingAt({required Duration position, Duration duration = TestMetadata.duration}) {
+    emitPlaybackState(PlaybackState.playing);
+    emitPosition(position);
+    emitDuration(duration);
+  }
+
+  /// Emits events to set up a paused video at a specific position.
+  void emitPausedAt({required Duration position, Duration duration = TestMetadata.duration}) {
+    emitPlaybackState(PlaybackState.paused);
+    emitPosition(position);
+    emitDuration(duration);
+  }
+
+  /// Waits for events to be processed.
+  ///
+  /// After emitting events, call this to allow the controller to process them.
+  /// Equivalent to `await Future<void>.delayed(Duration.zero)`.
+  Future<void> waitForEvents() async {
+    await Future<void>.delayed(Duration.zero);
+  }
+
+  // ==================== VERIFICATION HELPERS ====================
+
+  /// Verifies that play() was called on the platform with playerId 1.
+  void verifyPlay({int times = 1}) {
+    verify(() => mockPlatform.play(1)).called(times);
+  }
+
+  /// Verifies that pause() was called on the platform with playerId 1.
+  void verifyPause({int times = 1}) {
+    verify(() => mockPlatform.pause(1)).called(times);
+  }
+
+  /// Verifies that stop() was called on the platform with playerId 1.
+  void verifyStop({int times = 1}) {
+    verify(() => mockPlatform.stop(1)).called(times);
+  }
+
+  /// Verifies that seekTo() was called with specific position.
+  void verifySeekTo(Duration position, {int times = 1}) {
+    verify(() => mockPlatform.seekTo(1, position)).called(times);
+  }
+
+  /// Verifies that setVolume() was called with specific volume.
+  void verifySetVolume(double volume, {int times = 1}) {
+    verify(() => mockPlatform.setVolume(1, volume)).called(times);
+  }
+
+  /// Verifies that setPlaybackSpeed() was called with specific speed.
+  void verifySetPlaybackSpeed(double speed, {int times = 1}) {
+    verify(() => mockPlatform.setPlaybackSpeed(1, speed)).called(times);
+  }
+
+  /// Verifies that enterFullscreen() was called.
+  void verifyEnterFullscreen({int times = 1}) {
+    verify(() => mockPlatform.enterFullscreen(1)).called(times);
+  }
+
+  /// Verifies that exitFullscreen() was called.
+  void verifyExitFullscreen({int times = 1}) {
+    verify(() => mockPlatform.exitFullscreen(1)).called(times);
+  }
+
+  /// Verifies that enterPip() was called.
+  void verifyEnterPip({int times = 1}) {
+    verify(() => mockPlatform.enterPip(1, options: any(named: 'options'))).called(times);
+  }
+
+  /// Verifies that exitPip() was called.
+  void verifyExitPip({int times = 1}) {
+    verify(() => mockPlatform.exitPip(1)).called(times);
   }
 }
 

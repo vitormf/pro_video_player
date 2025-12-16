@@ -19,7 +19,7 @@ extension MethodCallArgs on MethodCall {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  const methodChannel = MethodChannel('com.example.pro_video_player/methods');
+  const methodChannel = MethodChannel('dev.pro_video_player/methods');
   late TestMethodChannelPlatform plugin;
   late List<MethodCall> log;
 
@@ -185,7 +185,7 @@ void main() {
       });
 
       test('setLooping calls native method', () async {
-        await plugin.setLooping(1, looping: true);
+        await plugin.setLooping(1, true);
 
         expect(log.last.method, equals('setLooping'));
         expect(log.last.args['playerId'], equals(1));
@@ -415,7 +415,7 @@ void main() {
 
         // Setup event channel mock
         nativeEventController = StreamController<dynamic>.broadcast();
-        eventChannel = const EventChannel('com.example.pro_video_player/events/1');
+        eventChannel = const EventChannel('dev.pro_video_player/events/1');
 
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockStreamHandler(
           eventChannel,

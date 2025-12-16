@@ -116,7 +116,7 @@ class DesktopControlsWrapper extends StatelessWidget {
   Widget build(BuildContext context) => Listener(
     onPointerSignal: _handleScroll,
     child: GestureDetector(
-      behavior: HitTestBehavior.deferToChild, // Let child widgets handle taps first
+      behavior: HitTestBehavior.translucent,
       onTap: () {
         if (controller.value.isPlaying) {
           unawaited(controller.pause());

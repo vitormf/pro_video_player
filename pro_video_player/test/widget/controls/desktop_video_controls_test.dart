@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 import 'package:pro_video_player/src/controls/desktop_volume_control.dart';
 
+import '../../shared/test_constants.dart';
+import '../../shared/test_helpers.dart';
 import '../../shared/test_setup.dart';
 
 // Mock for VideoControlsState
@@ -34,8 +36,6 @@ void main() {
   tearDown(() async {
     await fixture.tearDown();
   });
-
-  Widget buildTestWidget(Widget child) => MaterialApp(home: Scaffold(body: child));
 
   DesktopVideoControls buildDesktopControls({
     required ProVideoPlayerController controller,
@@ -72,7 +72,7 @@ void main() {
     group('basic rendering', () {
       testWidgets('renders with correct layout structure', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(buildTestWidget(buildDesktopControls(controller: controller)));
         await tester.pump();
@@ -87,7 +87,7 @@ void main() {
 
       testWidgets('shows play/pause button', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(buildTestWidget(buildDesktopControls(controller: controller)));
         await tester.pump();
@@ -98,7 +98,7 @@ void main() {
 
       testWidgets('shows progress bar', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(buildTestWidget(buildDesktopControls(controller: controller)));
         await tester.pump();
@@ -110,7 +110,7 @@ void main() {
     group('gradient overlay', () {
       testWidgets('shows gradient only at bottom', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(buildTestWidget(buildDesktopControls(controller: controller)));
         await tester.pump();
@@ -183,7 +183,7 @@ void main() {
 
       testWidgets('shows seek preview when dragging', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         // Set dragging state
         mockControlsState
@@ -200,7 +200,7 @@ void main() {
 
       testWidgets('hides seek preview when not dragging', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         mockControlsState.isDragging = false;
 
@@ -212,7 +212,7 @@ void main() {
 
       testWidgets('shows buffering indicator when buffering', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         // Emit buffering state
         fixture.emitPlaybackState(PlaybackState.buffering);
@@ -225,7 +225,7 @@ void main() {
 
       testWidgets('hides buffering indicator when dragging', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         fixture.emitPlaybackState(PlaybackState.buffering);
         mockControlsState.isDragging = true;
@@ -239,7 +239,7 @@ void main() {
 
       testWidgets('shows volume control when enabled', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(buildTestWidget(buildDesktopControls(controller: controller)));
         await tester.pump();
@@ -249,7 +249,7 @@ void main() {
 
       testWidgets('hides volume control when disabled', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(buildDesktopControls(controller: controller, shouldShowVolumeButton: false)),
@@ -261,7 +261,7 @@ void main() {
 
       testWidgets('shows fullscreen button when enabled and not minimal', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(buildTestWidget(buildDesktopControls(controller: controller)));
         await tester.pump();
@@ -271,7 +271,7 @@ void main() {
 
       testWidgets('hides fullscreen button in minimal mode', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(buildDesktopControls(controller: controller, minimalToolbarOnDesktop: true)),
@@ -285,7 +285,7 @@ void main() {
     group('time display', () {
       testWidgets('displays current and total time by default', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         // Emit duration and position BEFORE building
         fixture
@@ -302,7 +302,7 @@ void main() {
 
       testWidgets('displays remaining time when toggled', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         mockControlsState.showRemainingTime = true;
 
@@ -325,7 +325,7 @@ void main() {
         final theme = VideoPlayerTheme.light().copyWith(primaryColor: Colors.red, secondaryColor: Colors.blue);
 
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(buildTestWidget(buildDesktopControls(controller: controller, theme: theme)));
         await tester.pump();

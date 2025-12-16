@@ -1,6 +1,8 @@
 import 'package:flutter/services.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
+import 'manager_callbacks.dart';
+
 /// Manages fullscreen state and orientation for the video player.
 ///
 /// This manager handles:
@@ -8,7 +10,7 @@ import 'package:pro_video_player_platform_interface/pro_video_player_platform_in
 /// - System UI visibility (status bar, navigation bar)
 /// - Orientation locking and unlocking
 /// - Flutter-managed fullscreen (for desktop platforms)
-class FullscreenManager {
+class FullscreenManager with ManagerCallbacks {
   /// Creates a fullscreen manager with dependency injection via callbacks.
   FullscreenManager({
     required this.getValue,
@@ -19,22 +21,22 @@ class FullscreenManager {
     required this.ensureInitialized,
   });
 
-  /// Gets the current video player value.
+  @override
   final VideoPlayerValue Function() getValue;
 
-  /// Updates the video player value.
+  @override
   final void Function(VideoPlayerValue) setValue;
 
-  /// Gets the player ID (null if not initialized).
+  @override
   final int? Function() getPlayerId;
 
-  /// Gets the video player options.
+  @override
   final VideoPlayerOptions Function() getOptions;
 
-  /// Platform implementation for fullscreen operations.
+  @override
   final ProVideoPlayerPlatform platform;
 
-  /// Ensures the controller is initialized before operations.
+  @override
   final void Function() ensureInitialized;
 
   /// Enters fullscreen mode.

@@ -3,41 +3,36 @@ import 'package:mocktail/mocktail.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
-import '../test_helpers.dart';
+import '../shared/test_constants.dart';
+import '../shared/test_matchers.dart';
+import '../shared/test_setup.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  late ControllerTestFixture fixture;
+  late VideoPlayerTestFixture fixture;
 
-  setUpAll(registerFallbackValues);
+  setUpAll(registerVideoPlayerFallbackValues);
 
   setUp(() {
-    fixture = ControllerTestFixture();
+    fixture = VideoPlayerTestFixture()..setUp();
   });
 
   tearDown(() async {
-    await fixture.dispose();
+    await fixture.tearDown();
   });
 
   group('ProVideoPlayerController network resilience', () {
     setUp(() async {
-      when(
-        () => fixture.mockPlatform.create(
-          source: any(named: 'source'),
-          options: any(named: 'options'),
-        ),
-      ).thenAnswer((_) async => 1);
       when(() => fixture.mockPlatform.play(any())).thenAnswer((_) async {});
-
-      await fixture.controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await fixture.initializeWithDefaultSource();
     });
 
     test('BufferingStartedEvent updates value with buffering state', () async {
-      fixture.eventController.add(const BufferingStartedEvent(reason: BufferingReason.networkUnstable));
+      fixture.emitEvent(const BufferingStartedEvent(reason: BufferingReason.networkUnstable));
 
       // Allow event to be processed
-      await Future<void>.delayed(Duration.zero);
+      await fixture.waitForEvents();
 
       expect(fixture.controller.value.isNetworkBuffering, isTrue);
       expect(fixture.controller.value.bufferingReason, BufferingReason.networkUnstable);
@@ -45,26 +40,26 @@ void main() {
 
     test('BufferingEndedEvent clears buffering state', () async {
       // First set buffering state
-      fixture.eventController.add(const BufferingStartedEvent(reason: BufferingReason.initial));
-      await Future<void>.delayed(Duration.zero);
+      fixture.emitEvent(const BufferingStartedEvent(reason: BufferingReason.initial));
+      await fixture.waitForEvents();
       expect(fixture.controller.value.isNetworkBuffering, isTrue);
 
       // Then end buffering
-      fixture.eventController.add(const BufferingEndedEvent());
-      await Future<void>.delayed(Duration.zero);
+      fixture.emitEvent(const BufferingEndedEvent());
+      await fixture.waitForEvents();
 
       expect(fixture.controller.value.isNetworkBuffering, isFalse);
       expect(fixture.controller.value.bufferingReason, isNull);
     });
 
     test('NetworkErrorEvent triggers retry when autoRetry is enabled', () async {
-      fixture.eventController.add(const NetworkErrorEvent(message: 'Connection lost'));
-      await Future<void>.delayed(Duration.zero);
+      fixture.emitEvent(const NetworkErrorEvent(message: 'Connection lost'));
+      await fixture.waitForEvents();
 
       // Should be in recovery mode with incremented retry count
       expect(fixture.controller.value.isRecoveringFromError, isTrue);
       expect(fixture.controller.value.networkRetryCount, equals(1));
-      expect(fixture.controller.value.playbackState, PlaybackState.buffering);
+      expect(fixture.controller, isBuffering);
     });
 
     test('NetworkErrorEvent does not retry when autoRetry is disabled', () async {
@@ -82,10 +77,10 @@ void main() {
       ).thenAnswer((_) async => 2);
       when(() => fixture.mockPlatform.events(any())).thenAnswer((_) => fixture.eventController.stream);
 
-      await fixture.controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await fixture.controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
-      fixture.eventController.add(const NetworkErrorEvent(message: 'Connection lost'));
-      await Future<void>.delayed(Duration.zero);
+      fixture.emitEvent(const NetworkErrorEvent(message: 'Connection lost'));
+      await fixture.waitForEvents();
 
       // Should go to error state without retrying
       expect(fixture.controller.value.isRecoveringFromError, isFalse);
@@ -111,37 +106,37 @@ void main() {
       ).thenAnswer((_) async => 2);
       when(() => fixture.mockPlatform.events(any())).thenAnswer((_) => fixture.eventController.stream);
 
-      await fixture.controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await fixture.controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       // First error - retry 1
-      fixture.eventController.add(const NetworkErrorEvent(message: 'Error 1'));
-      await Future<void>.delayed(Duration.zero);
+      fixture.emitEvent(const NetworkErrorEvent(message: 'Error 1'));
+      await fixture.waitForEvents();
       expect(fixture.controller.value.networkRetryCount, equals(1));
       expect(fixture.controller.value.isRecoveringFromError, isTrue);
 
       // Second error - retry 2
-      fixture.eventController.add(const NetworkErrorEvent(message: 'Error 2'));
-      await Future<void>.delayed(Duration.zero);
+      fixture.emitEvent(const NetworkErrorEvent(message: 'Error 2'));
+      await fixture.waitForEvents();
       expect(fixture.controller.value.networkRetryCount, equals(2));
       expect(fixture.controller.value.isRecoveringFromError, isTrue);
 
       // Third error - max reached, should stop retrying
-      fixture.eventController.add(const NetworkErrorEvent(message: 'Error 3'));
-      await Future<void>.delayed(Duration.zero);
+      fixture.emitEvent(const NetworkErrorEvent(message: 'Error 3'));
+      await fixture.waitForEvents();
       expect(fixture.controller.value.isRecoveringFromError, isFalse);
       expect(fixture.controller.value.playbackState, PlaybackState.error);
     });
 
     test('PlaybackRecoveredEvent resets retry state', () async {
       // Set up error state first
-      fixture.eventController.add(const NetworkErrorEvent(message: 'Connection lost'));
-      await Future<void>.delayed(Duration.zero);
+      fixture.emitEvent(const NetworkErrorEvent(message: 'Connection lost'));
+      await fixture.waitForEvents();
       expect(fixture.controller.value.networkRetryCount, equals(1));
       expect(fixture.controller.value.isRecoveringFromError, isTrue);
 
       // Recovery event
-      fixture.eventController.add(const PlaybackRecoveredEvent(retriesUsed: 1));
-      await Future<void>.delayed(Duration.zero);
+      fixture.emitEvent(const PlaybackRecoveredEvent(retriesUsed: 1));
+      await fixture.waitForEvents();
 
       expect(fixture.controller.value.networkRetryCount, equals(0));
       expect(fixture.controller.value.isRecoveringFromError, isFalse);
@@ -153,13 +148,13 @@ void main() {
       when(() => fixture.mockPlatform.seekTo(any(), any())).thenAnswer((_) async {});
 
       // Set up error/recovery state first
-      fixture.eventController.add(const NetworkErrorEvent(message: 'Connection lost'));
-      await Future<void>.delayed(Duration.zero);
+      fixture.emitEvent(const NetworkErrorEvent(message: 'Connection lost'));
+      await fixture.waitForEvents();
       expect(fixture.controller.value.isRecoveringFromError, isTrue);
 
       // Network restored - should trigger immediate retry
-      fixture.eventController.add(const NetworkStateChangedEvent(isConnected: true));
-      await Future<void>.delayed(Duration.zero);
+      fixture.emitEvent(const NetworkStateChangedEvent(isConnected: true));
+      await fixture.waitForEvents();
 
       // Retry calls seekTo then play
       verify(() => fixture.mockPlatform.seekTo(1, any())).called(greaterThanOrEqualTo(1));
@@ -174,8 +169,8 @@ void main() {
       clearInteractions(fixture.mockPlatform);
 
       // Network state change when not recovering
-      fixture.eventController.add(const NetworkStateChangedEvent(isConnected: true));
-      await Future<void>.delayed(Duration.zero);
+      fixture.emitEvent(const NetworkStateChangedEvent(isConnected: true));
+      await fixture.waitForEvents();
 
       // play() should NOT be called
       verifyNever(() => fixture.mockPlatform.play(any()));

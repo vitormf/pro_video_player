@@ -1,51 +1,24 @@
-import 'dart:async';
+// This file is deprecated. Use test/shared/test_setup.dart instead.
+//
+// All functionality has been moved to:
+// - test/shared/mocks.dart - Mock classes
+// - test/shared/test_setup.dart - registerVideoPlayerFallbackValues() and VideoPlayerTestFixture
+//
+// Migration guide:
+// Old: import '../test_helpers.dart';
+// New: import 'shared/test_setup.dart'; import 'shared/mocks.dart';
+//
+// Old: registerFallbackValues()
+// New: registerVideoPlayerFallbackValues()
+//
+// Old: ControllerTestFixture
+// New: VideoPlayerTestFixture (has all the same functionality plus more)
 
-import 'package:mocktail/mocktail.dart';
-import 'package:plugin_platform_interface/plugin_platform_interface.dart';
-import 'package:pro_video_player/pro_video_player.dart';
-import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
+import 'shared/test_setup.dart' as setup;
 
-/// Mock platform implementation for testing
-class MockProVideoPlayerPlatform extends Mock with MockPlatformInterfaceMixin implements ProVideoPlayerPlatform {}
+export 'shared/mocks.dart';
+export 'shared/test_setup.dart' show VideoPlayerTestFixture, registerVideoPlayerFallbackValues;
 
-/// Registers all fallback values needed for mocktail
-void registerFallbackValues() {
-  // Register fallback values for mocktail using actual instances
-  // since VideoSource is a sealed class
-  registerFallbackValue(const VideoSource.network('https://example.com'));
-  registerFallbackValue(const VideoPlayerOptions());
-  registerFallbackValue(const PipOptions());
-  registerFallbackValue(const SubtitleTrack(id: 'test', label: 'Test'));
-  registerFallbackValue(const AudioTrack(id: 'test', label: 'Test'));
-  registerFallbackValue(Duration.zero);
-  registerFallbackValue(VideoScalingMode.fit);
-  registerFallbackValue(VideoQualityTrack.auto);
-  registerFallbackValue(MediaMetadata.empty);
-  registerFallbackValue(const SubtitleSource.network('https://example.com/subs.vtt'));
-  registerFallbackValue(FullscreenOrientation.landscapeBoth);
-}
-
-/// Test fixture for ProVideoPlayerController tests
-class ControllerTestFixture {
-  ControllerTestFixture() {
-    mockPlatform = MockProVideoPlayerPlatform();
-    ProVideoPlayerPlatform.instance = mockPlatform;
-    controller = ProVideoPlayerController();
-    eventController = StreamController<VideoPlayerEvent>.broadcast();
-
-    when(() => mockPlatform.events(any())).thenAnswer((_) => eventController.stream);
-  }
-
-  late MockProVideoPlayerPlatform mockPlatform;
-  late ProVideoPlayerController controller;
-  late StreamController<VideoPlayerEvent> eventController;
-
-  /// Disposes the fixture
-  Future<void> dispose() async {
-    await eventController.close();
-    if (!controller.isDisposed) {
-      when(() => mockPlatform.dispose(any())).thenAnswer((_) async {});
-      await controller.dispose();
-    }
-  }
-}
+// For backwards compatibility, re-export with old names
+void registerFallbackValues() => setup.registerVideoPlayerFallbackValues();
+typedef ControllerTestFixture = setup.VideoPlayerTestFixture;

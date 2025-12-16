@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 
+import '../shared/test_helpers.dart';
+
 class MockProVideoPlayerController extends Mock implements ProVideoPlayerController {}
 
 void main() {
@@ -16,7 +18,7 @@ void main() {
     testWidgets('renders nothing when no subtitle track is selected', (tester) async {
       when(() => mockController.value).thenReturn(const VideoPlayerValue());
 
-      await tester.pumpWidget(MaterialApp(home: SubtitleOverlay(controller: mockController)));
+      await tester.pumpWidget(buildTestWidget(SubtitleOverlay(controller: mockController)));
 
       expect(find.byType(Text), findsNothing);
     });
@@ -28,7 +30,7 @@ void main() {
         () => mockController.value,
       ).thenReturn(const VideoPlayerValue(selectedSubtitleTrack: embeddedTrack, position: Duration(seconds: 5)));
 
-      await tester.pumpWidget(MaterialApp(home: SubtitleOverlay(controller: mockController)));
+      await tester.pumpWidget(buildTestWidget(SubtitleOverlay(controller: mockController)));
 
       // Should not render anything for embedded tracks - native handles those
       expect(find.byType(Text), findsNothing);
@@ -52,7 +54,7 @@ void main() {
         () => mockController.value,
       ).thenReturn(const VideoPlayerValue(selectedSubtitleTrack: externalTrack, position: Duration(seconds: 3)));
 
-      await tester.pumpWidget(MaterialApp(home: SubtitleOverlay(controller: mockController)));
+      await tester.pumpWidget(buildTestWidget(SubtitleOverlay(controller: mockController)));
 
       expect(find.text('Hello, world!'), findsOneWidget);
       expect(find.text('Goodbye, world!'), findsNothing);
@@ -76,7 +78,7 @@ void main() {
         ),
       );
 
-      await tester.pumpWidget(MaterialApp(home: SubtitleOverlay(controller: mockController)));
+      await tester.pumpWidget(buildTestWidget(SubtitleOverlay(controller: mockController)));
 
       expect(find.text('Hello, world!'), findsNothing);
     });
@@ -95,7 +97,7 @@ void main() {
         () => mockController.value,
       ).thenReturn(const VideoPlayerValue(selectedSubtitleTrack: externalTrack, position: Duration(seconds: 5)));
 
-      await tester.pumpWidget(MaterialApp(home: SubtitleOverlay(controller: mockController)));
+      await tester.pumpWidget(buildTestWidget(SubtitleOverlay(controller: mockController)));
 
       expect(find.byType(Text), findsNothing);
     });
@@ -259,7 +261,7 @@ void main() {
         valueNotifier.removeListener(invocation.positionalArguments[0] as VoidCallback);
       });
 
-      await tester.pumpWidget(MaterialApp(home: SubtitleOverlay(controller: mockController)));
+      await tester.pumpWidget(buildTestWidget(SubtitleOverlay(controller: mockController)));
 
       expect(find.text('First cue'), findsOneWidget);
       expect(find.text('Second cue'), findsNothing);
@@ -292,7 +294,7 @@ void main() {
         () => mockController.value,
       ).thenReturn(const VideoPlayerValue(selectedSubtitleTrack: externalTrack, position: Duration(seconds: 3)));
 
-      await tester.pumpWidget(MaterialApp(home: SubtitleOverlay(controller: mockController)));
+      await tester.pumpWidget(buildTestWidget(SubtitleOverlay(controller: mockController)));
 
       expect(find.text('Line one\nLine two'), findsOneWidget);
     });
@@ -312,7 +314,7 @@ void main() {
         () => mockController.value,
       ).thenReturn(const VideoPlayerValue(selectedSubtitleTrack: externalTrack, position: Duration(seconds: 3)));
 
-      await tester.pumpWidget(MaterialApp(home: SubtitleOverlay(controller: mockController)));
+      await tester.pumpWidget(buildTestWidget(SubtitleOverlay(controller: mockController)));
 
       final text = tester.widget<Text>(find.text('Hello'));
       expect(text.style?.color, Colors.white);
@@ -420,7 +422,7 @@ void main() {
         () => mockController.value,
       ).thenReturn(const VideoPlayerValue(selectedSubtitleTrack: externalTrack, position: Duration(seconds: 3)));
 
-      await tester.pumpWidget(MaterialApp(home: SubtitleOverlay(controller: mockController)));
+      await tester.pumpWidget(buildTestWidget(SubtitleOverlay(controller: mockController)));
 
       final text = tester.widget<Text>(find.text('Hello'));
       expect(text.style?.shadows, isNotNull);
@@ -442,12 +444,13 @@ void main() {
         () => mockController.value,
       ).thenReturn(const VideoPlayerValue(selectedSubtitleTrack: externalTrack, position: Duration(seconds: 3)));
 
-      await tester.pumpWidget(MaterialApp(home: SubtitleOverlay(controller: mockController)));
+      await tester.pumpWidget(buildTestWidget(SubtitleOverlay(controller: mockController)));
 
       // Find the Container that wraps the text
       final container = tester.widget<Container>(find.byType(Container).first);
       final decoration = container.decoration as BoxDecoration?;
-      expect(decoration?.color, Colors.transparent);
+      // Default style has no background color (null), which renders as transparent
+      expect(decoration?.color, isNull);
     });
 
     group('subtitle offset', () {
@@ -474,7 +477,7 @@ void main() {
           ),
         );
 
-        await tester.pumpWidget(MaterialApp(home: SubtitleOverlay(controller: mockController)));
+        await tester.pumpWidget(buildTestWidget(SubtitleOverlay(controller: mockController)));
 
         // With +2s offset, position 3 + 2 = 5, which is within [5, 10)
         expect(find.text('Hello with offset'), findsOneWidget);
@@ -508,7 +511,7 @@ void main() {
           ),
         );
 
-        await tester.pumpWidget(MaterialApp(home: SubtitleOverlay(controller: mockController)));
+        await tester.pumpWidget(buildTestWidget(SubtitleOverlay(controller: mockController)));
 
         // With -3s offset, position 12 - 3 = 9, which is within [5, 10)
         expect(find.text('Hello with negative offset'), findsOneWidget);
@@ -531,7 +534,7 @@ void main() {
           () => mockController.value,
         ).thenReturn(const VideoPlayerValue(selectedSubtitleTrack: externalTrack, position: Duration(seconds: 7)));
 
-        await tester.pumpWidget(MaterialApp(home: SubtitleOverlay(controller: mockController)));
+        await tester.pumpWidget(buildTestWidget(SubtitleOverlay(controller: mockController)));
 
         expect(find.text('Normal subtitle'), findsOneWidget);
       });
@@ -557,7 +560,7 @@ void main() {
           ),
         );
 
-        await tester.pumpWidget(MaterialApp(home: SubtitleOverlay(controller: mockController)));
+        await tester.pumpWidget(buildTestWidget(SubtitleOverlay(controller: mockController)));
 
         // With -10s offset, position 7 - 10 = -3, which is before the cue
         expect(find.text('Should be hidden'), findsNothing);
@@ -888,7 +891,7 @@ void main() {
           ),
         );
 
-        await tester.pumpWidget(MaterialApp(home: SubtitleOverlay(controller: mockController)));
+        await tester.pumpWidget(buildTestWidget(SubtitleOverlay(controller: mockController)));
 
         expect(find.text('Embedded subtitle text'), findsOneWidget);
       });
@@ -904,7 +907,7 @@ void main() {
           ),
         );
 
-        await tester.pumpWidget(MaterialApp(home: SubtitleOverlay(controller: mockController)));
+        await tester.pumpWidget(buildTestWidget(SubtitleOverlay(controller: mockController)));
 
         expect(find.byType(Text), findsNothing);
       });
@@ -953,7 +956,7 @@ void main() {
           ),
         );
 
-        await tester.pumpWidget(MaterialApp(home: SubtitleOverlay(controller: mockController)));
+        await tester.pumpWidget(buildTestWidget(SubtitleOverlay(controller: mockController)));
         expect(find.text('First cue'), findsOneWidget);
         expect(find.text('Second cue'), findsNothing);
 
@@ -967,7 +970,7 @@ void main() {
         );
 
         // Rebuild the widget with the new controller value
-        await tester.pumpWidget(MaterialApp(home: SubtitleOverlay(controller: mockController)));
+        await tester.pumpWidget(buildTestWidget(SubtitleOverlay(controller: mockController)));
         expect(find.text('First cue'), findsNothing);
         expect(find.text('Second cue'), findsOneWidget);
       });
@@ -988,7 +991,7 @@ void main() {
           ),
         );
 
-        await tester.pumpWidget(MaterialApp(home: SubtitleOverlay(controller: mockController)));
+        await tester.pumpWidget(buildTestWidget(SubtitleOverlay(controller: mockController)));
         // Should NOT show because adjusted position (10s) is at the end of cue range
         expect(find.text('Delayed cue'), findsNothing);
       });
@@ -1009,7 +1012,7 @@ void main() {
           ),
         );
 
-        await tester.pumpWidget(MaterialApp(home: SubtitleOverlay(controller: mockController)));
+        await tester.pumpWidget(buildTestWidget(SubtitleOverlay(controller: mockController)));
         // Should NOT show because adjusted position (0s) is before cue start (5s)
         expect(find.text('Earlier cue'), findsNothing);
 
@@ -1024,7 +1027,7 @@ void main() {
           ),
         );
 
-        await tester.pumpWidget(MaterialApp(home: SubtitleOverlay(controller: mockController)));
+        await tester.pumpWidget(buildTestWidget(SubtitleOverlay(controller: mockController)));
         // Should show because adjusted position (5s) is within cue range
         expect(find.text('Earlier cue'), findsOneWidget);
       });

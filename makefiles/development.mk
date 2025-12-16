@@ -1,7 +1,7 @@
 # Development tasks
-# Running example apps
+# Running example apps and code generation
 
-.PHONY: run run-simple
+.PHONY: run run-simple pigeon-generate
 
 # run: Run the example-showcase app
 # Use when: Testing all library features in the showcase app
@@ -22,3 +22,15 @@ run-simple: verify-tools
 	else \
 		cd example-simple-player && ${FLUTTER} run; \
 	fi
+
+# pigeon-generate: Regenerate Pigeon code for all platforms
+# Use when: After editing shared_pigeon_sources/messages.dart
+pigeon-generate: verify-tools
+	@echo "$(WRENCH) Regenerating Pigeon code for all platforms..."
+	@echo "$(INFO) Android..."
+	@cd pro_video_player_android && ${DART} run pigeon --input pigeons/messages.dart
+	@echo "$(INFO) iOS..."
+	@cd pro_video_player_ios && ${DART} run pigeon --input pigeons/messages.dart
+	@echo "$(INFO) macOS..."
+	@cd pro_video_player_macos && ${DART} run pigeon --input pigeons/messages.dart
+	@echo "$(CHECK) Pigeon code regenerated for all platforms"

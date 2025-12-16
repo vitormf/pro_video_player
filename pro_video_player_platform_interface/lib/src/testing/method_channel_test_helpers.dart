@@ -229,7 +229,7 @@ mixin MethodChannelPlatformTests {
     });
 
     test('setLooping calls native method', () async {
-      await platform.setLooping(1, looping: true);
+      await platform.setLooping(1, true);
 
       expect(harness.lastCall.method, equals('setLooping'));
       expect(harness.lastCall.args['playerId'], equals(1));

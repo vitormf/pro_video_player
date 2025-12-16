@@ -6,6 +6,8 @@ import 'package:mocktail/mocktail.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
+import '../../shared/test_constants.dart';
+import '../../shared/test_helpers.dart';
 import '../../shared/test_setup.dart';
 
 void main() {
@@ -30,15 +32,13 @@ void main() {
     await fixture.tearDown();
   });
 
-  Widget buildTestWidget(Widget child) => MaterialApp(home: Scaffold(body: child));
-
   group('FullscreenStatusBar', () {
     testWidgets('renders with all components', (tester) async {
       await fixture.initializeController();
 
       // Set video state
       fixture
-        ..emitDuration(const Duration(minutes: 5))
+        ..emitDuration(TestMetadata.duration)
         ..emitPosition(const Duration(minutes: 2, seconds: 30));
       await tester.pump();
 

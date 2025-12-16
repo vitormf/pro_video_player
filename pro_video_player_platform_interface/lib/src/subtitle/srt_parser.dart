@@ -92,16 +92,8 @@ class SrtParser extends SubtitleParserBase {
 
     // Group 4 is optional (milliseconds)
     final millisecondsStr = match.group(4);
-    final milliseconds = millisecondsStr != null ? _parseMilliseconds(millisecondsStr) : 0;
+    final milliseconds = millisecondsStr != null ? SubtitleParserBase.parseMilliseconds(millisecondsStr) : 0;
 
     return Duration(hours: hours, minutes: minutes, seconds: seconds, milliseconds: milliseconds);
-  }
-
-  /// Parses milliseconds from a 2-3 digit string, padding 2 digits to 3.
-  /// E.g., "04" -> 40, "040" -> 40, "123" -> 123
-  static int _parseMilliseconds(String str) {
-    // Pad 2-digit milliseconds to 3 digits (e.g., "04" -> "040")
-    final paddedStr = str.length == 2 ? '${str}0' : str;
-    return int.parse(paddedStr);
   }
 }

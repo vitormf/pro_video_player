@@ -3,7 +3,8 @@ import 'package:mocktail/mocktail.dart';
 import 'package:pro_video_player/src/controller/casting_manager.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
-import '../../test_helpers.dart';
+import '../../shared/mocks.dart';
+import '../../shared/test_setup.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -14,7 +15,7 @@ void main() {
   late VideoPlayerOptions options;
   late bool isInitialized;
 
-  setUpAll(registerFallbackValues);
+  setUpAll(registerVideoPlayerFallbackValues);
 
   setUp(() {
     mockPlatform = MockProVideoPlayerPlatform();

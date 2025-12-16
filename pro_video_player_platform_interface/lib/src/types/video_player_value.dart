@@ -1,7 +1,9 @@
 import 'audio_track.dart';
+import 'caption.dart';
 import 'cast_device.dart';
 import 'cast_state.dart';
 import 'chapter.dart';
+import 'duration_range.dart';
 import 'playback_state.dart';
 import 'playlist.dart';
 import 'playlist_mode.dart';
@@ -347,10 +349,40 @@ class VideoPlayerValue {
   /// Whether the player has an error.
   bool get hasError => playbackState == PlaybackState.error;
 
-  /// The aspect ratio of the video, or null if size is unknown.
-  double? get aspectRatio {
-    if (size == null || size!.height == 0) return null;
+  /// The aspect ratio of the video.
+  ///
+  /// Returns the width divided by height, or 0.0 if size is unknown
+  /// or height is zero.
+  ///
+  /// This property is provided for compatibility with Flutter's video_player library.
+  double get aspectRatio {
+    if (size == null || size!.height == 0) return 0;
     return size!.width / size!.height;
+  }
+
+  /// The buffered ranges of the video.
+  ///
+  /// Returns a list of buffered time ranges. Currently this returns a single
+  /// range from Duration.zero to [bufferedPosition], or an empty list if
+  /// nothing is buffered.
+  ///
+  /// This property is provided for compatibility with Flutter's video_player library.
+  List<DurationRange> get buffered {
+    if (bufferedPosition == Duration.zero) return const [];
+    return [DurationRange(Duration.zero, bufferedPosition)];
+  }
+
+  /// The current caption to display.
+  ///
+  /// Returns [Caption.none] if no subtitle cue is currently active, otherwise
+  /// returns a [Caption] constructed from the current [currentEmbeddedCue].
+  ///
+  /// This property is provided for compatibility with Flutter's video_player library.
+  /// For new code, prefer using [currentEmbeddedCue] directly which provides more features.
+  Caption get caption {
+    final cue = currentEmbeddedCue;
+    if (cue == null) return Caption.none;
+    return Caption(text: cue.text, start: cue.start, end: cue.end);
   }
 
   /// Creates a copy of this value with the given fields replaced.

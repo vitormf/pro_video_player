@@ -363,7 +363,7 @@ class _PlayerFeaturesScreenState extends State<PlayerFeaturesScreen> {
             title: const Text('Loop'),
             secondary: const Icon(Icons.repeat),
             value: value.isLooping,
-            onChanged: (looping) => unawaited(_controller.setLooping(looping: looping)),
+            onChanged: (looping) => unawaited(_controller.setLooping(looping)),
           ),
         ],
       ),

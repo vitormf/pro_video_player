@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 
+import '../shared/test_helpers.dart';
+
 void main() {
   group('CastButton', () {
     group('default values', () {
@@ -81,56 +83,46 @@ void main() {
 
     group('construction', () {
       testWidgets('creates with default parameters', (tester) async {
-        await tester.pumpWidget(const MaterialApp(home: Scaffold(body: CastButton())));
+        await tester.pumpWidget(buildTestWidget(const Scaffold(body: CastButton())));
 
         expect(find.byType(CastButton), findsOneWidget);
       });
 
       testWidgets('creates with custom tintColor', (tester) async {
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(body: CastButton(tintColor: Colors.red)),
-          ),
-        );
+        await tester.pumpWidget(buildTestWidget(const CastButton(tintColor: Colors.red)));
 
         expect(find.byType(CastButton), findsOneWidget);
       });
 
       testWidgets('creates with custom activeTintColor', (tester) async {
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(body: CastButton(activeTintColor: Colors.blue)),
-          ),
-        );
+        await tester.pumpWidget(buildTestWidget(const CastButton(activeTintColor: Colors.blue)));
 
         expect(find.byType(CastButton), findsOneWidget);
       });
 
       testWidgets('creates with custom size', (tester) async {
-        await tester.pumpWidget(const MaterialApp(home: Scaffold(body: CastButton(size: 48))));
+        await tester.pumpWidget(buildTestWidget(const Scaffold(body: CastButton(size: 48))));
 
         expect(find.byType(CastButton), findsOneWidget);
       });
 
       testWidgets('creates with alwaysVisible true', (tester) async {
-        await tester.pumpWidget(const MaterialApp(home: Scaffold(body: CastButton(alwaysVisible: true))));
+        await tester.pumpWidget(buildTestWidget(const Scaffold(body: CastButton(alwaysVisible: true))));
 
         expect(find.byType(CastButton), findsOneWidget);
       });
 
       testWidgets('creates with all custom parameters', (tester) async {
         await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: CastButton(
-                tintColor: Colors.red,
-                activeTintColor: Colors.green,
-                size: 32,
-                alwaysVisible: true,
-                onCastStateChanged: (state) {},
-                onWillBeginPresentingRoutes: () {},
-                onDidEndPresentingRoutes: () {},
-              ),
+          buildTestWidget(
+            CastButton(
+              tintColor: Colors.red,
+              activeTintColor: Colors.green,
+              size: 32,
+              alwaysVisible: true,
+              onCastStateChanged: (state) {},
+              onWillBeginPresentingRoutes: () {},
+              onDidEndPresentingRoutes: () {},
             ),
           ),
         );
@@ -143,13 +135,11 @@ void main() {
       testWidgets('onCastStateChanged callback is stored', (tester) async {
         var callbackCalled = false;
         await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: CastButton(
-                onCastStateChanged: (state) {
-                  callbackCalled = true;
-                },
-              ),
+          buildTestWidget(
+            CastButton(
+              onCastStateChanged: (state) {
+                callbackCalled = true;
+              },
             ),
           ),
         );
@@ -163,13 +153,11 @@ void main() {
       testWidgets('onWillBeginPresentingRoutes callback is stored', (tester) async {
         var callbackCalled = false;
         await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: CastButton(
-                onWillBeginPresentingRoutes: () {
-                  callbackCalled = true;
-                },
-              ),
+          buildTestWidget(
+            CastButton(
+              onWillBeginPresentingRoutes: () {
+                callbackCalled = true;
+              },
             ),
           ),
         );
@@ -181,13 +169,11 @@ void main() {
       testWidgets('onDidEndPresentingRoutes callback is stored', (tester) async {
         var callbackCalled = false;
         await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: CastButton(
-                onDidEndPresentingRoutes: () {
-                  callbackCalled = true;
-                },
-              ),
+          buildTestWidget(
+            CastButton(
+              onDidEndPresentingRoutes: () {
+                callbackCalled = true;
+              },
             ),
           ),
         );
@@ -199,20 +185,20 @@ void main() {
 
     group('widget lifecycle', () {
       testWidgets('disposes without error', (tester) async {
-        await tester.pumpWidget(const MaterialApp(home: Scaffold(body: CastButton())));
+        await tester.pumpWidget(buildTestWidget(const Scaffold(body: CastButton())));
 
         // Replace with different widget to trigger dispose
-        await tester.pumpWidget(const MaterialApp(home: Scaffold(body: SizedBox())));
+        await tester.pumpWidget(buildTestWidget(const Scaffold(body: SizedBox())));
 
         expect(find.byType(CastButton), findsNothing);
       });
 
       testWidgets('can be rebuilt with different parameters', (tester) async {
-        await tester.pumpWidget(const MaterialApp(home: Scaffold(body: CastButton(size: 20))));
+        await tester.pumpWidget(buildTestWidget(const Scaffold(body: CastButton(size: 20))));
 
         expect(find.byType(CastButton), findsOneWidget);
 
-        await tester.pumpWidget(const MaterialApp(home: Scaffold(body: CastButton(size: 48))));
+        await tester.pumpWidget(buildTestWidget(const Scaffold(body: CastButton(size: 48))));
 
         expect(find.byType(CastButton), findsOneWidget);
       });
@@ -220,11 +206,7 @@ void main() {
 
     group('widget tree', () {
       testWidgets('can be placed in Row', (tester) async {
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(body: Row(children: [CastButton(), SizedBox(width: 8), Text('Cast')])),
-          ),
-        );
+        await tester.pumpWidget(buildTestWidget(const Row(children: [CastButton(), SizedBox(width: 8), Text('Cast')])));
 
         expect(find.byType(CastButton), findsOneWidget);
         expect(find.text('Cast'), findsOneWidget);
@@ -232,9 +214,7 @@ void main() {
 
       testWidgets('can be placed in Column', (tester) async {
         await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(body: Column(children: [CastButton(), SizedBox(height: 8), Text('Cast')])),
-          ),
+          buildTestWidget(const Column(children: [CastButton(), SizedBox(height: 8), Text('Cast')])),
         );
 
         expect(find.byType(CastButton), findsOneWidget);
@@ -242,13 +222,7 @@ void main() {
       });
 
       testWidgets('can be placed in IconButton', (tester) async {
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: IconButton(onPressed: () {}, icon: const CastButton()),
-            ),
-          ),
-        );
+        await tester.pumpWidget(buildTestWidget(IconButton(onPressed: () {}, icon: const CastButton())));
 
         expect(find.byType(CastButton), findsOneWidget);
         expect(find.byType(IconButton), findsOneWidget);
@@ -258,15 +232,13 @@ void main() {
     group('multiple instances', () {
       testWidgets('can render multiple CastButtons', (tester) async {
         await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: Row(
-                children: [
-                  CastButton(key: Key('cast1')),
-                  CastButton(key: Key('cast2')),
-                  CastButton(key: Key('cast3')),
-                ],
-              ),
+          buildTestWidget(
+            const Row(
+              children: [
+                CastButton(key: Key('cast1')),
+                CastButton(key: Key('cast2')),
+                CastButton(key: Key('cast3')),
+              ],
             ),
           ),
         );
@@ -279,15 +251,13 @@ void main() {
 
       testWidgets('each instance has independent properties', (tester) async {
         await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: Row(
-                children: [
-                  CastButton(key: Key('cast1'), size: 20),
-                  CastButton(key: Key('cast2'), size: 32),
-                  CastButton(key: Key('cast3'), size: 48),
-                ],
-              ),
+          buildTestWidget(
+            const Row(
+              children: [
+                CastButton(key: Key('cast1'), size: 20),
+                CastButton(key: Key('cast2'), size: 32),
+                CastButton(key: Key('cast3'), size: 48),
+              ],
             ),
           ),
         );
@@ -305,25 +275,19 @@ void main() {
 
     group('key handling', () {
       testWidgets('accepts custom key', (tester) async {
-        await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(body: CastButton(key: Key('custom_cast_button'))),
-          ),
-        );
+        await tester.pumpWidget(buildTestWidget(const CastButton(key: Key('custom_cast_button'))));
 
         expect(find.byKey(const Key('custom_cast_button')), findsOneWidget);
       });
 
       testWidgets('different keys create different widgets', (tester) async {
         await tester.pumpWidget(
-          const MaterialApp(
-            home: Scaffold(
-              body: Column(
-                children: [
-                  CastButton(key: Key('button_a')),
-                  CastButton(key: Key('button_b')),
-                ],
-              ),
+          buildTestWidget(
+            const Column(
+              children: [
+                CastButton(key: Key('button_a')),
+                CastButton(key: Key('button_b')),
+              ],
             ),
           ),
         );

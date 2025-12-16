@@ -4,6 +4,8 @@ import 'package:mocktail/mocktail.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 import 'package:pro_video_player/src/controls/volume_popup.dart';
 
+import '../../shared/test_constants.dart';
+import '../../shared/test_helpers.dart';
 import '../../shared/test_setup.dart';
 
 void main() {
@@ -21,14 +23,12 @@ void main() {
     await fixture.tearDown();
   });
 
-  Widget buildTestWidget(Widget child) => MaterialApp(home: Scaffold(body: child));
-
   group('VolumePopupContent', () {
     group('initialization', () {
       testWidgets('initializes volume from controller', (tester) async {
         final controller = ProVideoPlayerController();
         await controller.initialize(
-          source: const VideoSource.network('https://example.com/video.mp4'),
+          source: const VideoSource.network(TestMedia.networkUrl),
           options: const VideoPlayerOptions(volume: 0.7),
         );
 
@@ -45,7 +45,7 @@ void main() {
       testWidgets('mutes when volume > 0', (tester) async {
         final controller = ProVideoPlayerController();
         await controller.initialize(
-          source: const VideoSource.network('https://example.com/video.mp4'),
+          source: const VideoSource.network(TestMedia.networkUrl),
           options: const VideoPlayerOptions(volume: 0.8),
         );
 
@@ -66,7 +66,7 @@ void main() {
       testWidgets('unmutes and restores previous volume', (tester) async {
         final controller = ProVideoPlayerController();
         await controller.initialize(
-          source: const VideoSource.network('https://example.com/video.mp4'),
+          source: const VideoSource.network(TestMedia.networkUrl),
           options: const VideoPlayerOptions(volume: 0.7),
         );
 
@@ -91,7 +91,7 @@ void main() {
       testWidgets('unmutes to 1.0 when no previous volume', (tester) async {
         final controller = ProVideoPlayerController();
         await controller.initialize(
-          source: const VideoSource.network('https://example.com/video.mp4'),
+          source: const VideoSource.network(TestMedia.networkUrl),
           options: const VideoPlayerOptions(volume: 0),
         );
 
@@ -114,7 +114,7 @@ void main() {
       testWidgets('shows volume_off when muted', (tester) async {
         final controller = ProVideoPlayerController();
         await controller.initialize(
-          source: const VideoSource.network('https://example.com/video.mp4'),
+          source: const VideoSource.network(TestMedia.networkUrl),
           options: const VideoPlayerOptions(volume: 0),
         );
 
@@ -130,7 +130,7 @@ void main() {
       testWidgets('shows volume_down when volume <= 0.5', (tester) async {
         final controller = ProVideoPlayerController();
         await controller.initialize(
-          source: const VideoSource.network('https://example.com/video.mp4'),
+          source: const VideoSource.network(TestMedia.networkUrl),
           options: const VideoPlayerOptions(volume: 0.3),
         );
 
@@ -146,7 +146,7 @@ void main() {
       testWidgets('shows volume_up when volume > 0.5', (tester) async {
         final controller = ProVideoPlayerController();
         await controller.initialize(
-          source: const VideoSource.network('https://example.com/video.mp4'),
+          source: const VideoSource.network(TestMedia.networkUrl),
           options: const VideoPlayerOptions(volume: 0.8),
         );
 
@@ -164,7 +164,7 @@ void main() {
       testWidgets('displays current volume value', (tester) async {
         final controller = ProVideoPlayerController();
         await controller.initialize(
-          source: const VideoSource.network('https://example.com/video.mp4'),
+          source: const VideoSource.network(TestMedia.networkUrl),
           options: const VideoPlayerOptions(volume: 0.6),
         );
 
@@ -181,7 +181,7 @@ void main() {
       testWidgets('updates volume when slider changes', (tester) async {
         final controller = ProVideoPlayerController();
         await controller.initialize(
-          source: const VideoSource.network('https://example.com/video.mp4'),
+          source: const VideoSource.network(TestMedia.networkUrl),
           options: const VideoPlayerOptions(volume: 0.5),
         );
 
@@ -204,7 +204,7 @@ void main() {
       testWidgets('updates when controller volume changes', (tester) async {
         final controller = ProVideoPlayerController();
         await controller.initialize(
-          source: const VideoSource.network('https://example.com/video.mp4'),
+          source: const VideoSource.network(TestMedia.networkUrl),
           options: const VideoPlayerOptions(volume: 0.5),
         );
 
@@ -217,7 +217,7 @@ void main() {
 
         // Change volume through controller
         await controller.setVolume(0.8);
-        await tester.pump(const Duration(milliseconds: 50));
+        await tester.pump(TestDelays.eventPropagation);
 
         // UI should update
         expect(find.text('80%'), findsOneWidget);
@@ -226,7 +226,7 @@ void main() {
       testWidgets('removes listener on dispose', (tester) async {
         final controller = ProVideoPlayerController();
         await controller.initialize(
-          source: const VideoSource.network('https://example.com/video.mp4'),
+          source: const VideoSource.network(TestMedia.networkUrl),
           options: const VideoPlayerOptions(volume: 0.5),
         );
 
@@ -255,7 +255,7 @@ void main() {
 
         final controller = ProVideoPlayerController();
         await controller.initialize(
-          source: const VideoSource.network('https://example.com/video.mp4'),
+          source: const VideoSource.network(TestMedia.networkUrl),
           options: const VideoPlayerOptions(volume: 0.7),
         );
 

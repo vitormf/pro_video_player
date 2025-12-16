@@ -3,15 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pro_video_player/src/controls/buttons/shuffle_button.dart';
 import 'package:pro_video_player/src/video_player_theme.dart';
 
+import '../../../shared/test_helpers.dart';
+
 void main() {
   group('ShuffleButton', () {
     testWidgets('shows shuffle icon when not shuffled', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ShuffleButton(theme: VideoPlayerTheme.light(), isShuffled: false, onPressed: () {}),
-          ),
-        ),
+        buildTestWidget(ShuffleButton(theme: VideoPlayerTheme.light(), isShuffled: false, onPressed: () {})),
       );
 
       expect(find.byIcon(Icons.shuffle), findsOneWidget);
@@ -20,11 +18,7 @@ void main() {
 
     testWidgets('shows shuffle_on icon when shuffled', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ShuffleButton(theme: VideoPlayerTheme.light(), isShuffled: true, onPressed: () {}),
-          ),
-        ),
+        buildTestWidget(ShuffleButton(theme: VideoPlayerTheme.light(), isShuffled: true, onPressed: () {})),
       );
 
       expect(find.byIcon(Icons.shuffle_on), findsOneWidget);
@@ -36,13 +30,7 @@ void main() {
         primaryColor: Colors.blue,
       );
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ShuffleButton(theme: customTheme, isShuffled: true, onPressed: () {}),
-          ),
-        ),
-      );
+      await tester.pumpWidget(buildTestWidget(ShuffleButton(theme: customTheme, isShuffled: true, onPressed: () {})));
 
       final iconButton = tester.widget<IconButton>(find.byType(IconButton));
       final icon = iconButton.icon as Icon;
@@ -55,13 +43,7 @@ void main() {
         primaryColor: Colors.blue,
       );
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ShuffleButton(theme: customTheme, isShuffled: false, onPressed: () {}),
-          ),
-        ),
-      );
+      await tester.pumpWidget(buildTestWidget(ShuffleButton(theme: customTheme, isShuffled: false, onPressed: () {})));
 
       final iconButton = tester.widget<IconButton>(find.byType(IconButton));
       final icon = iconButton.icon as Icon;
@@ -72,10 +54,8 @@ void main() {
       var pressed = false;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ShuffleButton(theme: VideoPlayerTheme.light(), isShuffled: false, onPressed: () => pressed = true),
-          ),
+        buildTestWidget(
+          ShuffleButton(theme: VideoPlayerTheme.light(), isShuffled: false, onPressed: () => pressed = true),
         ),
       );
 
@@ -87,11 +67,7 @@ void main() {
 
     testWidgets('has shuffle on tooltip when shuffled', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ShuffleButton(theme: VideoPlayerTheme.light(), isShuffled: true, onPressed: () {}),
-          ),
-        ),
+        buildTestWidget(ShuffleButton(theme: VideoPlayerTheme.light(), isShuffled: true, onPressed: () {})),
       );
 
       final iconButton = tester.widget<IconButton>(find.byType(IconButton));
@@ -100,11 +76,7 @@ void main() {
 
     testWidgets('has shuffle off tooltip when not shuffled', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ShuffleButton(theme: VideoPlayerTheme.light(), isShuffled: false, onPressed: () {}),
-          ),
-        ),
+        buildTestWidget(ShuffleButton(theme: VideoPlayerTheme.light(), isShuffled: false, onPressed: () {})),
       );
 
       final iconButton = tester.widget<IconButton>(find.byType(IconButton));
@@ -113,11 +85,7 @@ void main() {
 
     testWidgets('uses correct icon size', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ShuffleButton(theme: VideoPlayerTheme.light(), isShuffled: false, onPressed: () {}),
-          ),
-        ),
+        buildTestWidget(ShuffleButton(theme: VideoPlayerTheme.light(), isShuffled: false, onPressed: () {})),
       );
 
       final iconButton = tester.widget<IconButton>(find.byType(IconButton));

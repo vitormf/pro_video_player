@@ -1,13 +1,15 @@
 import 'package:flutter/foundation.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
+import 'manager_callbacks.dart';
+
 /// Manages video player configuration settings.
 ///
 /// This manager handles:
 /// - Looping mode
 /// - Video scaling mode
 /// - Background playback settings
-class ConfigurationManager {
+class ConfigurationManager with ManagerCallbacks {
   /// Creates a configuration manager with dependency injection via callbacks.
   ConfigurationManager({
     required this.getValue,
@@ -17,25 +19,26 @@ class ConfigurationManager {
     required this.ensureInitialized,
   });
 
-  /// Gets the current video player value.
+  @override
   final VideoPlayerValue Function() getValue;
 
-  /// Updates the video player value.
+  @override
   final void Function(VideoPlayerValue) setValue;
 
-  /// Gets the player ID (null if not initialized).
+  @override
   final int? Function() getPlayerId;
 
-  /// Platform implementation for configuration operations.
+  @override
   final ProVideoPlayerPlatform platform;
 
-  /// Ensures the controller is initialized before operations.
+  @override
   final void Function() ensureInitialized;
 
   /// Sets whether the video should loop.
-  Future<void> setLooping({required bool looping}) async {
+  // ignore: avoid_positional_boolean_parameters
+  Future<void> setLooping(bool looping) async {
     ensureInitialized();
-    await platform.setLooping(getPlayerId()!, looping: looping);
+    await platform.setLooping(getPlayerId()!, looping);
     setValue(getValue().copyWith(isLooping: looping));
   }
 

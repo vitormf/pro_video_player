@@ -214,7 +214,7 @@ class VttParser extends SubtitleParserBase {
         hours: int.parse(match.group(1)!),
         minutes: int.parse(match.group(2)!),
         seconds: int.parse(match.group(3)!),
-        milliseconds: millisecondsStr != null ? _parseMilliseconds(millisecondsStr) : 0,
+        milliseconds: millisecondsStr != null ? SubtitleParserBase.parseMilliseconds(millisecondsStr) : 0,
       );
     }
 
@@ -225,18 +225,10 @@ class VttParser extends SubtitleParserBase {
       return Duration(
         minutes: int.parse(match.group(1)!),
         seconds: int.parse(match.group(2)!),
-        milliseconds: millisecondsStr != null ? _parseMilliseconds(millisecondsStr) : 0,
+        milliseconds: millisecondsStr != null ? SubtitleParserBase.parseMilliseconds(millisecondsStr) : 0,
       );
     }
 
     return null;
-  }
-
-  /// Parses milliseconds from a 2-3 digit string, padding 2 digits to 3.
-  /// E.g., "04" -> 40, "040" -> 40, "123" -> 123
-  static int _parseMilliseconds(String str) {
-    // Pad 2-digit milliseconds to 3 digits (e.g., "04" -> "040")
-    final paddedStr = str.length == 2 ? '${str}0' : str;
-    return int.parse(paddedStr);
   }
 }

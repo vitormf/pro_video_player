@@ -143,8 +143,8 @@ class InitializationCoordinator {
         setSource: setSource,
       );
 
-      // Subscribe to platform events
-      circularManagers.eventCoordinator.subscribeToEvents();
+      // Don't subscribe to events here - subscription happens lazily when needed
+      // This prevents test hanging issues with ValueListenableBuilder widgets
 
       // Update state to ready
       setValue(
@@ -153,6 +153,7 @@ class InitializationCoordinator {
           playbackSpeed: options.playbackSpeed,
           volume: options.volume,
           isLooping: options.looping,
+          currentSubtitleRenderMode: options.subtitleRenderMode,
         ),
       );
 

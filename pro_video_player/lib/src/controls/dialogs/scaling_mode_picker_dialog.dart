@@ -6,6 +6,7 @@ import 'package:pro_video_player_platform_interface/pro_video_player_platform_in
 import '../../pro_video_player_controller.dart';
 import '../../video_player_theme.dart';
 import '../video_controls_utils.dart';
+import 'base_picker_dialog.dart';
 
 /// A dialog that allows users to select video scaling mode.
 ///
@@ -37,44 +38,16 @@ class ScalingModePickerDialog {
     required List<VideoScalingMode> scalingModeOptions,
     required VoidCallback onDismiss,
   }) {
-    unawaited(
-      showModalBottomSheet<void>(
-        context: context,
-        backgroundColor: theme.backgroundColor,
-        builder: (context) => SafeArea(
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    'Video Scaling Mode',
-                    style: TextStyle(color: theme.primaryColor, fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                ...scalingModeOptions.map(
-                  (mode) => ListTile(
-                    title: Text(
-                      VideoControlsUtils.getScalingModeLabel(mode),
-                      style: TextStyle(color: theme.primaryColor),
-                    ),
-                    subtitle: Text(
-                      VideoControlsUtils.getScalingModeDescription(mode),
-                      style: TextStyle(color: theme.primaryColor.withValues(alpha: 0.7), fontSize: 12),
-                    ),
-                    onTap: () async {
-                      Navigator.pop(context);
-                      await controller.setScalingMode(mode);
-                    },
-                  ),
-                ),
-                const SizedBox(height: 8),
-              ],
-            ),
-          ),
-        ),
-      ).then((_) => onDismiss()),
+    BasePickerDialog.show<VideoScalingMode>(
+      context: context,
+      theme: theme,
+      title: 'Video Scaling Mode',
+      items: scalingModeOptions,
+      itemLabelBuilder: VideoControlsUtils.getScalingModeLabel,
+      isItemSelected: (_) => false, // No selection highlighting
+      onItemSelected: (mode) => unawaited(controller.setScalingMode(mode)),
+      onDismiss: onDismiss,
+      showCheckIcon: false,
     );
   }
 }

@@ -11,14 +11,20 @@ import 'video_format_utils.dart';
 
 /// Base class for platform implementations that use method channels.
 ///
-/// This class provides common functionality for iOS, macOS, Windows, and Linux
-/// implementations, eliminating code duplication across platforms.
+/// **DEPRECATED:** This class is being phased out in favor of `PigeonMethodChannelBase`
+/// which provides type-safe platform channel communication. Currently still used by
+/// Windows and Linux platforms pending Pigeon migration. iOS, Android, and macOS
+/// have migrated to `PigeonMethodChannelBase`.
+///
+/// This class will be removed in a future release once all platforms support Pigeon.
+@Deprecated('Use PigeonMethodChannelBase instead. Will be removed once Windows/Linux support Pigeon.')
 abstract class MethodChannelBase extends ProVideoPlayerPlatform {
   /// Creates a [MethodChannelBase] with the given [channelPrefix].
   ///
   /// The [channelPrefix] is used to construct the method channel name
-  /// as 'com.example.$channelPrefix/methods'.
-  MethodChannelBase(this.channelPrefix) : _methodChannel = MethodChannel('com.example.$channelPrefix/methods');
+  /// as 'dev.pro_video_player.$channelPrefix/methods'.
+  @Deprecated('Use PigeonMethodChannelBase instead. Will be removed once Windows/Linux support Pigeon.')
+  MethodChannelBase(this.channelPrefix) : _methodChannel = MethodChannel('dev.pro_video_player.$channelPrefix/methods');
 
   /// The channel prefix used for method and event channels.
   final String channelPrefix;
@@ -127,7 +133,7 @@ abstract class MethodChannelBase extends ProVideoPlayerPlatform {
 
   @override
   Stream<BatteryInfo> get batteryUpdates {
-    _batteryUpdatesStream ??= EventChannel('com.example.$channelPrefix/batteryUpdates')
+    _batteryUpdatesStream ??= EventChannel('dev.pro_video_player.$channelPrefix/batteryUpdates')
         .receiveBroadcastStream()
         .transform(
           StreamTransformer<dynamic, BatteryInfo>.fromHandlers(
@@ -153,7 +159,7 @@ abstract class MethodChannelBase extends ProVideoPlayerPlatform {
   }
 
   @override
-  Future<void> setLooping(int playerId, {required bool looping}) async {
+  Future<void> setLooping(int playerId, bool looping) async {
     await _methodChannel.invokeMethod<void>('setLooping', {'playerId': playerId, 'looping': looping});
   }
 
@@ -277,7 +283,7 @@ abstract class MethodChannelBase extends ProVideoPlayerPlatform {
 
   /// Sets up the event channel for a player.
   void _setupEventChannel(int playerId) {
-    final eventChannel = EventChannel('com.example.$channelPrefix/events/$playerId');
+    final eventChannel = EventChannel('dev.pro_video_player.$channelPrefix/events/$playerId');
     _eventChannels[playerId] = eventChannel;
 
     _eventStreams[playerId] = eventChannel.receiveBroadcastStream().transform(

@@ -55,7 +55,7 @@ class AirPlayRoutePickerPlatformView: NSObject, FlutterPlatformView {
     ) {
         self.containerView = UIView(frame: frame)
         self.channel = FlutterMethodChannel(
-            name: "com.example.pro_video_player/airplay_picker_\(viewId)",
+            name: "dev.pro_video_player/airplay_picker_\(viewId)",
             binaryMessenger: messenger
         )
         super.init()
@@ -182,7 +182,7 @@ class AirPlayRoutePickerPlatformView: NSView {
         messenger: FlutterBinaryMessenger
     ) {
         self.channel = FlutterMethodChannel(
-            name: "com.example.pro_video_player/airplay_picker_\(viewId)",
+            name: "dev.pro_video_player/airplay_picker_\(viewId)",
             binaryMessenger: messenger
         )
         super.init(frame: .zero)

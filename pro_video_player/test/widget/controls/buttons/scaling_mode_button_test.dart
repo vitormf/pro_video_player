@@ -3,16 +3,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pro_video_player/src/controls/buttons/scaling_mode_button.dart';
 import 'package:pro_video_player/src/video_player_theme.dart';
 
+import '../../../shared/test_helpers.dart';
+
 void main() {
   group('ScalingModeButton', () {
     testWidgets('renders icon button with correct icon', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ScalingModeButton(theme: VideoPlayerTheme.light(), onPressed: () {}),
-          ),
-        ),
-      );
+      await tester.pumpWidget(buildTestWidget(ScalingModeButton(theme: VideoPlayerTheme.light(), onPressed: () {})));
 
       expect(find.byIcon(Icons.aspect_ratio), findsOneWidget);
       expect(find.byType(IconButton), findsOneWidget);
@@ -21,13 +17,7 @@ void main() {
     testWidgets('uses theme primary color for icon', (tester) async {
       final customTheme = VideoPlayerTheme.light().copyWith(primaryColor: Colors.purple);
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ScalingModeButton(theme: customTheme, onPressed: () {}),
-          ),
-        ),
-      );
+      await tester.pumpWidget(buildTestWidget(ScalingModeButton(theme: customTheme, onPressed: () {})));
 
       final iconButton = tester.widget<IconButton>(find.byType(IconButton));
       final icon = iconButton.icon as Icon;
@@ -38,11 +28,7 @@ void main() {
       var pressed = false;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ScalingModeButton(theme: VideoPlayerTheme.light(), onPressed: () => pressed = true),
-          ),
-        ),
+        buildTestWidget(ScalingModeButton(theme: VideoPlayerTheme.light(), onPressed: () => pressed = true)),
       );
 
       await tester.tap(find.byType(IconButton));
@@ -52,26 +38,14 @@ void main() {
     });
 
     testWidgets('has Scaling mode tooltip', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ScalingModeButton(theme: VideoPlayerTheme.light(), onPressed: () {}),
-          ),
-        ),
-      );
+      await tester.pumpWidget(buildTestWidget(ScalingModeButton(theme: VideoPlayerTheme.light(), onPressed: () {})));
 
       final iconButton = tester.widget<IconButton>(find.byType(IconButton));
       expect(iconButton.tooltip, equals('Scaling mode'));
     });
 
     testWidgets('uses correct icon size', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ScalingModeButton(theme: VideoPlayerTheme.light(), onPressed: () {}),
-          ),
-        ),
-      );
+      await tester.pumpWidget(buildTestWidget(ScalingModeButton(theme: VideoPlayerTheme.light(), onPressed: () {})));
 
       final iconButton = tester.widget<IconButton>(find.byType(IconButton));
       expect(iconButton.iconSize, equals(20));

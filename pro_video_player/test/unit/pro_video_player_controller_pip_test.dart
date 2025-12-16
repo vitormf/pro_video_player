@@ -3,21 +3,22 @@ import 'package:mocktail/mocktail.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
-import '../test_helpers.dart';
+import '../shared/test_constants.dart';
+import '../shared/test_setup.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  late ControllerTestFixture fixture;
+  late VideoPlayerTestFixture fixture;
 
-  setUpAll(registerFallbackValues);
+  setUpAll(registerVideoPlayerFallbackValues);
 
   setUp(() {
-    fixture = ControllerTestFixture();
+    fixture = VideoPlayerTestFixture()..setUp();
   });
 
   tearDown(() async {
-    await fixture.dispose();
+    await fixture.tearDown();
   });
 
   group('ProVideoPlayerController pip', () {
@@ -29,7 +30,7 @@ void main() {
         ),
       ).thenAnswer((_) async => 1);
 
-      await fixture.controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await fixture.controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
     });
 
     test('enterPip calls platform and returns result', () async {
@@ -93,7 +94,7 @@ void main() {
 
     test('isPipAvailable returns false when allowPip is false', () async {
       await fixture.controller.initialize(
-        source: const VideoSource.network('https://example.com/video.mp4'),
+        source: const VideoSource.network(TestMedia.networkUrl),
         options: const VideoPlayerOptions(allowPip: false),
       );
 
@@ -107,7 +108,7 @@ void main() {
     });
 
     test('isPipAvailable returns platform support when allowPip is true', () async {
-      await fixture.controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await fixture.controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       when(() => fixture.mockPlatform.isPipSupported()).thenAnswer((_) async => true);
 
@@ -119,7 +120,7 @@ void main() {
 
     test('enterPip returns false when allowPip is false', () async {
       await fixture.controller.initialize(
-        source: const VideoSource.network('https://example.com/video.mp4'),
+        source: const VideoSource.network(TestMedia.networkUrl),
         options: const VideoPlayerOptions(allowPip: false),
       );
 

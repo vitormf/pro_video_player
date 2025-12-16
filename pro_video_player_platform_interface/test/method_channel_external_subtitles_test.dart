@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use_from_same_package
+
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -44,7 +46,7 @@ void main() {
       mockResponse = null;
 
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-        const MethodChannel('com.example.test_platform/methods'),
+        const MethodChannel('dev.pro_video_player.test_platform/methods'),
         (call) async {
           methodCalls.add(call);
 
@@ -61,7 +63,7 @@ void main() {
 
     tearDown(() {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-        const MethodChannel('com.example.test_platform/methods'),
+        const MethodChannel('dev.pro_video_player.test_platform/methods'),
         null,
       );
     });
@@ -208,7 +210,7 @@ void main() {
 
       // Setup method call handler for the test channel
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-        const MethodChannel('com.example.test_platform/methods'),
+        const MethodChannel('dev.pro_video_player.test_platform/methods'),
         (call) async {
           methodCalls.add(call);
           if (call.method == 'addExternalSubtitle') {
@@ -258,7 +260,7 @@ Test subtitle cue
 
       // Cleanup
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-        const MethodChannel('com.example.test_platform/methods'),
+        const MethodChannel('dev.pro_video_player.test_platform/methods'),
         null,
       );
       subtitleLoader.dispose();
@@ -270,7 +272,7 @@ Test subtitle cue
       final testMethodChannel = TestableMethodChannel(subtitleLoader: subtitleLoader);
 
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-        const MethodChannel('com.example.test_platform/methods'),
+        const MethodChannel('dev.pro_video_player.test_platform/methods'),
         (call) async {
           if (call.method == 'addExternalSubtitle') {
             return {
@@ -319,7 +321,7 @@ Second cue
 
       // Cleanup
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-        const MethodChannel('com.example.test_platform/methods'),
+        const MethodChannel('dev.pro_video_player.test_platform/methods'),
         null,
       );
       subtitleLoader.dispose();
@@ -331,7 +333,7 @@ Second cue
       final testMethodChannel = TestableMethodChannel(subtitleLoader: subtitleLoader);
 
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-        const MethodChannel('com.example.test_platform/methods'),
+        const MethodChannel('dev.pro_video_player.test_platform/methods'),
         (call) async {
           if (call.method == 'addExternalSubtitle') {
             return {
@@ -367,7 +369,7 @@ Second cue
 
       // Cleanup
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-        const MethodChannel('com.example.test_platform/methods'),
+        const MethodChannel('dev.pro_video_player.test_platform/methods'),
         null,
       );
       subtitleLoader.dispose();
@@ -380,7 +382,7 @@ Second cue
       final calls = <MethodCall>[];
 
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-        const MethodChannel('com.example.test_platform/methods'),
+        const MethodChannel('dev.pro_video_player.test_platform/methods'),
         (call) async {
           calls.add(call);
           if (call.method == 'addExternalSubtitle') {
@@ -418,7 +420,7 @@ Second cue
 
       // Cleanup
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-        const MethodChannel('com.example.test_platform/methods'),
+        const MethodChannel('dev.pro_video_player.test_platform/methods'),
         null,
       );
       subtitleLoader.dispose();
@@ -450,7 +452,7 @@ Second cue
       mockRemoveResult = true;
 
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-        const MethodChannel('com.example.test_platform/methods'),
+        const MethodChannel('dev.pro_video_player.test_platform/methods'),
         (call) async {
           methodCalls.add(call);
 
@@ -464,7 +466,7 @@ Second cue
 
     tearDown(() {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-        const MethodChannel('com.example.test_platform/methods'),
+        const MethodChannel('dev.pro_video_player.test_platform/methods'),
         null,
       );
     });
@@ -500,7 +502,7 @@ Second cue
       mockTracks = [];
 
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-        const MethodChannel('com.example.test_platform/methods'),
+        const MethodChannel('dev.pro_video_player.test_platform/methods'),
         (call) async {
           methodCalls.add(call);
 
@@ -514,7 +516,7 @@ Second cue
 
     tearDown(() {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-        const MethodChannel('com.example.test_platform/methods'),
+        const MethodChannel('dev.pro_video_player.test_platform/methods'),
         null,
       );
     });

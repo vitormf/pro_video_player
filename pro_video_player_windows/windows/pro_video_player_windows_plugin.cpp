@@ -17,7 +17,7 @@ void ProVideoPlayerWindowsPlugin::RegisterWithRegistrar(
     flutter::PluginRegistrarWindows *registrar) {
   auto channel =
       std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
-          registrar->messenger(), "com.example.pro_video_player_windows/methods",
+          registrar->messenger(), "dev.pro_video_player.windows/methods",
           &flutter::StandardMethodCodec::GetInstance());
 
   auto plugin = std::make_unique<ProVideoPlayerWindowsPlugin>();

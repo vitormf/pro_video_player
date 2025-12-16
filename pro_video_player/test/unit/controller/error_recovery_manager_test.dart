@@ -1,10 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:pro_video_player/src/controller/error_recovery_manager.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
-class MockProVideoPlayerPlatform extends Mock with MockPlatformInterfaceMixin implements ProVideoPlayerPlatform {}
+import '../../shared/mocks.dart';
+import '../../shared/test_constants.dart';
+import '../../shared/test_setup.dart';
 
 void main() {
   late ErrorRecoveryManager manager;
@@ -15,9 +16,7 @@ void main() {
   late ErrorRecoveryOptions options;
   late bool retryCallbackCalled;
 
-  setUpAll(() {
-    registerFallbackValue(Duration.zero);
-  });
+  setUpAll(registerVideoPlayerFallbackValues);
 
   setUp(() {
     mockPlatform = MockProVideoPlayerPlatform();
@@ -128,7 +127,7 @@ void main() {
 
         // Wait for retry to execute (2^2 = 4 seconds, but we'll test with shorter wait)
         // In real scenario delay would be 4s, but for test we just verify the flag
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(TestDelays.eventPropagation);
         expect(manager.isRetrying, isTrue); // Still retrying
       });
 
@@ -149,7 +148,7 @@ void main() {
           onRetry: () async => retryCallbackCalled = true,
         );
 
-        final error = VideoPlayerError.network(message: 'Network error', retryCount: 3);
+        final error = VideoPlayerError.network(message: 'Network error', retryCount: 3, maxRetries: 5);
         manager.scheduleAutoRetry(error);
 
         expect(attemptNumber, equals(4)); // retryCount + 1
@@ -170,7 +169,7 @@ void main() {
 
         // Use very short delay for testing
         manager = ErrorRecoveryManager(
-          options: const ErrorRecoveryOptions(baseRetryDelay: Duration(milliseconds: 50)),
+          options: const ErrorRecoveryOptions(baseRetryDelay: TestDelays.eventPropagation),
           getValue: () => currentValue,
           setValue: (v) => currentValue = v,
           isDisposed: () => disposed,
@@ -182,7 +181,7 @@ void main() {
 
         // Dispose before timer fires
         disposed = true;
-        await Future<void>.delayed(const Duration(milliseconds: 100));
+        await Future<void>.delayed(TestDelays.stateUpdate);
 
         expect(retryCallbackCalled, isFalse);
       });
@@ -258,7 +257,7 @@ void main() {
         manager.handleNetworkStateChange(isConnected: true);
 
         // Give time for async operation
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         verify(() => mockPlatform.seekTo(1, const Duration(seconds: 30))).called(1);
         verify(() => mockPlatform.play(1)).called(1);
@@ -269,7 +268,7 @@ void main() {
 
         manager.handleNetworkStateChange(isConnected: false);
 
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         verifyNever(() => mockPlatform.seekTo(any(), any()));
         verifyNever(() => mockPlatform.play(any()));
@@ -280,7 +279,7 @@ void main() {
 
         manager.handleNetworkStateChange(isConnected: true);
 
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         verifyNever(() => mockPlatform.seekTo(any(), any()));
         verifyNever(() => mockPlatform.play(any()));
@@ -335,7 +334,7 @@ void main() {
 
       test('prevents concurrent retries', () async {
         when(() => mockPlatform.seekTo(any(), any())).thenAnswer((_) async {
-          await Future<void>.delayed(const Duration(milliseconds: 100));
+          await Future<void>.delayed(TestDelays.stateUpdate);
         });
         when(() => mockPlatform.play(any())).thenAnswer((_) async {});
 
@@ -374,7 +373,7 @@ void main() {
 
         // Manually set retrying flag
         manager = ErrorRecoveryManager(
-          options: const ErrorRecoveryOptions(baseRetryDelay: Duration(milliseconds: 50)),
+          options: const ErrorRecoveryOptions(baseRetryDelay: TestDelays.eventPropagation),
           getValue: () => currentValue,
           setValue: (v) => currentValue = v,
           isDisposed: () => disposed,
@@ -390,7 +389,7 @@ void main() {
         manager.scheduleAutoRetry(error);
         expect(manager.isRetrying, isTrue);
 
-        await Future<void>.delayed(const Duration(milliseconds: 100));
+        await Future<void>.delayed(TestDelays.stateUpdate);
 
         expect(manager.isRetrying, isFalse);
       });
@@ -407,7 +406,7 @@ void main() {
         manager.cancelRetryTimer();
 
         // Wait to ensure callback doesn't fire
-        await Future<void>.delayed(const Duration(milliseconds: 100));
+        await Future<void>.delayed(TestDelays.stateUpdate);
         expect(retryCallbackCalled, isFalse);
       });
 
@@ -428,13 +427,13 @@ void main() {
         manager.dispose();
 
         expect(manager.isRetrying, isFalse);
-        await Future<void>.delayed(const Duration(milliseconds: 100));
+        await Future<void>.delayed(TestDelays.stateUpdate);
         expect(retryCallbackCalled, isFalse);
       });
 
       test('resets isRetrying flag', () {
         manager = ErrorRecoveryManager(
-          options: const ErrorRecoveryOptions(baseRetryDelay: Duration(milliseconds: 50)),
+          options: const ErrorRecoveryOptions(baseRetryDelay: TestDelays.eventPropagation),
           getValue: () => currentValue,
           setValue: (v) => currentValue = v,
           isDisposed: () => disposed,
@@ -457,6 +456,17 @@ void main() {
       test('calculates correct delays', () {
         // Test the delay calculation indirectly through handleNetworkError
         // Since _calculateRetryDelay is private, we verify the behavior
+
+        // Recreate manager with higher max retries for this test
+        manager = ErrorRecoveryManager(
+          options: const ErrorRecoveryOptions(maxAutoRetries: 10),
+          getValue: () => currentValue,
+          setValue: (v) => currentValue = v,
+          isDisposed: () => disposed,
+          getPlayerId: () => playerId,
+          platform: mockPlatform,
+          onRetry: () async => retryCallbackCalled = true,
+        );
 
         // Retry 0: 2^0 = 1 second
         currentValue = const VideoPlayerValue();

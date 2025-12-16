@@ -26,14 +26,14 @@ public struct PlatformConfig {
     }
 
     public static let ios = PlatformConfig(
-        channelName: "com.example.pro_video_player_ios/methods",
-        viewTypeId: "com.example.pro_video_player_ios/video_view",
+        channelName: "dev.pro_video_player.ios/methods",
+        viewTypeId: "dev.pro_video_player.ios/video_view",
         supportsPipActions: true
     )
 
     public static let macOS = PlatformConfig(
-        channelName: "com.example.pro_video_player_macos/methods",
-        viewTypeId: "com.example.pro_video_player_macos/video_view",
+        channelName: "dev.pro_video_player.macos/methods",
+        viewTypeId: "dev.pro_video_player.macos/video_view",
         supportsPipActions: false
     )
 }

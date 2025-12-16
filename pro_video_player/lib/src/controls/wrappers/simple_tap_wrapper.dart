@@ -24,6 +24,7 @@ class SimpleTapWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GestureDetector(
+    behavior: HitTestBehavior.translucent,
     onTap: () {
       final isCasting = controller.value.isCasting;
       if (isCasting) {

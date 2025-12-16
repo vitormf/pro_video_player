@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 
+import '../../shared/test_constants.dart';
+import '../../shared/test_helpers.dart';
 import '../../shared/test_setup.dart';
 
 // Mock for VideoControlsState
@@ -32,8 +34,6 @@ void main() {
   tearDown(() async {
     await fixture.tearDown();
   });
-
-  Widget buildTestWidget(Widget child) => MaterialApp(home: Scaffold(body: child));
 
   MobileVideoControls buildMobileControls({
     required ProVideoPlayerController controller,
@@ -100,7 +100,7 @@ void main() {
     group('basic rendering', () {
       testWidgets('renders with correct layout structure', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(buildTestWidget(buildMobileControls(controller: controller)));
         await tester.pump();
@@ -113,7 +113,7 @@ void main() {
 
       testWidgets('shows three main sections', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(buildTestWidget(buildMobileControls(controller: controller)));
         await tester.pump();
@@ -127,7 +127,7 @@ void main() {
     group('gradient overlays', () {
       testWidgets('shows two gradient overlays', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(buildTestWidget(buildMobileControls(controller: controller)));
         await tester.pump();
@@ -154,7 +154,7 @@ void main() {
 
       testWidgets('gradients are aligned top to bottom', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(buildTestWidget(buildMobileControls(controller: controller)));
         await tester.pump();
@@ -176,11 +176,11 @@ void main() {
     group('fullscreen padding', () {
       testWidgets('adds padding when in fullscreen', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         // Enter fullscreen
         fixture.eventController.add(const FullscreenStateChangedEvent(isFullscreen: true));
-        await tester.pump(const Duration(milliseconds: 50));
+        await tester.pump(TestDelays.eventPropagation);
 
         await tester.pumpWidget(buildTestWidget(buildMobileControls(controller: controller)));
         await tester.pump();
@@ -198,7 +198,7 @@ void main() {
 
       testWidgets('has no padding when not in fullscreen', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         // Not in fullscreen (default - no need to emit event)
 
@@ -219,7 +219,7 @@ void main() {
     group('child widget integration', () {
       testWidgets('shows PlayerToolbar in top section', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(buildTestWidget(buildMobileControls(controller: controller)));
         await tester.pump();
@@ -229,7 +229,7 @@ void main() {
 
       testWidgets('shows BottomControlsBar in bottom section', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(buildTestWidget(buildMobileControls(controller: controller)));
         await tester.pump();
@@ -239,7 +239,7 @@ void main() {
 
       testWidgets('shows provided center controls', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final centerWidget = Container(key: const Key('custom-center'), child: const Text('Center Controls'));
 
@@ -256,7 +256,7 @@ void main() {
     group('callback propagation', () {
       testWidgets('passes callbacks to PlayerToolbar', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(buildTestWidget(buildMobileControls(controller: controller)));
         await tester.pump();
@@ -269,7 +269,7 @@ void main() {
 
       testWidgets('passes callbacks to BottomControlsBar', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(
@@ -294,7 +294,7 @@ void main() {
         final theme = VideoPlayerTheme.light().copyWith(primaryColor: Colors.red, backgroundColor: Colors.black);
 
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(buildTestWidget(buildMobileControls(controller: controller, theme: theme)));
         await tester.pump();

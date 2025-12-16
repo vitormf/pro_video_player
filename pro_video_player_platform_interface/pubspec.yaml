@@ -17,6 +17,7 @@ dependencies:
 
 dev_dependencies:
   mocktail: ^1.0.4
+  pigeon: ^22.7.0
 
 flutter:
   plugin:

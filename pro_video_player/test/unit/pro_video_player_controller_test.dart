@@ -4,11 +4,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
-class MockProVideoPlayerPlatform extends Mock with MockPlatformInterfaceMixin implements ProVideoPlayerPlatform {}
+import '../shared/mocks.dart';
+import '../shared/test_constants.dart';
+import '../shared/test_matchers.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -53,7 +54,7 @@ void main() {
   group('ProVideoPlayerController', () {
     group('initialization', () {
       test('initial value has uninitialized state', () {
-        expect(controller.value.playbackState, PlaybackState.uninitialized);
+        expect(controller, isUninitialized);
         expect(controller.isInitialized, isFalse);
         expect(controller.playerId, isNull);
       });
@@ -66,11 +67,11 @@ void main() {
           ),
         ).thenAnswer((_) async => 1);
 
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         expect(controller.playerId, equals(1));
         expect(controller.isInitialized, isTrue);
-        expect(controller.value.playbackState, PlaybackState.ready);
+        expect(controller, isReady);
       });
 
       test('initialize with autoPlay calls play', () async {
@@ -83,7 +84,7 @@ void main() {
         when(() => mockPlatform.play(any())).thenAnswer((_) async {});
 
         await controller.initialize(
-          source: const VideoSource.network('https://example.com/video.mp4'),
+          source: const VideoSource.network(TestMedia.networkUrl),
           options: const VideoPlayerOptions(autoPlay: true),
         );
 
@@ -98,7 +99,7 @@ void main() {
           ),
         ).thenAnswer((_) async => 1);
 
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         expect(
           () => controller.initialize(source: const VideoSource.network('https://example.com/other.mp4')),
@@ -111,7 +112,7 @@ void main() {
         await controller.dispose();
 
         expect(
-          () => controller.initialize(source: const VideoSource.network('https://example.com/video.mp4')),
+          () => controller.initialize(source: const VideoSource.network(TestMedia.networkUrl)),
           throwsA(isA<StateError>()),
         );
       });
@@ -123,7 +124,7 @@ void main() {
         expect(() => controller.seekTo(Duration.zero), throwsA(isA<StateError>()));
         expect(() => controller.setPlaybackSpeed(1), throwsA(isA<StateError>()));
         expect(() => controller.setVolume(1), throwsA(isA<StateError>()));
-        expect(() => controller.setLooping(looping: true), throwsA(isA<StateError>()));
+        expect(() => controller.setLooping(true), throwsA(isA<StateError>()));
         expect(() => controller.setSubtitleTrack(null), throwsA(isA<StateError>()));
         expect(() => controller.setAudioTrack(null), throwsA(isA<StateError>()));
         expect(() => controller.enterPip(), throwsA(isA<StateError>()));
@@ -139,11 +140,11 @@ void main() {
         ).thenThrow(Exception('Failed to create player'));
 
         await expectLater(
-          controller.initialize(source: const VideoSource.network('https://example.com/video.mp4')),
+          controller.initialize(source: const VideoSource.network(TestMedia.networkUrl)),
           throwsA(isA<Exception>()),
         );
 
-        expect(controller.value.playbackState, PlaybackState.error);
+        expect(controller, hasError);
         expect(controller.value.errorMessage, isNotNull);
       });
     });
@@ -157,7 +158,7 @@ void main() {
           ),
         ).thenAnswer((_) async => 1);
 
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
       });
 
       test('play calls platform play', () async {
@@ -198,7 +199,7 @@ void main() {
         // Set initial position and duration via events
         eventController
           ..add(const PositionChangedEvent(Duration(seconds: 30)))
-          ..add(const DurationChangedEvent(Duration(minutes: 5)));
+          ..add(const DurationChangedEvent(TestMetadata.duration));
         await Future<void>.delayed(Duration.zero);
 
         await controller.seekForward(const Duration(seconds: 10));
@@ -276,7 +277,7 @@ void main() {
           ),
         ).thenAnswer((_) async => 1);
 
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
       });
 
       test('setPlaybackSpeed calls platform and updates value', () async {
@@ -285,7 +286,7 @@ void main() {
         await controller.setPlaybackSpeed(1.5);
 
         verify(() => mockPlatform.setPlaybackSpeed(1, 1.5)).called(1);
-        expect(controller.value.playbackSpeed, 1.5);
+        expect(controller, hasSpeed(1.5));
       });
 
       test('setPlaybackSpeed throws for invalid speed', () async {
@@ -299,7 +300,7 @@ void main() {
         await controller.setVolume(0.5);
 
         verify(() => mockPlatform.setVolume(1, 0.5)).called(1);
-        expect(controller.value.volume, 0.5);
+        expect(controller, hasVolume(0.5));
       });
 
       test('setVolume throws for invalid volume', () async {
@@ -308,12 +309,12 @@ void main() {
       });
 
       test('setLooping calls platform and updates value', () async {
-        when(() => mockPlatform.setLooping(any(), looping: any(named: 'looping'))).thenAnswer((_) async {});
+        when(() => mockPlatform.setLooping(any(), any())).thenAnswer((_) async {});
 
-        await controller.setLooping(looping: true);
+        await controller.setLooping(true);
 
-        verify(() => mockPlatform.setLooping(1, looping: true)).called(1);
-        expect(controller.value.isLooping, isTrue);
+        verify(() => mockPlatform.setLooping(1, true)).called(1);
+        expect(controller, isLooping);
       });
 
       test('setSubtitleTrack calls platform and updates value', () async {
@@ -364,7 +365,7 @@ void main() {
           ),
         ).thenAnswer((_) async => 1);
 
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
       });
 
       test('enterPip calls platform and returns result', () async {
@@ -431,7 +432,7 @@ void main() {
           (methodCall) async => null,
         );
 
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
       });
 
       test('enterFullscreen calls platform and updates value', () async {
@@ -440,7 +441,7 @@ void main() {
         final result = await controller.enterFullscreen();
 
         expect(result, isTrue);
-        expect(controller.value.isFullscreen, isTrue);
+        expect(controller, isInFullscreen);
         verify(() => mockPlatform.enterFullscreen(1)).called(1);
       });
 
@@ -449,7 +450,7 @@ void main() {
 
         await controller.enterFullscreen(orientation: FullscreenOrientation.portraitBoth);
 
-        expect(controller.value.isFullscreen, isTrue);
+        expect(controller, isInFullscreen);
         verify(() => mockPlatform.enterFullscreen(1)).called(1);
       });
 
@@ -470,12 +471,12 @@ void main() {
 
         // Enter fullscreen first
         await controller.enterFullscreen();
-        expect(controller.value.isFullscreen, isTrue);
+        expect(controller, isInFullscreen);
 
         // Exit fullscreen
         await controller.exitFullscreen();
 
-        expect(controller.value.isFullscreen, isFalse);
+        expect(controller, isNotInFullscreen);
         verify(() => mockPlatform.exitFullscreen(1)).called(1);
       });
 
@@ -484,7 +485,7 @@ void main() {
 
         await controller.toggleFullscreen();
 
-        expect(controller.value.isFullscreen, isTrue);
+        expect(controller, isInFullscreen);
         verify(() => mockPlatform.enterFullscreen(1)).called(1);
       });
 
@@ -498,7 +499,7 @@ void main() {
         // Toggle should exit
         await controller.toggleFullscreen();
 
-        expect(controller.value.isFullscreen, isFalse);
+        expect(controller, isNotInFullscreen);
         verify(() => mockPlatform.exitFullscreen(1)).called(1);
       });
 
@@ -518,12 +519,12 @@ void main() {
         eventController.add(const FullscreenStateChangedEvent(isFullscreen: true));
         await Future<void>.delayed(Duration.zero);
 
-        expect(controller.value.isFullscreen, isTrue);
+        expect(controller, isInFullscreen);
 
         eventController.add(const FullscreenStateChangedEvent(isFullscreen: false));
         await Future<void>.delayed(Duration.zero);
 
-        expect(controller.value.isFullscreen, isFalse);
+        expect(controller, isNotInFullscreen);
       });
     });
 
@@ -536,14 +537,14 @@ void main() {
           ),
         ).thenAnswer((_) async => 1);
 
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
       });
 
       test('updates value on PlaybackStateChangedEvent', () async {
         eventController.add(const PlaybackStateChangedEvent(PlaybackState.playing));
         await Future<void>.delayed(Duration.zero);
 
-        expect(controller.value.playbackState, PlaybackState.playing);
+        expect(controller, isPlaying);
       });
 
       test('updates value on PositionChangedEvent', () async {
@@ -554,10 +555,10 @@ void main() {
       });
 
       test('updates value on DurationChangedEvent', () async {
-        eventController.add(const DurationChangedEvent(Duration(minutes: 5)));
+        eventController.add(const DurationChangedEvent(TestMetadata.duration));
         await Future<void>.delayed(Duration.zero);
 
-        expect(controller.value.duration, const Duration(minutes: 5));
+        expect(controller.value.duration, TestMetadata.duration);
       });
 
       test('updates value on VideoSizeChangedEvent', () async {
@@ -571,7 +572,7 @@ void main() {
         eventController.add(ErrorEvent('Playback error'));
         await Future<void>.delayed(Duration.zero);
 
-        expect(controller.value.playbackState, PlaybackState.error);
+        expect(controller, hasError);
         expect(controller.value.errorMessage, 'Playback error');
       });
 
@@ -579,7 +580,7 @@ void main() {
         eventController.add(const PipStateChangedEvent(isActive: true));
         await Future<void>.delayed(Duration.zero);
 
-        expect(controller.value.isPipActive, isTrue);
+        expect(controller, isInPip);
       });
 
       test('updates value on BufferedPositionChangedEvent', () async {
@@ -593,7 +594,7 @@ void main() {
         eventController.add(const PlaybackCompletedEvent());
         await Future<void>.delayed(Duration.zero);
 
-        expect(controller.value.playbackState, PlaybackState.completed);
+        expect(controller, isCompleted);
       });
 
       test('updates value on SubtitleTracksChangedEvent', () async {
@@ -626,14 +627,14 @@ void main() {
         eventController.add(const PlaybackSpeedChangedEvent(2));
         await Future<void>.delayed(Duration.zero);
 
-        expect(controller.value.playbackSpeed, 2.0);
+        expect(controller, hasSpeed(2));
       });
 
       test('updates value on VolumeChangedEvent', () async {
         eventController.add(const VolumeChangedEvent(0.5));
         await Future<void>.delayed(Duration.zero);
 
-        expect(controller.value.volume, 0.5);
+        expect(controller, hasVolume(0.5));
       });
 
       test('updates value on AudioTracksChangedEvent', () async {
@@ -673,11 +674,11 @@ void main() {
         ).thenAnswer((_) async => 1);
         when(() => mockPlatform.dispose(any())).thenAnswer((_) async {});
 
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
         await controller.dispose();
 
         verify(() => mockPlatform.dispose(1)).called(1);
-        expect(controller.isDisposed, isTrue);
+        expect(controller, isDisposed);
         expect(controller.value.playbackState, PlaybackState.disposed);
       });
 
@@ -690,7 +691,7 @@ void main() {
         ).thenAnswer((_) async => 1);
         when(() => mockPlatform.dispose(any())).thenAnswer((_) async {});
 
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
         await controller.dispose();
 
         expect(() => controller.play(), throwsA(isA<StateError>()));
@@ -717,7 +718,7 @@ void main() {
           ),
         ).thenAnswer((_) async => 1);
 
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
       });
 
       test('setScalingMode calls platform', () async {
@@ -744,7 +745,7 @@ void main() {
           ),
         ).thenAnswer((_) async => 1);
 
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
       });
 
       test('setVideoQuality calls platform and updates value on success', () async {
@@ -837,7 +838,7 @@ void main() {
           ),
         ).thenAnswer((_) async => 1);
 
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
       });
 
       test('setBackgroundPlayback calls platform and updates value on success', () async {
@@ -916,7 +917,7 @@ void main() {
           ),
         ).thenAnswer((_) async => 1);
 
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
       });
 
       test('setMediaMetadata calls platform', () async {
@@ -976,7 +977,7 @@ void main() {
 
       test('isPipAvailable returns false when allowPip is false', () async {
         await controller.initialize(
-          source: const VideoSource.network('https://example.com/video.mp4'),
+          source: const VideoSource.network(TestMedia.networkUrl),
           options: const VideoPlayerOptions(allowPip: false),
         );
 
@@ -990,7 +991,7 @@ void main() {
       });
 
       test('isPipAvailable returns platform support when allowPip is true', () async {
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         when(() => mockPlatform.isPipSupported()).thenAnswer((_) async => true);
 
@@ -1002,7 +1003,7 @@ void main() {
 
       test('enterPip returns false when allowPip is false', () async {
         await controller.initialize(
-          source: const VideoSource.network('https://example.com/video.mp4'),
+          source: const VideoSource.network(TestMedia.networkUrl),
           options: const VideoPlayerOptions(allowPip: false),
         );
 
@@ -1026,7 +1027,7 @@ void main() {
 
       test('subtitlesEnabled returns options value', () async {
         await controller.initialize(
-          source: const VideoSource.network('https://example.com/video.mp4'),
+          source: const VideoSource.network(TestMedia.networkUrl),
           options: const VideoPlayerOptions(subtitlesEnabled: false),
         );
 
@@ -1035,7 +1036,7 @@ void main() {
 
       test('setSubtitleTrack returns early when subtitles disabled', () async {
         await controller.initialize(
-          source: const VideoSource.network('https://example.com/video.mp4'),
+          source: const VideoSource.network(TestMedia.networkUrl),
           options: const VideoPlayerOptions(subtitlesEnabled: false),
         );
 
@@ -1048,7 +1049,7 @@ void main() {
 
       test('SubtitleTracksChangedEvent is ignored when subtitles disabled', () async {
         await controller.initialize(
-          source: const VideoSource.network('https://example.com/video.mp4'),
+          source: const VideoSource.network(TestMedia.networkUrl),
           options: const VideoPlayerOptions(subtitlesEnabled: false),
         );
 
@@ -1063,7 +1064,7 @@ void main() {
         when(() => mockPlatform.setSubtitleTrack(any(), any())).thenAnswer((_) async {});
 
         await controller.initialize(
-          source: const VideoSource.network('https://example.com/video.mp4'),
+          source: const VideoSource.network(TestMedia.networkUrl),
           options: const VideoPlayerOptions(showSubtitlesByDefault: true),
         );
 
@@ -1079,7 +1080,7 @@ void main() {
         when(() => mockPlatform.setSubtitleTrack(any(), any())).thenAnswer((_) async {});
 
         await controller.initialize(
-          source: const VideoSource.network('https://example.com/video.mp4'),
+          source: const VideoSource.network(TestMedia.networkUrl),
           options: const VideoPlayerOptions(showSubtitlesByDefault: true, preferredSubtitleLanguage: 'es'),
         );
 
@@ -1106,7 +1107,7 @@ void main() {
         when(() => mockPlatform.play(any())).thenAnswer((_) async {});
         when(() => mockPlatform.dispose(any())).thenAnswer((_) async {});
 
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
       });
 
       test('clearError resets error state', () async {
@@ -1118,15 +1119,15 @@ void main() {
         controller.clearError();
 
         expect(controller.value.hasError, isFalse);
-        expect(controller.value.playbackState, PlaybackState.ready);
+        expect(controller, isReady);
       });
 
       test('clearError does nothing if no error', () async {
-        expect(controller.value.playbackState, PlaybackState.ready);
+        expect(controller, isReady);
 
         controller.clearError();
 
-        expect(controller.value.playbackState, PlaybackState.ready);
+        expect(controller, isReady);
       });
 
       test('retry throws when no error', () async {
@@ -1274,7 +1275,7 @@ void main() {
       });
 
       test('playlistNext throws when no playlist', () async {
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         expect(controller.playlistNext, throwsA(isA<StateError>()));
       });
@@ -1310,7 +1311,7 @@ void main() {
         final result = await controller.playlistNext();
 
         expect(result, isFalse);
-        expect(controller.value.playbackState, PlaybackState.completed);
+        expect(controller, isCompleted);
       });
 
       test('playlistNext wraps with repeat all', () async {
@@ -1342,7 +1343,7 @@ void main() {
       });
 
       test('playlistPrevious throws when no playlist', () async {
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         expect(controller.playlistPrevious, throwsA(isA<StateError>()));
       });
@@ -1382,7 +1383,7 @@ void main() {
       });
 
       test('playlistJumpTo throws when no playlist', () async {
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         expect(() => controller.playlistJumpTo(0), throwsA(isA<StateError>()));
       });
@@ -1489,7 +1490,7 @@ void main() {
         ).thenAnswer((_) async => 1);
         when(() => mockPlatform.play(any())).thenAnswer((_) async {});
 
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
       });
 
       test('BufferingStartedEvent updates value with buffering state', () async {
@@ -1523,7 +1524,7 @@ void main() {
         // Should be in recovery mode with incremented retry count
         expect(controller.value.isRecoveringFromError, isTrue);
         expect(controller.value.networkRetryCount, equals(1));
-        expect(controller.value.playbackState, PlaybackState.buffering);
+        expect(controller, isBuffering);
       });
 
       test('NetworkErrorEvent does not retry when autoRetry is disabled', () async {
@@ -1541,7 +1542,7 @@ void main() {
         ).thenAnswer((_) async => 2);
         when(() => mockPlatform.events(any())).thenAnswer((_) => eventController.stream);
 
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         eventController.add(const NetworkErrorEvent(message: 'Connection lost'));
         await Future<void>.delayed(Duration.zero);
@@ -1549,7 +1550,7 @@ void main() {
         // Should go to error state without retrying
         expect(controller.value.isRecoveringFromError, isFalse);
         expect(controller.value.networkRetryCount, equals(0));
-        expect(controller.value.playbackState, PlaybackState.error);
+        expect(controller, hasError);
         expect(controller.value.errorMessage, equals('Connection lost'));
       });
 
@@ -1568,7 +1569,7 @@ void main() {
         ).thenAnswer((_) async => 2);
         when(() => mockPlatform.events(any())).thenAnswer((_) => eventController.stream);
 
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         // First error - retry 1
         eventController.add(const NetworkErrorEvent(message: 'Error 1'));
@@ -1586,7 +1587,7 @@ void main() {
         eventController.add(const NetworkErrorEvent(message: 'Error 3'));
         await Future<void>.delayed(Duration.zero);
         expect(controller.value.isRecoveringFromError, isFalse);
-        expect(controller.value.playbackState, PlaybackState.error);
+        expect(controller, hasError);
       });
 
       test('PlaybackRecoveredEvent resets retry state', () async {
@@ -1652,10 +1653,7 @@ void main() {
 
         const customOptions = VideoPlayerOptions(autoPlay: true, looping: true, volume: 0.5);
 
-        await controller.initialize(
-          source: const VideoSource.network('https://example.com/video.mp4'),
-          options: customOptions,
-        );
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl), options: customOptions);
 
         expect(controller.options.autoPlay, isTrue);
         expect(controller.options.looping, isTrue);
@@ -1672,7 +1670,7 @@ void main() {
           ),
         ).thenAnswer((_) async => 1);
 
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         expect(
           () => controller.initialize(source: const VideoSource.network('https://example.com/other.mp4')),
@@ -1702,7 +1700,7 @@ void main() {
         );
 
         await controller.initialize(
-          source: const VideoSource.network('https://example.com/video.mp4'),
+          source: const VideoSource.network(TestMedia.networkUrl),
           options: const VideoPlayerOptions(subtitlesEnabled: false),
         );
 
@@ -1733,7 +1731,7 @@ void main() {
 
         when(() => mockPlatform.addExternalSubtitle(any(), any())).thenAnswer((_) async => expectedTrack);
 
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final result = await controller.addExternalSubtitle(
           const SubtitleSource.network('https://example.com/subs.vtt', label: 'English', language: 'en'),
@@ -1753,7 +1751,7 @@ void main() {
 
         when(() => mockPlatform.removeExternalSubtitle(any(), any())).thenAnswer((_) async => true);
 
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final result = await controller.removeExternalSubtitle('ext-1');
 
@@ -1782,7 +1780,7 @@ void main() {
 
         when(() => mockPlatform.getExternalSubtitles(any())).thenAnswer((_) async => expectedTracks);
 
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final result = await controller.getExternalSubtitles();
 

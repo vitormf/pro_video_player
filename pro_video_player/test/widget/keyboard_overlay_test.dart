@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 
+import '../shared/test_helpers.dart';
+
 void main() {
   group('KeyboardOverlay', () {
     late VideoPlayerTheme theme;
@@ -11,11 +13,7 @@ void main() {
     });
 
     testWidgets('returns empty SizedBox when type is null', (tester) async {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(body: KeyboardOverlay(type: null, value: 50, theme: theme)),
-        ),
-      );
+      await tester.pumpWidget(buildTestWidget(KeyboardOverlay(type: null, value: 50, theme: theme)));
 
       expect(find.byIcon(Icons.volume_up), findsNothing);
       expect(find.byIcon(Icons.fast_forward), findsNothing);
@@ -25,11 +23,7 @@ void main() {
 
     testWidgets('returns empty SizedBox when value is null', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: KeyboardOverlay(type: KeyboardOverlayType.volume, value: null, theme: theme),
-          ),
-        ),
+        buildTestWidget(KeyboardOverlay(type: KeyboardOverlayType.volume, value: null, theme: theme)),
       );
 
       expect(find.byIcon(Icons.volume_up), findsNothing);
@@ -40,11 +34,7 @@ void main() {
     group('Volume overlay', () {
       testWidgets('shows volume_up icon for volume > 0.5', (tester) async {
         await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: KeyboardOverlay(type: KeyboardOverlayType.volume, value: 0.8, theme: theme),
-            ),
-          ),
+          buildTestWidget(KeyboardOverlay(type: KeyboardOverlayType.volume, value: 0.8, theme: theme)),
         );
 
         expect(find.byIcon(Icons.volume_up), findsOneWidget);
@@ -53,11 +43,7 @@ void main() {
 
       testWidgets('shows volume_down icon for volume > 0 and <= 0.5', (tester) async {
         await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: KeyboardOverlay(type: KeyboardOverlayType.volume, value: 0.3, theme: theme),
-            ),
-          ),
+          buildTestWidget(KeyboardOverlay(type: KeyboardOverlayType.volume, value: 0.3, theme: theme)),
         );
 
         expect(find.byIcon(Icons.volume_down), findsOneWidget);
@@ -66,11 +52,7 @@ void main() {
 
       testWidgets('shows volume_off icon for volume = 0', (tester) async {
         await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: KeyboardOverlay(type: KeyboardOverlayType.volume, value: 0, theme: theme),
-            ),
-          ),
+          buildTestWidget(KeyboardOverlay(type: KeyboardOverlayType.volume, value: 0, theme: theme)),
         );
 
         expect(find.byIcon(Icons.volume_off), findsOneWidget);
@@ -79,11 +61,7 @@ void main() {
 
       testWidgets('rounds volume percentage to nearest integer', (tester) async {
         await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: KeyboardOverlay(type: KeyboardOverlayType.volume, value: 0.567, theme: theme),
-            ),
-          ),
+          buildTestWidget(KeyboardOverlay(type: KeyboardOverlayType.volume, value: 0.567, theme: theme)),
         );
 
         expect(find.text('57%'), findsOneWidget);
@@ -93,11 +71,7 @@ void main() {
     group('Seek overlay', () {
       testWidgets('shows fast_forward icon for positive seconds', (tester) async {
         await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: KeyboardOverlay(type: KeyboardOverlayType.seek, value: 10, theme: theme),
-            ),
-          ),
+          buildTestWidget(KeyboardOverlay(type: KeyboardOverlayType.seek, value: 10, theme: theme)),
         );
 
         expect(find.byIcon(Icons.fast_forward), findsOneWidget);
@@ -106,11 +80,7 @@ void main() {
 
       testWidgets('shows fast_rewind icon for negative seconds', (tester) async {
         await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: KeyboardOverlay(type: KeyboardOverlayType.seek, value: -10, theme: theme),
-            ),
-          ),
+          buildTestWidget(KeyboardOverlay(type: KeyboardOverlayType.seek, value: -10, theme: theme)),
         );
 
         expect(find.byIcon(Icons.fast_rewind), findsOneWidget);
@@ -119,11 +89,7 @@ void main() {
 
       testWidgets('shows + prefix for zero seconds', (tester) async {
         await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: KeyboardOverlay(type: KeyboardOverlayType.seek, value: 0, theme: theme),
-            ),
-          ),
+          buildTestWidget(KeyboardOverlay(type: KeyboardOverlayType.seek, value: 0, theme: theme)),
         );
 
         expect(find.byIcon(Icons.fast_forward), findsOneWidget);
@@ -132,11 +98,7 @@ void main() {
 
       testWidgets('converts decimal seconds to integer', (tester) async {
         await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: KeyboardOverlay(type: KeyboardOverlayType.seek, value: 15.7, theme: theme),
-            ),
-          ),
+          buildTestWidget(KeyboardOverlay(type: KeyboardOverlayType.seek, value: 15.7, theme: theme)),
         );
 
         expect(find.text('+15s'), findsOneWidget);
@@ -146,11 +108,7 @@ void main() {
     group('Speed overlay', () {
       testWidgets('shows speed icon and value', (tester) async {
         await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: KeyboardOverlay(type: KeyboardOverlayType.speed, value: 1.5, theme: theme),
-            ),
-          ),
+          buildTestWidget(KeyboardOverlay(type: KeyboardOverlayType.speed, value: 1.5, theme: theme)),
         );
 
         expect(find.byIcon(Icons.speed), findsOneWidget);
@@ -159,11 +117,7 @@ void main() {
 
       testWidgets('handles integer speed values', (tester) async {
         await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: KeyboardOverlay(type: KeyboardOverlayType.speed, value: 2, theme: theme),
-            ),
-          ),
+          buildTestWidget(KeyboardOverlay(type: KeyboardOverlayType.speed, value: 2, theme: theme)),
         );
 
         expect(find.text('2.0x'), findsOneWidget);
@@ -171,11 +125,7 @@ void main() {
 
       testWidgets('handles decimal speed values', (tester) async {
         await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: KeyboardOverlay(type: KeyboardOverlayType.speed, value: 0.75, theme: theme),
-            ),
-          ),
+          buildTestWidget(KeyboardOverlay(type: KeyboardOverlayType.speed, value: 0.75, theme: theme)),
         );
 
         expect(find.text('0.75x'), findsOneWidget);
@@ -185,11 +135,7 @@ void main() {
     group('Widget properties', () {
       testWidgets('overlay is centered', (tester) async {
         await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: KeyboardOverlay(type: KeyboardOverlayType.volume, value: 0.5, theme: theme),
-            ),
-          ),
+          buildTestWidget(KeyboardOverlay(type: KeyboardOverlayType.volume, value: 0.5, theme: theme)),
         );
 
         // Verify content is rendered (which means Center is working)
@@ -199,11 +145,7 @@ void main() {
 
       testWidgets('overlay ignores pointer events', (tester) async {
         await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: KeyboardOverlay(type: KeyboardOverlayType.volume, value: 0.5, theme: theme),
-            ),
-          ),
+          buildTestWidget(KeyboardOverlay(type: KeyboardOverlayType.volume, value: 0.5, theme: theme)),
         );
 
         // Find the IgnorePointer that's a direct child of KeyboardOverlay
@@ -215,11 +157,7 @@ void main() {
         final customTheme = VideoPlayerTheme.light().copyWith(primaryColor: Colors.red);
 
         await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: KeyboardOverlay(type: KeyboardOverlayType.volume, value: 0.5, theme: customTheme),
-            ),
-          ),
+          buildTestWidget(KeyboardOverlay(type: KeyboardOverlayType.volume, value: 0.5, theme: customTheme)),
         );
 
         final icon = tester.widget<Icon>(find.byType(Icon));
@@ -231,11 +169,7 @@ void main() {
 
       testWidgets('icon has text shadow', (tester) async {
         await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: KeyboardOverlay(type: KeyboardOverlayType.volume, value: 0.5, theme: theme),
-            ),
-          ),
+          buildTestWidget(KeyboardOverlay(type: KeyboardOverlayType.volume, value: 0.5, theme: theme)),
         );
 
         final icon = tester.widget<Icon>(find.byType(Icon));
@@ -246,11 +180,7 @@ void main() {
 
       testWidgets('text has text shadow', (tester) async {
         await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: KeyboardOverlay(type: KeyboardOverlayType.volume, value: 0.5, theme: theme),
-            ),
-          ),
+          buildTestWidget(KeyboardOverlay(type: KeyboardOverlayType.volume, value: 0.5, theme: theme)),
         );
 
         final text = tester.widget<Text>(find.text('50%'));

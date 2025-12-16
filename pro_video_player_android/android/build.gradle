@@ -1,4 +1,4 @@
-group 'com.example.pro_video_player_android'
+group 'dev.pro_video_player.android'
 version '1.0-SNAPSHOT'
 
 buildscript {
@@ -26,7 +26,7 @@ apply plugin: 'kotlin-android'
 apply plugin: 'jacoco'
 
 android {
-    namespace 'com.example.pro_video_player_android'
+    namespace 'dev.pro_video_player.android'
     compileSdk 36
 
     compileOptions {

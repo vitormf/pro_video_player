@@ -41,4 +41,15 @@ abstract class SubtitleParserBase {
 
   /// Strips both HTML and ASS-style tags from text.
   String stripAllTags(String text) => stripAssTags(stripTags(text));
+
+  /// Parses milliseconds from a 2-3 digit string, padding 2 digits to 3.
+  ///
+  /// E.g., "04" -> 40, "040" -> 40, "123" -> 123
+  ///
+  /// This is a common operation for both SRT and VTT timestamp parsing.
+  static int parseMilliseconds(String str) {
+    // Pad 2-digit milliseconds to 3 digits (e.g., "04" -> "040")
+    final paddedStr = str.length == 2 ? '${str}0' : str;
+    return int.parse(paddedStr);
+  }
 }

@@ -3,14 +3,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pro_video_player/src/controls/buttons/fullscreen_button.dart';
 import 'package:pro_video_player/src/video_player_theme.dart';
 
+import '../../../shared/test_helpers.dart';
+
 void main() {
   group('FullscreenButton', () {
     testWidgets('shows fullscreen icon when not in fullscreen', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: FullscreenButton(theme: VideoPlayerTheme.light(), isFullscreen: false, onEnter: () {}, onExit: () {}),
-          ),
+        buildTestWidget(
+          FullscreenButton(theme: VideoPlayerTheme.light(), isFullscreen: false, onEnter: () {}, onExit: () {}),
         ),
       );
 
@@ -21,10 +21,8 @@ void main() {
 
     testWidgets('shows fullscreen_exit icon when in fullscreen', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: FullscreenButton(theme: VideoPlayerTheme.light(), isFullscreen: true, onEnter: () {}, onExit: () {}),
-          ),
+        buildTestWidget(
+          FullscreenButton(theme: VideoPlayerTheme.light(), isFullscreen: true, onEnter: () {}, onExit: () {}),
         ),
       );
 
@@ -36,11 +34,7 @@ void main() {
       final customTheme = VideoPlayerTheme.light().copyWith(primaryColor: Colors.purple);
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: FullscreenButton(theme: customTheme, isFullscreen: false, onEnter: () {}, onExit: () {}),
-          ),
-        ),
+        buildTestWidget(FullscreenButton(theme: customTheme, isFullscreen: false, onEnter: () {}, onExit: () {})),
       );
 
       final iconButton = tester.widget<IconButton>(find.byType(IconButton));
@@ -51,11 +45,7 @@ void main() {
       final customTheme = VideoPlayerTheme.light().copyWith(iconSize: 32);
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: FullscreenButton(theme: customTheme, isFullscreen: false, onEnter: () {}, onExit: () {}),
-          ),
-        ),
+        buildTestWidget(FullscreenButton(theme: customTheme, isFullscreen: false, onEnter: () {}, onExit: () {})),
       );
 
       final iconButton = tester.widget<IconButton>(find.byType(IconButton));
@@ -67,14 +57,12 @@ void main() {
       var exitCalled = false;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: FullscreenButton(
-              theme: VideoPlayerTheme.light(),
-              isFullscreen: false,
-              onEnter: () => enterCalled = true,
-              onExit: () => exitCalled = true,
-            ),
+        buildTestWidget(
+          FullscreenButton(
+            theme: VideoPlayerTheme.light(),
+            isFullscreen: false,
+            onEnter: () => enterCalled = true,
+            onExit: () => exitCalled = true,
           ),
         ),
       );
@@ -92,14 +80,12 @@ void main() {
       var exitCalled = false;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: FullscreenButton(
-              theme: VideoPlayerTheme.light(),
-              isFullscreen: true,
-              onEnter: () => enterCalled = true,
-              onExit: () => exitCalled = true,
-            ),
+        buildTestWidget(
+          FullscreenButton(
+            theme: VideoPlayerTheme.light(),
+            isFullscreen: true,
+            onEnter: () => enterCalled = true,
+            onExit: () => exitCalled = true,
           ),
         ),
       );
@@ -114,10 +100,8 @@ void main() {
 
     testWidgets('has fullscreen tooltip when not in fullscreen', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: FullscreenButton(theme: VideoPlayerTheme.light(), isFullscreen: false, onEnter: () {}, onExit: () {}),
-          ),
+        buildTestWidget(
+          FullscreenButton(theme: VideoPlayerTheme.light(), isFullscreen: false, onEnter: () {}, onExit: () {}),
         ),
       );
 
@@ -127,10 +111,8 @@ void main() {
 
     testWidgets('has exit fullscreen tooltip when in fullscreen', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: FullscreenButton(theme: VideoPlayerTheme.light(), isFullscreen: true, onEnter: () {}, onExit: () {}),
-          ),
+        buildTestWidget(
+          FullscreenButton(theme: VideoPlayerTheme.light(), isFullscreen: true, onEnter: () {}, onExit: () {}),
         ),
       );
 

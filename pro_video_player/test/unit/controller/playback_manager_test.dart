@@ -1,10 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:pro_video_player/src/controller/playback_manager.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
-class MockProVideoPlayerPlatform extends Mock with MockPlatformInterfaceMixin implements ProVideoPlayerPlatform {}
+import '../../shared/mocks.dart';
+import '../../shared/test_constants.dart';
+import '../../shared/test_setup.dart';
 
 void main() {
   late PlaybackManager manager;
@@ -12,6 +13,8 @@ void main() {
   late VideoPlayerValue currentValue;
   late int? playerId;
   late bool ensureInitializedCalled;
+
+  setUpAll(registerVideoPlayerFallbackValues);
 
   setUp(() {
     mockPlatform = MockProVideoPlayerPlatform();
@@ -74,7 +77,7 @@ void main() {
         expect(manager.isStartingPlayback, isTrue);
 
         // Wait for timeout
-        await Future<void>.delayed(const Duration(milliseconds: 2100));
+        await Future<void>.delayed(TestDelays.playbackManagerTimer);
 
         expect(manager.isStartingPlayback, isFalse);
       });
@@ -140,7 +143,7 @@ void main() {
     group('seekForward', () {
       test('seeks forward by duration', () async {
         when(() => mockPlatform.seekTo(any(), any())).thenAnswer((_) async {});
-        currentValue = const VideoPlayerValue(position: Duration(seconds: 10), duration: Duration(minutes: 5));
+        currentValue = const VideoPlayerValue(position: Duration(seconds: 10), duration: TestMetadata.duration);
 
         await manager.seekForward(const Duration(seconds: 5));
 
@@ -149,11 +152,11 @@ void main() {
 
       test('clamps to duration', () async {
         when(() => mockPlatform.seekTo(any(), any())).thenAnswer((_) async {});
-        currentValue = const VideoPlayerValue(position: Duration(seconds: 290), duration: Duration(minutes: 5));
+        currentValue = const VideoPlayerValue(position: Duration(seconds: 290), duration: TestMetadata.duration);
 
         await manager.seekForward(const Duration(seconds: 20));
 
-        verify(() => mockPlatform.seekTo(1, const Duration(minutes: 5))).called(1);
+        verify(() => mockPlatform.seekTo(1, TestMetadata.duration)).called(1);
       });
     });
 

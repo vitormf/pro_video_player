@@ -3,15 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pro_video_player/src/controls/buttons/chapters_button.dart';
 import 'package:pro_video_player/src/video_player_theme.dart';
 
+import '../../../shared/test_helpers.dart';
+
 void main() {
   group('ChaptersButton', () {
     testWidgets('displays icon only when no chapter title', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ChaptersButton(theme: VideoPlayerTheme.light(), currentChapterTitle: null, onPressed: () {}),
-          ),
-        ),
+        buildTestWidget(ChaptersButton(theme: VideoPlayerTheme.light(), currentChapterTitle: null, onPressed: () {})),
       );
 
       expect(find.byIcon(Icons.list), findsOneWidget);
@@ -22,14 +20,8 @@ void main() {
 
     testWidgets('displays icon and chapter title when available', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ChaptersButton(
-              theme: VideoPlayerTheme.light(),
-              currentChapterTitle: 'Introduction',
-              onPressed: () {},
-            ),
-          ),
+        buildTestWidget(
+          ChaptersButton(theme: VideoPlayerTheme.light(), currentChapterTitle: 'Introduction', onPressed: () {}),
         ),
       );
 
@@ -41,11 +33,7 @@ void main() {
       final customTheme = VideoPlayerTheme.light().copyWith(primaryColor: Colors.purple);
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ChaptersButton(theme: customTheme, currentChapterTitle: 'Chapter 1', onPressed: () {}),
-          ),
-        ),
+        buildTestWidget(ChaptersButton(theme: customTheme, currentChapterTitle: 'Chapter 1', onPressed: () {})),
       );
 
       final textButton = tester.widget<TextButton>(find.byType(TextButton));
@@ -62,11 +50,7 @@ void main() {
 
     testWidgets('uses correct icon size', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ChaptersButton(theme: VideoPlayerTheme.light(), currentChapterTitle: null, onPressed: () {}),
-          ),
-        ),
+        buildTestWidget(ChaptersButton(theme: VideoPlayerTheme.light(), currentChapterTitle: null, onPressed: () {})),
       );
 
       final textButton = tester.widget<TextButton>(find.byType(TextButton));
@@ -80,14 +64,8 @@ void main() {
       var pressed = false;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ChaptersButton(
-              theme: VideoPlayerTheme.light(),
-              currentChapterTitle: 'Test',
-              onPressed: () => pressed = true,
-            ),
-          ),
+        buildTestWidget(
+          ChaptersButton(theme: VideoPlayerTheme.light(), currentChapterTitle: 'Test', onPressed: () => pressed = true),
         ),
       );
 
@@ -99,11 +77,7 @@ void main() {
 
     testWidgets('has Chapters tooltip', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ChaptersButton(theme: VideoPlayerTheme.light(), currentChapterTitle: null, onPressed: () {}),
-          ),
-        ),
+        buildTestWidget(ChaptersButton(theme: VideoPlayerTheme.light(), currentChapterTitle: null, onPressed: () {})),
       );
 
       expect(find.byType(Tooltip), findsOneWidget);
@@ -113,13 +87,11 @@ void main() {
 
     testWidgets('truncates long chapter titles', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: ChaptersButton(
-              theme: VideoPlayerTheme.light(),
-              currentChapterTitle: 'This is a very long chapter title that should be truncated',
-              onPressed: () {},
-            ),
+        buildTestWidget(
+          ChaptersButton(
+            theme: VideoPlayerTheme.light(),
+            currentChapterTitle: 'This is a very long chapter title that should be truncated',
+            onPressed: () {},
           ),
         ),
       );

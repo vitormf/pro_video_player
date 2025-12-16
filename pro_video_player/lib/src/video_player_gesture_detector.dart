@@ -4,7 +4,9 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
+import 'controls/seek_preview.dart';
 import 'controls/seek_preview_progress_bar.dart';
+import 'controls/widgets/value_indicator_overlay.dart';
 import 'pro_video_player_controller.dart';
 import 'video_player_theme.dart';
 
@@ -763,152 +765,43 @@ class _VideoPlayerGestureDetectorState extends State<VideoPlayerGestureDetector>
   }
 
   Widget _buildSeekPreview(VideoPlayerTheme theme) {
-    final difference = _seekTargetPosition! - _dragStartPlaybackPosition!;
-    final isForward = difference.inMilliseconds >= 0;
-    final absDifference = Duration(milliseconds: difference.inMilliseconds.abs());
     final value = widget.controller.value;
+    final dragProgress = _seekTargetPosition!.inMilliseconds / value.duration.inMilliseconds;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            formatVideoDuration(_seekTargetPosition!),
-            style: TextStyle(
-              color: theme.primaryColor,
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              shadows: [Shadow(color: Colors.black.withValues(alpha: 0.8), blurRadius: 8)],
-            ),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                isForward ? Icons.fast_forward : Icons.fast_rewind,
-                color: theme.secondaryColor,
-                size: 18,
-                shadows: [Shadow(color: Colors.black.withValues(alpha: 0.8), blurRadius: 8)],
-              ),
-              const SizedBox(width: 6),
-              Text(
-                '${isForward ? '+' : '-'}${formatVideoDuration(absDifference)}',
-                style: TextStyle(
-                  color: theme.secondaryColor,
-                  fontSize: 16,
-                  shadows: [Shadow(color: Colors.black.withValues(alpha: 0.8), blurRadius: 8)],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Mini progress bar showing position, buffered, and seek target
-          SeekPreviewProgressBar(
-            currentPosition: _dragStartPlaybackPosition!,
-            seekTargetPosition: _seekTargetPosition!,
-            duration: value.duration,
-            bufferedPosition: value.bufferedPosition,
-            chapters: value.chapters,
-            theme: theme,
-          ),
-        ],
-      ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SeekPreview(
+          dragProgress: dragProgress,
+          dragStartPosition: _dragStartPlaybackPosition!,
+          duration: value.duration,
+          theme: theme,
+        ),
+        const SizedBox(height: 16),
+        // Mini progress bar showing position, buffered, and seek target
+        SeekPreviewProgressBar(
+          currentPosition: _dragStartPlaybackPosition!,
+          seekTargetPosition: _seekTargetPosition!,
+          duration: value.duration,
+          bufferedPosition: value.bufferedPosition,
+          chapters: value.chapters,
+          theme: theme,
+        ),
+      ],
     );
   }
 
-  Widget _buildVolumeOverlay(VideoPlayerTheme theme) => Column(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Icon(
-        _currentVolume! > 0.5 ? Icons.volume_up : (_currentVolume! > 0 ? Icons.volume_down : Icons.volume_off),
-        size: theme.seekIconSize,
-        color: theme.primaryColor,
-        shadows: [Shadow(color: Colors.black.withValues(alpha: 0.8), blurRadius: 8)],
-      ),
-      const SizedBox(height: 12),
-      Container(
-        width: 40,
-        height: 160,
-        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(20)),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: Stack(
-            alignment: Alignment.bottomCenter,
-            children: [
-              Container(
-                height: 160 * _currentVolume!,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [theme.primaryColor, theme.primaryColor.withValues(alpha: 0.7)],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      const SizedBox(height: 8),
-      Text(
-        '${(_currentVolume! * 100).round()}%',
-        style: TextStyle(
-          color: theme.primaryColor,
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          shadows: [Shadow(color: Colors.black.withValues(alpha: 0.8), blurRadius: 8)],
-        ),
-      ),
-    ],
-  );
+  Widget _buildVolumeOverlay(VideoPlayerTheme theme) {
+    final volumeIcon = _currentVolume! > 0.5
+        ? Icons.volume_up
+        : (_currentVolume! > 0 ? Icons.volume_down : Icons.volume_off);
+    return ValueIndicatorOverlay(value: _currentVolume!, icon: volumeIcon, theme: theme);
+  }
 
-  Widget _buildBrightnessOverlay(VideoPlayerTheme theme) => Column(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Icon(
-        _currentBrightness! > 0.5 ? Icons.brightness_high : Icons.brightness_low,
-        size: theme.seekIconSize,
-        color: theme.primaryColor,
-        shadows: [Shadow(color: Colors.black.withValues(alpha: 0.8), blurRadius: 8)],
-      ),
-      const SizedBox(height: 12),
-      Container(
-        width: 40,
-        height: 160,
-        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(20)),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: Stack(
-            alignment: Alignment.bottomCenter,
-            children: [
-              Container(
-                height: 160 * _currentBrightness!,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [theme.primaryColor, theme.primaryColor.withValues(alpha: 0.7)],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      const SizedBox(height: 8),
-      Text(
-        '${(_currentBrightness! * 100).round()}%',
-        style: TextStyle(
-          color: theme.primaryColor,
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          shadows: [Shadow(color: Colors.black.withValues(alpha: 0.8), blurRadius: 8)],
-        ),
-      ),
-    ],
-  );
+  Widget _buildBrightnessOverlay(VideoPlayerTheme theme) {
+    final brightnessIcon = _currentBrightness! > 0.5 ? Icons.brightness_high : Icons.brightness_low;
+    return ValueIndicatorOverlay(value: _currentBrightness!, icon: brightnessIcon, theme: theme);
+  }
 
   Widget _buildPlaybackSpeedOverlay(VideoPlayerTheme theme) => Column(
     mainAxisSize: MainAxisSize.min,

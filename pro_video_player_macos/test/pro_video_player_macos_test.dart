@@ -17,7 +17,7 @@ void main() {
 
       // Mock method channel
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-        const MethodChannel('com.example.pro_video_player_macos/methods'),
+        const MethodChannel('dev.pro_video_player.macos/methods'),
         (methodCall) async {
           log.add(methodCall);
           switch (methodCall.method) {
@@ -90,7 +90,7 @@ void main() {
     });
 
     test('setLooping calls native setLooping', () async {
-      await platform.setLooping(1, looping: true);
+      await platform.setLooping(1, true);
       expect(log.last.method, 'setLooping');
       expect(log.last.arguments, {'playerId': 1, 'looping': true});
     });
@@ -137,7 +137,7 @@ void main() {
 
     testWidgets('buildView passes playerId and controlsMode', (tester) async {
       final view = platform.buildView(1, controlsMode: ControlsMode.native) as AppKitView;
-      expect(view.viewType, 'com.example.pro_video_player_macos/video_view');
+      expect(view.viewType, 'dev.pro_video_player.macos/video_view');
       expect(view.creationParams, {'playerId': 1, 'controlsMode': 'native'});
     });
 

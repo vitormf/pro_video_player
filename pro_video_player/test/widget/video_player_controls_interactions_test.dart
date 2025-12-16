@@ -8,6 +8,9 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
+import '../shared/test_constants.dart';
+import '../shared/test_helpers.dart';
+
 class MockProVideoPlayerPlatform extends Mock with MockPlatformInterfaceMixin implements ProVideoPlayerPlatform {}
 
 void main() {
@@ -62,8 +65,6 @@ void main() {
     await eventController.close();
     ProVideoPlayerPlatform.instance = MockProVideoPlayerPlatform();
   });
-
-  Widget buildTestWidget(Widget child) => MaterialApp(home: Scaffold(body: child));
 
   group('VideoPlayerControls', () {
     group('playlist controls', () {
@@ -140,7 +141,7 @@ void main() {
           when(() => mockPlatform.startCasting(any(), device: any(named: 'device'))).thenAnswer((_) async => true);
 
           final controller = ProVideoPlayerController();
-          await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+          await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
           await tester.pump();
 
           await tester.pumpWidget(
@@ -158,7 +159,7 @@ void main() {
         when(() => mockPlatform.isCastingSupported()).thenAnswer((_) async => false);
 
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
         await tester.pump();
 
         await tester.pumpWidget(
@@ -179,7 +180,7 @@ void main() {
           when(() => mockPlatform.isCastingSupported()).thenAnswer((_) async => true);
 
           final controller = ProVideoPlayerController();
-          await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+          await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
           // Simulate casting connected event
           eventController.add(
@@ -212,7 +213,7 @@ void main() {
           when(() => mockPlatform.startCasting(any(), device: any(named: 'device'))).thenAnswer((_) async => true);
 
           final controller = ProVideoPlayerController();
-          await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+          await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
           await tester.pump();
 
           await tester.pumpWidget(
@@ -237,7 +238,7 @@ void main() {
           when(() => mockPlatform.stopCasting(any())).thenAnswer((_) async => true);
 
           final controller = ProVideoPlayerController();
-          await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+          await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
           // Set casting to connected
           eventController.add(
@@ -266,7 +267,7 @@ void main() {
     group('subtitle overlay', () {
       testWidgets('renders SubtitleOverlay in controls stack', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(VideoPlayerControls(controller: controller, enableGestures: false, forceMobileLayout: true)),
@@ -278,7 +279,7 @@ void main() {
 
       testWidgets('SubtitleOverlay shows external subtitle cue text', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         // Select an external subtitle track with cues
         const externalTrack = ExternalSubtitleTrack(
@@ -307,7 +308,7 @@ void main() {
 
       testWidgets('SubtitleOverlay does not show text for embedded subtitle track', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         // Select an embedded subtitle track (no ext- prefix)
         const embeddedTrack = SubtitleTrack(id: '0:1', label: 'English', language: 'en');
@@ -327,7 +328,7 @@ void main() {
 
       testWidgets('SubtitleOverlay updates when position changes', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         const externalTrack = ExternalSubtitleTrack(
           id: 'ext-0',
@@ -364,7 +365,7 @@ void main() {
 
       testWidgets('SubtitleOverlay shows nothing when no cue is active', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         const externalTrack = ExternalSubtitleTrack(
           id: 'ext-0',
@@ -421,7 +422,7 @@ void main() {
     group('gesture integration', () {
       testWidgets('uses VideoPlayerGestureDetector when gestures enabled', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(
@@ -438,7 +439,7 @@ void main() {
 
       testWidgets('does not use VideoPlayerGestureDetector when gestures disabled', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(
@@ -457,7 +458,7 @@ void main() {
     group('tooltips', () {
       testWidgets('fullscreen button has tooltip', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(VideoPlayerControls(controller: controller, enableGestures: false, forceMobileLayout: true)),
@@ -475,7 +476,7 @@ void main() {
 
       testWidgets('pip button has tooltip', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(
@@ -498,7 +499,7 @@ void main() {
 
       testWidgets('subtitle button has tooltip', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         eventController.add(
           const SubtitleTracksChangedEvent([SubtitleTrack(id: '1', label: 'English', language: 'en')]),
@@ -520,7 +521,7 @@ void main() {
 
       testWidgets('speed button has tooltip', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(VideoPlayerControls(controller: controller, enableGestures: false, forceMobileLayout: true)),
@@ -540,7 +541,7 @@ void main() {
 
       testWidgets('scaling mode button has tooltip', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(VideoPlayerControls(controller: controller, enableGestures: false, forceMobileLayout: true)),
@@ -557,7 +558,7 @@ void main() {
 
       testWidgets('audio track button has tooltip', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         eventController.add(
           const AudioTracksChangedEvent([
@@ -582,7 +583,7 @@ void main() {
     group('orientation lock', () {
       testWidgets('orientation lock button not visible when not in fullscreen', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(VideoPlayerControls(controller: controller, enableGestures: false, forceMobileLayout: true)),
@@ -596,7 +597,7 @@ void main() {
 
       testWidgets('orientation lock button visible in fullscreen mode', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         // Simulate fullscreen state
         eventController.add(const FullscreenStateChangedEvent(isFullscreen: true));
@@ -618,7 +619,7 @@ void main() {
 
       testWidgets('orientation lock button has tooltip', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         // Simulate fullscreen state
         eventController.add(const FullscreenStateChangedEvent(isFullscreen: true));
@@ -645,7 +646,7 @@ void main() {
     group('mouse hover on desktop', () {
       testWidgets('wraps controls with MouseRegion on web', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(
@@ -676,7 +677,7 @@ void main() {
         (tester) async {
           var exitFullscreenCalled = false;
           final controller = ProVideoPlayerController();
-          await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+          await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
           // Simulate fullscreen state
           eventController.add(const FullscreenStateChangedEvent(isFullscreen: true));
@@ -722,7 +723,7 @@ void main() {
         (tester) async {
           var enterFullscreenCalled = false;
           final controller = ProVideoPlayerController();
-          await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+          await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
           await tester.pumpWidget(
             buildTestWidget(

@@ -3,21 +3,23 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 
-import '../test_helpers.dart';
+import '../shared/test_constants.dart';
+import '../shared/test_matchers.dart';
+import '../shared/test_setup.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  late ControllerTestFixture fixture;
+  late VideoPlayerTestFixture fixture;
 
-  setUpAll(registerFallbackValues);
+  setUpAll(registerVideoPlayerFallbackValues);
 
   setUp(() {
-    fixture = ControllerTestFixture();
+    fixture = VideoPlayerTestFixture()..setUp();
   });
 
   tearDown(() async {
-    await fixture.dispose();
+    await fixture.tearDown();
   });
 
   group('ProVideoPlayerController fullscreen', () {
@@ -35,7 +37,7 @@ void main() {
         (methodCall) async => null,
       );
 
-      await fixture.controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await fixture.controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
     });
 
     test('enterFullscreen calls platform and updates value', () async {
@@ -44,7 +46,7 @@ void main() {
       final result = await fixture.controller.enterFullscreen();
 
       expect(result, isTrue);
-      expect(fixture.controller.value.isFullscreen, isTrue);
+      expect(fixture.controller, isInFullscreen);
       verify(() => fixture.mockPlatform.enterFullscreen(1)).called(1);
     });
 
@@ -53,7 +55,7 @@ void main() {
 
       await fixture.controller.enterFullscreen(orientation: FullscreenOrientation.portraitBoth);
 
-      expect(fixture.controller.value.isFullscreen, isTrue);
+      expect(fixture.controller, isInFullscreen);
       verify(() => fixture.mockPlatform.enterFullscreen(1)).called(1);
     });
 
@@ -74,12 +76,12 @@ void main() {
 
       // Enter fullscreen first
       await fixture.controller.enterFullscreen();
-      expect(fixture.controller.value.isFullscreen, isTrue);
+      expect(fixture.controller, isInFullscreen);
 
       // Exit fullscreen
       await fixture.controller.exitFullscreen();
 
-      expect(fixture.controller.value.isFullscreen, isFalse);
+      expect(fixture.controller, isNotInFullscreen);
       verify(() => fixture.mockPlatform.exitFullscreen(1)).called(1);
     });
 
@@ -88,7 +90,7 @@ void main() {
 
       await fixture.controller.toggleFullscreen();
 
-      expect(fixture.controller.value.isFullscreen, isTrue);
+      expect(fixture.controller, isInFullscreen);
       verify(() => fixture.mockPlatform.enterFullscreen(1)).called(1);
     });
 
@@ -102,7 +104,7 @@ void main() {
       // Toggle should exit
       await fixture.controller.toggleFullscreen();
 
-      expect(fixture.controller.value.isFullscreen, isFalse);
+      expect(fixture.controller, isNotInFullscreen);
       verify(() => fixture.mockPlatform.exitFullscreen(1)).called(1);
     });
 
@@ -119,15 +121,15 @@ void main() {
     });
 
     test('updates value on FullscreenStateChangedEvent', () async {
-      fixture.eventController.add(const FullscreenStateChangedEvent(isFullscreen: true));
-      await Future<void>.delayed(Duration.zero);
+      fixture.emitEvent(const FullscreenStateChangedEvent(isFullscreen: true));
+      await fixture.waitForEvents();
 
-      expect(fixture.controller.value.isFullscreen, isTrue);
+      expect(fixture.controller, isInFullscreen);
 
-      fixture.eventController.add(const FullscreenStateChangedEvent(isFullscreen: false));
-      await Future<void>.delayed(Duration.zero);
+      fixture.emitEvent(const FullscreenStateChangedEvent(isFullscreen: false));
+      await fixture.waitForEvents();
 
-      expect(fixture.controller.value.isFullscreen, isFalse);
+      expect(fixture.controller, isNotInFullscreen);
     });
   });
 }

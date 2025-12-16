@@ -8,6 +8,9 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
+import '../../../shared/test_constants.dart';
+import '../../../shared/test_helpers.dart';
+
 class MockProVideoPlayerPlatform extends Mock with MockPlatformInterfaceMixin implements ProVideoPlayerPlatform {}
 
 class MockVideoControlsController extends Mock implements VideoControlsController {}
@@ -74,7 +77,7 @@ void main() {
   });
 
   tearDown(() async {
-    testFocusNode.dispose();
+    // Note: testFocusNode will be disposed when tests dispose their controllers
     await eventController.close();
     ProVideoPlayerPlatform.instance = MockProVideoPlayerPlatform();
   });
@@ -82,61 +85,64 @@ void main() {
   group('DesktopControlsWrapper', () {
     testWidgets('single tap plays when paused', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       // Set paused state
       eventController.add(const PlaybackStateChangedEvent(PlaybackState.paused));
-      await tester.pump(const Duration(milliseconds: 50));
+      await tester.pump(TestDelays.eventPropagation);
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: DesktopControlsWrapper(
-              controller: controller,
-              controlsController: mockControlsController,
-              theme: const VideoPlayerTheme(),
-              showFullscreenButton: true,
-              onEnterFullscreen: () {},
-              onExitFullscreen: () {},
-              child: const Center(child: Text('Video')),
-            ),
+        buildTestWidget(
+          DesktopControlsWrapper(
+            controller: controller,
+            controlsController: mockControlsController,
+            theme: const VideoPlayerTheme(),
+            showFullscreenButton: true,
+            onEnterFullscreen: () {},
+            onExitFullscreen: () {},
+            child: const Center(child: Text('Video')),
           ),
         ),
       );
 
-      // Tap the wrapper
-      await tester.tap(find.byType(DesktopControlsWrapper));
+      // Tap the wrapper (tap on the visible content)
+      await tester.tap(find.text('Video'));
+      // Wait for double-tap timeout (GestureDetector with both onTap and onDoubleTap waits ~300ms)
+      await tester.pump(const Duration(milliseconds: 350));
       await tester.pump();
 
       verify(() => mockPlatform.play(1)).called(1);
+
+      // Wait for PlaybackManager's _startingPlaybackTimeout timer to expire
+      await tester.pump(TestDelays.playbackManagerTimer);
     });
 
     testWidgets('single tap pauses when playing', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       // Set playing state
       eventController.add(const PlaybackStateChangedEvent(PlaybackState.playing));
-      await tester.pump(const Duration(milliseconds: 50));
+      await tester.pump(TestDelays.eventPropagation);
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: DesktopControlsWrapper(
-              controller: controller,
-              controlsController: mockControlsController,
-              theme: const VideoPlayerTheme(),
-              showFullscreenButton: true,
-              onEnterFullscreen: () {},
-              onExitFullscreen: () {},
-              child: const Center(child: Text('Video')),
-            ),
+        buildTestWidget(
+          DesktopControlsWrapper(
+            controller: controller,
+            controlsController: mockControlsController,
+            theme: const VideoPlayerTheme(),
+            showFullscreenButton: true,
+            onEnterFullscreen: () {},
+            onExitFullscreen: () {},
+            child: const Center(child: Text('Video')),
           ),
         ),
       );
 
-      // Tap the wrapper
-      await tester.tap(find.byType(DesktopControlsWrapper));
+      // Tap the wrapper (tap on the visible content)
+      await tester.tap(find.text('Video'));
+      // Wait for double-tap timeout (GestureDetector with both onTap and onDoubleTap waits ~300ms)
+      await tester.pump(const Duration(milliseconds: 350));
       await tester.pump();
 
       verify(() => mockPlatform.pause(1)).called(1);
@@ -144,29 +150,27 @@ void main() {
 
     testWidgets('double tap enters fullscreen when not fullscreen', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       var fullscreenEntered = false;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: DesktopControlsWrapper(
-              controller: controller,
-              controlsController: mockControlsController,
-              theme: const VideoPlayerTheme(),
-              showFullscreenButton: true,
-              onEnterFullscreen: () => fullscreenEntered = true,
-              onExitFullscreen: () {},
-              child: const Center(child: Text('Video')),
-            ),
+        buildTestWidget(
+          DesktopControlsWrapper(
+            controller: controller,
+            controlsController: mockControlsController,
+            theme: const VideoPlayerTheme(),
+            showFullscreenButton: true,
+            onEnterFullscreen: () => fullscreenEntered = true,
+            onExitFullscreen: () {},
+            child: const Center(child: Text('Video')),
           ),
         ),
       );
 
       // Double tap the wrapper
       await tester.tap(find.byType(DesktopControlsWrapper));
-      await tester.pump(const Duration(milliseconds: 50));
+      await tester.pump(TestDelays.eventPropagation);
       await tester.tap(find.byType(DesktopControlsWrapper));
       await tester.pumpAndSettle();
 
@@ -175,33 +179,31 @@ void main() {
 
     testWidgets('double tap exits fullscreen when fullscreen', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       // Set fullscreen state
       eventController.add(const FullscreenStateChangedEvent(isFullscreen: true));
-      await tester.pump(const Duration(milliseconds: 50));
+      await tester.pump(TestDelays.eventPropagation);
 
       var fullscreenExited = false;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: DesktopControlsWrapper(
-              controller: controller,
-              controlsController: mockControlsController,
-              theme: const VideoPlayerTheme(),
-              showFullscreenButton: true,
-              onEnterFullscreen: () {},
-              onExitFullscreen: () => fullscreenExited = true,
-              child: const Center(child: Text('Video')),
-            ),
+        buildTestWidget(
+          DesktopControlsWrapper(
+            controller: controller,
+            controlsController: mockControlsController,
+            theme: const VideoPlayerTheme(),
+            showFullscreenButton: true,
+            onEnterFullscreen: () {},
+            onExitFullscreen: () => fullscreenExited = true,
+            child: const Center(child: Text('Video')),
           ),
         ),
       );
 
       // Double tap the wrapper
       await tester.tap(find.byType(DesktopControlsWrapper));
-      await tester.pump(const Duration(milliseconds: 50));
+      await tester.pump(TestDelays.eventPropagation);
       await tester.tap(find.byType(DesktopControlsWrapper));
       await tester.pumpAndSettle();
 
@@ -210,29 +212,27 @@ void main() {
 
     testWidgets('double tap does nothing when fullscreen button hidden', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       var fullscreenEntered = false;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: DesktopControlsWrapper(
-              controller: controller,
-              controlsController: mockControlsController,
-              theme: const VideoPlayerTheme(),
-              showFullscreenButton: false,
-              onEnterFullscreen: () => fullscreenEntered = true,
-              onExitFullscreen: () {},
-              child: const Center(child: Text('Video')),
-            ),
+        buildTestWidget(
+          DesktopControlsWrapper(
+            controller: controller,
+            controlsController: mockControlsController,
+            theme: const VideoPlayerTheme(),
+            showFullscreenButton: false,
+            onEnterFullscreen: () => fullscreenEntered = true,
+            onExitFullscreen: () {},
+            child: const Center(child: Text('Video')),
           ),
         ),
       );
 
       // Double tap the wrapper
       await tester.tap(find.byType(DesktopControlsWrapper));
-      await tester.pump(const Duration(milliseconds: 50));
+      await tester.pump(TestDelays.eventPropagation);
       await tester.tap(find.byType(DesktopControlsWrapper));
       await tester.pumpAndSettle();
 
@@ -241,20 +241,18 @@ void main() {
 
     testWidgets('mouse hover triggers onMouseHover', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: DesktopControlsWrapper(
-              controller: controller,
-              controlsController: mockControlsController,
-              theme: const VideoPlayerTheme(),
-              showFullscreenButton: true,
-              onEnterFullscreen: () {},
-              onExitFullscreen: () {},
-              child: const Center(child: Text('Video')),
-            ),
+        buildTestWidget(
+          DesktopControlsWrapper(
+            controller: controller,
+            controlsController: mockControlsController,
+            theme: const VideoPlayerTheme(),
+            showFullscreenButton: true,
+            onEnterFullscreen: () {},
+            onExitFullscreen: () {},
+            child: const Center(child: Text('Video')),
           ),
         ),
       );
@@ -273,20 +271,18 @@ void main() {
 
     testWidgets('renders child widget', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: DesktopControlsWrapper(
-              controller: controller,
-              controlsController: mockControlsController,
-              theme: const VideoPlayerTheme(),
-              showFullscreenButton: true,
-              onEnterFullscreen: () {},
-              onExitFullscreen: () {},
-              child: const Center(child: Text('Test Child')),
-            ),
+        buildTestWidget(
+          DesktopControlsWrapper(
+            controller: controller,
+            controlsController: mockControlsController,
+            theme: const VideoPlayerTheme(),
+            showFullscreenButton: true,
+            onEnterFullscreen: () {},
+            onExitFullscreen: () {},
+            child: const Center(child: Text('Test Child')),
           ),
         ),
       );
@@ -296,7 +292,7 @@ void main() {
 
     testWidgets('shows keyboard overlay when type is set', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       // Mock keyboard overlay state
       final mockState = VideoControlsState()
@@ -304,40 +300,39 @@ void main() {
       when(() => mockControlsController.controlsState).thenReturn(mockState);
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: DesktopControlsWrapper(
-              controller: controller,
-              controlsController: mockControlsController,
-              theme: const VideoPlayerTheme(),
-              showFullscreenButton: true,
-              onEnterFullscreen: () {},
-              onExitFullscreen: () {},
-              child: const Center(child: Text('Video')),
-            ),
+        buildTestWidget(
+          DesktopControlsWrapper(
+            controller: controller,
+            controlsController: mockControlsController,
+            theme: const VideoPlayerTheme(),
+            showFullscreenButton: true,
+            onEnterFullscreen: () {},
+            onExitFullscreen: () {},
+            child: const Center(child: Text('Video')),
           ),
         ),
       );
 
       expect(find.byType(KeyboardOverlay), findsOneWidget);
+
+      // Wait for keyboard overlay hide timer to expire (1000ms)
+      await tester.pump(const Duration(milliseconds: 1000));
     });
 
     testWidgets('does not show keyboard overlay when type is null', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: DesktopControlsWrapper(
-              controller: controller,
-              controlsController: mockControlsController,
-              theme: const VideoPlayerTheme(),
-              showFullscreenButton: true,
-              onEnterFullscreen: () {},
-              onExitFullscreen: () {},
-              child: const Center(child: Text('Video')),
-            ),
+        buildTestWidget(
+          DesktopControlsWrapper(
+            controller: controller,
+            controlsController: mockControlsController,
+            theme: const VideoPlayerTheme(),
+            showFullscreenButton: true,
+            onEnterFullscreen: () {},
+            onExitFullscreen: () {},
+            child: const Center(child: Text('Video')),
           ),
         ),
       );
@@ -347,26 +342,24 @@ void main() {
 
     testWidgets('focus node is set to autofocus', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: DesktopControlsWrapper(
-              controller: controller,
-              controlsController: mockControlsController,
-              theme: const VideoPlayerTheme(),
-              showFullscreenButton: true,
-              onEnterFullscreen: () {},
-              onExitFullscreen: () {},
-              child: const Center(child: Text('Video')),
-            ),
+        buildTestWidget(
+          DesktopControlsWrapper(
+            controller: controller,
+            controlsController: mockControlsController,
+            theme: const VideoPlayerTheme(),
+            showFullscreenButton: true,
+            onEnterFullscreen: () {},
+            onExitFullscreen: () {},
+            child: const Center(child: Text('Video')),
           ),
         ),
       );
 
-      // Verify Focus widget exists
-      expect(find.byType(Focus), findsOneWidget);
+      // Verify Focus widget exists (MaterialApp creates multiple, so check for at least one)
+      expect(find.byType(Focus), findsWidgets);
     });
   });
 }

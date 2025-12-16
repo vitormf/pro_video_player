@@ -3,26 +3,28 @@ import 'package:mocktail/mocktail.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
-import '../test_helpers.dart';
+import '../shared/test_constants.dart';
+import '../shared/test_matchers.dart';
+import '../shared/test_setup.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  late ControllerTestFixture fixture;
+  late VideoPlayerTestFixture fixture;
 
-  setUpAll(registerFallbackValues);
+  setUpAll(registerVideoPlayerFallbackValues);
 
   setUp(() {
-    fixture = ControllerTestFixture();
+    fixture = VideoPlayerTestFixture()..setUp();
   });
 
   tearDown(() async {
-    await fixture.dispose();
+    await fixture.tearDown();
   });
 
   group('ProVideoPlayerController initialization', () {
     test('initial value has uninitialized state', () {
-      expect(fixture.controller.value.playbackState, PlaybackState.uninitialized);
+      expect(fixture.controller, isUninitialized);
       expect(fixture.controller.isInitialized, isFalse);
       expect(fixture.controller.playerId, isNull);
     });
@@ -35,11 +37,11 @@ void main() {
         ),
       ).thenAnswer((_) async => 1);
 
-      await fixture.controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await fixture.controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       expect(fixture.controller.playerId, equals(1));
       expect(fixture.controller.isInitialized, isTrue);
-      expect(fixture.controller.value.playbackState, PlaybackState.ready);
+      expect(fixture.controller, isReady);
     });
 
     test('initialize with autoPlay calls play', () async {
@@ -52,7 +54,7 @@ void main() {
       when(() => fixture.mockPlatform.play(any())).thenAnswer((_) async {});
 
       await fixture.controller.initialize(
-        source: const VideoSource.network('https://example.com/video.mp4'),
+        source: const VideoSource.network(TestMedia.networkUrl),
         options: const VideoPlayerOptions(autoPlay: true),
       );
 
@@ -67,7 +69,7 @@ void main() {
         ),
       ).thenAnswer((_) async => 1);
 
-      await fixture.controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await fixture.controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       expect(
         () => fixture.controller.initialize(source: const VideoSource.network('https://example.com/other.mp4')),
@@ -80,7 +82,7 @@ void main() {
       await fixture.controller.dispose();
 
       expect(
-        () => fixture.controller.initialize(source: const VideoSource.network('https://example.com/video.mp4')),
+        () => fixture.controller.initialize(source: const VideoSource.network(TestMedia.networkUrl)),
         throwsA(isA<StateError>()),
       );
     });
@@ -92,7 +94,7 @@ void main() {
       expect(() => fixture.controller.seekTo(Duration.zero), throwsA(isA<StateError>()));
       expect(() => fixture.controller.setPlaybackSpeed(1), throwsA(isA<StateError>()));
       expect(() => fixture.controller.setVolume(1), throwsA(isA<StateError>()));
-      expect(() => fixture.controller.setLooping(looping: true), throwsA(isA<StateError>()));
+      expect(() => fixture.controller.setLooping(true), throwsA(isA<StateError>()));
       expect(() => fixture.controller.setSubtitleTrack(null), throwsA(isA<StateError>()));
       expect(() => fixture.controller.setAudioTrack(null), throwsA(isA<StateError>()));
       expect(() => fixture.controller.enterPip(), throwsA(isA<StateError>()));
@@ -108,11 +110,11 @@ void main() {
       ).thenThrow(Exception('Failed to create player'));
 
       await expectLater(
-        fixture.controller.initialize(source: const VideoSource.network('https://example.com/video.mp4')),
+        fixture.controller.initialize(source: const VideoSource.network(TestMedia.networkUrl)),
         throwsA(isA<Exception>()),
       );
 
-      expect(fixture.controller.value.playbackState, PlaybackState.error);
+      expect(fixture.controller, hasError);
       expect(fixture.controller.value.errorMessage, isNotNull);
     });
   });
@@ -127,11 +129,11 @@ void main() {
       ).thenAnswer((_) async => 1);
       when(() => fixture.mockPlatform.dispose(any())).thenAnswer((_) async {});
 
-      await fixture.controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await fixture.controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
       await fixture.controller.dispose();
 
       verify(() => fixture.mockPlatform.dispose(1)).called(1);
-      expect(fixture.controller.isDisposed, isTrue);
+      expect(fixture.controller, isDisposed);
       expect(fixture.controller.value.playbackState, PlaybackState.disposed);
     });
 
@@ -144,7 +146,7 @@ void main() {
       ).thenAnswer((_) async => 1);
       when(() => fixture.mockPlatform.dispose(any())).thenAnswer((_) async {});
 
-      await fixture.controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await fixture.controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
       await fixture.controller.dispose();
 
       expect(() => fixture.controller.play(), throwsA(isA<StateError>()));
@@ -176,7 +178,7 @@ void main() {
       const customOptions = VideoPlayerOptions(autoPlay: true, looping: true, volume: 0.5);
 
       await fixture.controller.initialize(
-        source: const VideoSource.network('https://example.com/video.mp4'),
+        source: const VideoSource.network(TestMedia.networkUrl),
         options: customOptions,
       );
 

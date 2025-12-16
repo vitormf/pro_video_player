@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 
+import '../../shared/test_constants.dart';
+import '../../shared/test_helpers.dart';
 import '../../shared/test_setup.dart';
 
 void main() {
@@ -20,16 +22,14 @@ void main() {
     await fixture.tearDown();
   });
 
-  Widget buildTestWidget(Widget child) => MaterialApp(home: Scaffold(body: child));
-
   group('ProgressBar', () {
     group('basic rendering', () {
       testWidgets('renders progress bar with correct structure', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         fixture
-          ..emitDuration(const Duration(minutes: 5))
+          ..emitDuration(TestMetadata.duration)
           ..emitPosition(const Duration(minutes: 2));
         await tester.pump();
 
@@ -43,7 +43,7 @@ void main() {
 
       testWidgets('handles zero duration gracefully', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         fixture.emitDuration(Duration.zero);
         await tester.pump();
@@ -57,10 +57,10 @@ void main() {
 
       testWidgets('renders position indicator circle', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         fixture
-          ..emitDuration(const Duration(minutes: 5))
+          ..emitDuration(TestMetadata.duration)
           ..emitPosition(const Duration(minutes: 2));
         await tester.pump();
 
@@ -81,7 +81,7 @@ void main() {
     group('tap to seek', () {
       testWidgets('seeks when tapped', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         fixture
           ..emitDuration(const Duration(seconds: 100))
@@ -110,7 +110,7 @@ void main() {
 
       testWidgets('does not seek when duration is zero', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         fixture.emitDuration(Duration.zero);
         await tester.pump();
@@ -132,7 +132,7 @@ void main() {
       testWidgets('starts drag and calls onDragStart callback', (tester) async {
         var dragStartCalled = false;
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         fixture.emitDuration(const Duration(seconds: 100));
         await tester.pump();
@@ -163,7 +163,7 @@ void main() {
       testWidgets('ends drag and calls onDragEnd callback', (tester) async {
         var dragEndCalled = false;
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         fixture.emitDuration(const Duration(seconds: 100));
         await tester.pump();
@@ -193,7 +193,7 @@ void main() {
 
       testWidgets('seeks when drag ends', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         fixture.emitDuration(const Duration(seconds: 100));
         await tester.pump();
@@ -221,7 +221,7 @@ void main() {
       testWidgets('does not start drag when duration is zero', (tester) async {
         var dragStartCalled = false;
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         fixture.emitDuration(Duration.zero);
         await tester.pump();
@@ -249,7 +249,7 @@ void main() {
     group('live scrubbing modes', () {
       testWidgets('disabled mode never live scrubs during drag', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(
@@ -275,9 +275,9 @@ void main() {
         final startLocation = tester.getCenter(progressBar);
         final gesture = await tester.startGesture(startLocation);
         await gesture.moveBy(const Offset(50, 0));
-        await tester.pump(const Duration(milliseconds: 100));
+        await tester.pump(TestDelays.stateUpdate);
         await gesture.moveBy(const Offset(50, 0));
-        await tester.pump(const Duration(milliseconds: 100));
+        await tester.pump(TestDelays.stateUpdate);
         await gesture.up();
         await tester.pumpAndSettle();
 
@@ -287,7 +287,7 @@ void main() {
 
       testWidgets('always mode live scrubs for all sources', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(
@@ -327,7 +327,7 @@ void main() {
 
       testWidgets('localOnly mode live scrubs for file sources', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.file('/path/to/video.mp4'));
+        await controller.initialize(source: const VideoSource.file(TestMedia.filePath));
 
         await tester.pumpWidget(
           buildTestWidget(
@@ -365,7 +365,7 @@ void main() {
 
       testWidgets('localOnly mode does not live scrub for network sources', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(
@@ -403,7 +403,7 @@ void main() {
 
       testWidgets('adaptive mode live scrubs for local sources', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.asset('assets/video.mp4'));
+        await controller.initialize(source: const VideoSource.asset(TestMedia.assetPath));
 
         await tester.pumpWidget(
           buildTestWidget(
@@ -439,7 +439,7 @@ void main() {
 
       testWidgets('adaptive mode does not live scrub for buffering network sources', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(
@@ -475,7 +475,7 @@ void main() {
 
       testWidgets('adaptive mode live scrubs for non-buffering network sources', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(
@@ -519,10 +519,10 @@ void main() {
         );
 
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         fixture
-          ..emitDuration(const Duration(minutes: 5))
+          ..emitDuration(TestMetadata.duration)
           ..emitPosition(const Duration(minutes: 2));
         await tester.pump();
 

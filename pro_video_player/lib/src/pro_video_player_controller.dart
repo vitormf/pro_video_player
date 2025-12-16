@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
@@ -25,35 +26,133 @@ typedef _Logger = ProVideoPlayerLogger;
 
 /// Controller for a video player instance.
 ///
-/// Create a controller, call [initialize] with a video source, and then
-/// use [play], [pause], [seekTo], etc. to control playback.
+/// Create a controller using named constructors (`network`, `file`, `asset`),
+/// then call [initialize] to load the video. Use [play], [pause], [seekTo],
+/// etc. to control playback.
 ///
 /// Remember to call [dispose] when done to release resources.
 ///
-/// Example:
+/// Example (video_player compatible style):
 /// ```dart
-/// final controller = ProVideoPlayerController();
-/// await controller.initialize(
-///   source: VideoSource.network('https://example.com/video.mp4'),
+/// final controller = ProVideoPlayerController.network(
+///   'https://example.com/video.mp4',
 /// );
+/// await controller.initialize();
 /// await controller.play();
 /// // ...
 /// await controller.dispose();
 /// ```
+///
+/// Advanced example (custom source):
+/// ```dart
+/// final controller = ProVideoPlayerController();
+/// await controller.initialize(
+///   source: VideoSource.network('https://example.com/video.mp4'),
+///   options: VideoPlayerOptions(autoPlay: true),
+/// );
+/// ```
 class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// Creates a new video player controller.
+  ///
+  /// For compatibility with the video_player library, prefer using named
+  /// constructors: `network`, `file`, or `asset`.
   ///
   /// Optionally pass [errorRecoveryOptions] to configure automatic error
   /// recovery behavior. By default, automatic retry is enabled for network
   /// and timeout errors.
   ProVideoPlayerController({ErrorRecoveryOptions errorRecoveryOptions = ErrorRecoveryOptions.defaultOptions})
     : _errorRecoveryOptions = errorRecoveryOptions,
+      _initialSource = null,
+      _initialOptions = null,
       super(const VideoPlayerValue());
+
+  /// Creates a video player controller for a network video.
+  ///
+  /// This constructor is compatible with Flutter's video_player library.
+  ///
+  /// The [dataSource] is the URL of the video. Optional [httpHeaders] can be
+  /// provided for authenticated content. Optional [videoPlayerOptions] can be
+  /// provided to configure player behavior.
+  ///
+  /// Call [initialize] after construction to load the video.
+  ///
+  /// Example:
+  /// ```dart
+  /// final controller = ProVideoPlayerController.network(
+  ///   'https://example.com/video.mp4',
+  ///   httpHeaders: {'Authorization': 'Bearer token'},
+  ///   videoPlayerOptions: VideoPlayerOptions(autoPlay: true),
+  /// );
+  /// await controller.initialize();
+  /// ```
+  ProVideoPlayerController.network(
+    String dataSource, {
+    Map<String, String>? httpHeaders,
+    VideoPlayerOptions? videoPlayerOptions,
+    ErrorRecoveryOptions errorRecoveryOptions = ErrorRecoveryOptions.defaultOptions,
+  }) : _errorRecoveryOptions = errorRecoveryOptions,
+       _initialSource = VideoSource.network(dataSource, headers: httpHeaders),
+       _initialOptions = videoPlayerOptions,
+       super(const VideoPlayerValue());
+
+  /// Creates a video player controller for a local file.
+  ///
+  /// This constructor is compatible with Flutter's video_player library.
+  ///
+  /// The [file] is the local video file. Optional [videoPlayerOptions] can be
+  /// provided to configure player behavior.
+  ///
+  /// Call [initialize] after construction to load the video.
+  ///
+  /// Example:
+  /// ```dart
+  /// final controller = ProVideoPlayerController.file(
+  ///   File('/path/to/video.mp4'),
+  /// );
+  /// await controller.initialize();
+  /// ```
+  ProVideoPlayerController.file(
+    File file, {
+    VideoPlayerOptions? videoPlayerOptions,
+    ErrorRecoveryOptions errorRecoveryOptions = ErrorRecoveryOptions.defaultOptions,
+  }) : _errorRecoveryOptions = errorRecoveryOptions,
+       _initialSource = VideoSource.file(file.path),
+       _initialOptions = videoPlayerOptions,
+       super(const VideoPlayerValue());
+
+  /// Creates a video player controller for an asset video.
+  ///
+  /// This constructor is compatible with Flutter's video_player library.
+  ///
+  /// The [dataSource] is the asset path (e.g., 'assets/video.mp4'). Optional
+  /// [package] can be specified for assets from packages. Optional
+  /// [videoPlayerOptions] can be provided to configure player behavior.
+  ///
+  /// Call [initialize] after construction to load the video.
+  ///
+  /// Example:
+  /// ```dart
+  /// final controller = ProVideoPlayerController.asset(
+  ///   'assets/video.mp4',
+  /// );
+  /// await controller.initialize();
+  /// ```
+  ProVideoPlayerController.asset(
+    String dataSource, {
+    String? package,
+    VideoPlayerOptions? videoPlayerOptions,
+    ErrorRecoveryOptions errorRecoveryOptions = ErrorRecoveryOptions.defaultOptions,
+  }) : _errorRecoveryOptions = errorRecoveryOptions,
+       _initialSource = VideoSource.asset(package != null ? 'packages/$package/$dataSource' : dataSource),
+       _initialOptions = videoPlayerOptions,
+       super(const VideoPlayerValue());
 
   int? _playerId;
   VideoSource? _source;
   VideoPlayerOptions _options = const VideoPlayerOptions();
   final ErrorRecoveryOptions _errorRecoveryOptions;
+  final VideoSource? _initialSource;
+  final VideoPlayerOptions? _initialOptions;
   late ErrorRecoveryManager _errorRecovery;
   late TrackManager _trackManager;
   late PlaylistManager _playlistManager;
@@ -88,16 +187,81 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// These are the options passed during [initialize].
   VideoPlayerOptions get options => _options;
 
+  // ==================== video_player Compatibility Properties ====================
+
+  /// The data source URL or path.
+  ///
+  /// This property is provided for compatibility with Flutter's video_player
+  /// library. Returns the string representation of the current [source].
+  ///
+  /// For more detailed source information, use the [source] property instead.
+  String? get dataSource {
+    final src = source;
+    if (src == null) return null;
+    if (src is NetworkVideoSource) return src.url;
+    if (src is FileVideoSource) return src.path;
+    if (src is AssetVideoSource) return src.assetPath;
+    if (src is PlaylistVideoSource) return src.url;
+    return null;
+  }
+
+  /// The type of data source.
+  ///
+  /// This property is provided for compatibility with Flutter's video_player
+  /// library. Returns the type based on the current [source].
+  DataSourceType? get dataSourceType {
+    final src = source;
+    if (src == null) return null;
+    if (src is NetworkVideoSource) return DataSourceType.network;
+    if (src is FileVideoSource) {
+      // Check if it's a content URI (Android)
+      if (src.path.startsWith('content://')) {
+        return DataSourceType.contentUri;
+      }
+      return DataSourceType.file;
+    }
+    if (src is AssetVideoSource) return DataSourceType.asset;
+    if (src is PlaylistVideoSource) return DataSourceType.network;
+    return null;
+  }
+
+  /// HTTP headers for network requests.
+  ///
+  /// This property is provided for compatibility with Flutter's video_player
+  /// library. Returns headers if the current source is a network source.
+  Map<String, String>? get httpHeaders {
+    final src = source;
+    if (src is NetworkVideoSource) return src.headers;
+    return null;
+  }
+
+  /// The current playback position.
+  ///
+  /// This property is provided for compatibility with Flutter's video_player
+  /// library, which returns position as a Future. However, the position is
+  /// also available synchronously via `value.position`.
+  ///
+  /// For UI code, prefer using `value.position` directly for synchronous
+  /// access. This getter is provided for code migrating from video_player.
+  Future<Duration> get position async {
+    _ensureInitialized();
+    // Could optionally fetch fresh from platform here, but value.position
+    // is kept up-to-date via events, so returning it is sufficient
+    return value.position;
+  }
+
   ProVideoPlayerPlatform get _platform => ProVideoPlayerPlatform.instance;
 
   /// Initializes the video player with the given [source].
   ///
+  /// For controllers created with named constructors (`network`, `file`,
+  /// `asset`), the source is optional and will use the source provided in
+  /// the constructor.
+  ///
   /// Must be called before any other methods.
-  /// Throws [StateError] if already initialized or disposed.
-  Future<void> initialize({
-    required VideoSource source,
-    VideoPlayerOptions options = const VideoPlayerOptions(),
-  }) async {
+  /// Throws [StateError] if already initialized, disposed, or if no source
+  /// is provided and none was set in the constructor.
+  Future<void> initialize({VideoSource? source, VideoPlayerOptions? options}) async {
     if (_isDisposed) {
       throw StateError('Cannot initialize a disposed controller');
     }
@@ -105,8 +269,19 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
       throw StateError('Controller is already initialized');
     }
 
+    // Use constructor source/options if not explicitly provided
+    final effectiveSource = source ?? _initialSource;
+    final effectiveOptions = options ?? _initialOptions ?? const VideoPlayerOptions();
+
+    if (effectiveSource == null) {
+      throw StateError(
+        'No source provided. Either pass a source to initialize() or use a '
+        'named constructor (network, file, asset).',
+      );
+    }
+
     _Logger.log(
-      'Initializing player with source: ${source.runtimeType}, autoPlay: ${options.autoPlay}',
+      'Initializing player with source: ${effectiveSource.runtimeType}, autoPlay: ${effectiveOptions.autoPlay}',
       tag: 'Controller',
     );
 
@@ -129,8 +304,8 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
 
     // Delegate to coordinator for full initialization
     final result = await coordinator.initializeWithSource(
-      source: source,
-      options: options,
+      source: effectiveSource,
+      options: effectiveOptions,
       setSource: (s) => _source = s,
       setOptions: (o) => _options = o,
       setPlayerId: (id) => _playerId = id,
@@ -155,6 +330,9 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     _configurationManager = result.managers!.configurationManager;
     _playlistManager = result.circularManagers!.playlistManager;
     _eventCoordinator = result.circularManagers!.eventCoordinator;
+
+    // Subscribe to platform events
+    _eventCoordinator.subscribeToEvents();
 
     // Auto-play if requested (after managers are stored)
     if (result.autoPlay) {
@@ -266,9 +444,10 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   }
 
   /// Sets whether the video should loop.
-  Future<void> setLooping({required bool looping}) async {
+  // ignore: avoid_positional_boolean_parameters
+  Future<void> setLooping(bool looping) async {
     _ensureInitialized();
-    return _configurationManager.setLooping(looping: looping);
+    return _configurationManager.setLooping(looping);
   }
 
   /// Sets the video scaling mode.
@@ -1057,7 +1236,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     value = const VideoPlayerValue();
 
     // Reinitialize with original source and options
-    await initialize(source: _source!, options: _options);
+    await initialize(source: _source, options: _options);
   }
 
   void _ensureInitialized() {
@@ -1291,5 +1470,56 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     _playerId = null;
     value = value.copyWith(playbackState: PlaybackState.disposed);
     super.dispose();
+  }
+
+  // ============================================================================
+  // Caption Compatibility Layer (video_player compatibility)
+  // ============================================================================
+
+  /// Sets closed captions for the video.
+  ///
+  /// This method is provided for compatibility with Flutter's video_player library.
+  /// Pass `null` to disable captions, or a [Future<ClosedCaptionFile>] to enable them.
+  ///
+  /// **Note**: This is a compatibility stub. Full implementation requires converting
+  /// the caption data to a subtitle format and loading it. For production use,
+  /// prefer using [addExternalSubtitle] with a proper [SubtitleSource] which
+  /// provides more features and format support.
+  ///
+  /// Throws [StateError] if the controller is not initialized.
+  Future<void> setClosedCaptionFile(Future<ClosedCaptionFile>? closedCaptionFile) async {
+    _ensureInitialized();
+
+    if (closedCaptionFile == null) {
+      await setSubtitleTrack(null);
+      return;
+    }
+
+    // Wait for captions to load (for API compatibility)
+    await closedCaptionFile;
+
+    // TODO(pro_video_player): Implement full caption loading.
+    // This would require either:
+    // 1. Adding SubtitleSource.memory() constructor for in-memory content
+    // 2. Writing captions to a temporary file and using SubtitleSource.file()
+    // 3. Adding a new platform method for loading caption data directly
+    //
+    // For now, this is a compatibility stub that succeeds without actually
+    // loading the captions. Users migrating from video_player should use
+    // addExternalSubtitle() with a proper SubtitleSource instead.
+  }
+
+  /// Sets the caption offset.
+  ///
+  /// This adjusts the timing of captions by the given [offset].
+  /// Positive values delay captions, negative values advance them.
+  ///
+  /// This method is provided for compatibility with Flutter's video_player library.
+  /// For new code, the method name is the same so you can use it directly.
+  ///
+  /// Throws [StateError] if the controller is not initialized.
+  Future<void> setCaptionOffset(Duration offset) async {
+    _ensureInitialized();
+    await _platform.setSubtitleOffset(_playerId!, offset);
   }
 }

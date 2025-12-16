@@ -2,21 +2,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 
-import '../test_helpers.dart';
+import '../shared/test_constants.dart';
+import '../shared/test_setup.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  late ControllerTestFixture fixture;
+  late VideoPlayerTestFixture fixture;
 
-  setUpAll(registerFallbackValues);
+  setUpAll(registerVideoPlayerFallbackValues);
 
   setUp(() {
-    fixture = ControllerTestFixture();
+    fixture = VideoPlayerTestFixture()..setUp();
   });
 
   tearDown(() async {
-    await fixture.dispose();
+    await fixture.tearDown();
   });
 
   group('ProVideoPlayerController media metadata', () {
@@ -28,7 +29,7 @@ void main() {
         ),
       ).thenAnswer((_) async => 1);
 
-      await fixture.controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await fixture.controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
     });
 
     test('setMediaMetadata calls platform', () async {
@@ -47,16 +48,16 @@ void main() {
     });
 
     test('updates value on MetadataChangedEvent', () async {
-      fixture.eventController.add(const MetadataChangedEvent(title: 'New Title'));
-      await Future<void>.delayed(Duration.zero);
+      fixture.emitEvent(const MetadataChangedEvent(title: 'New Title'));
+      await fixture.waitForEvents();
 
       expect(fixture.controller.value.title, equals('New Title'));
     });
 
     test('updates value on EmbeddedSubtitleCueEvent with cue', () async {
       const cue = SubtitleCue(text: 'Hello world', start: Duration(seconds: 1), end: Duration(seconds: 3));
-      fixture.eventController.add(const EmbeddedSubtitleCueEvent(cue: cue, trackId: 'track-1'));
-      await Future<void>.delayed(Duration.zero);
+      fixture.emitEvent(const EmbeddedSubtitleCueEvent(cue: cue, trackId: 'track-1'));
+      await fixture.waitForEvents();
 
       expect(fixture.controller.value.currentEmbeddedCue, equals(cue));
     });
@@ -64,13 +65,13 @@ void main() {
     test('updates value on EmbeddedSubtitleCueEvent with null cue (hides subtitle)', () async {
       // First set a cue
       const cue = SubtitleCue(text: 'Hello world', start: Duration(seconds: 1), end: Duration(seconds: 3));
-      fixture.eventController.add(const EmbeddedSubtitleCueEvent(cue: cue));
-      await Future<void>.delayed(Duration.zero);
+      fixture.emitEvent(const EmbeddedSubtitleCueEvent(cue: cue));
+      await fixture.waitForEvents();
       expect(fixture.controller.value.currentEmbeddedCue, equals(cue));
 
       // Then clear it with null
-      fixture.eventController.add(const EmbeddedSubtitleCueEvent(cue: null));
-      await Future<void>.delayed(Duration.zero);
+      fixture.emitEvent(const EmbeddedSubtitleCueEvent(cue: null));
+      await fixture.waitForEvents();
 
       expect(fixture.controller.value.currentEmbeddedCue, isNull);
     });

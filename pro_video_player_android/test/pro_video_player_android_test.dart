@@ -13,7 +13,7 @@ void main() {
 
   setUp(() {
     plugin = ProVideoPlayerAndroid();
-    harness = MethodChannelTestHarness(channelName: 'com.example.pro_video_player_android/methods')..setUp();
+    harness = MethodChannelTestHarness(channelName: 'dev.pro_video_player.android/methods')..setUp();
   });
 
   tearDown(() {
@@ -144,7 +144,7 @@ void main() {
       });
 
       test('setLooping calls native method', () async {
-        await plugin.setLooping(1, looping: true);
+        await plugin.setLooping(1, true);
 
         expect(harness.lastCall.method, equals('setLooping'));
         expect(harness.lastCall.args['playerId'], equals(1));

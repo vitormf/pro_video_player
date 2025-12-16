@@ -7,6 +7,10 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
+import '../shared/test_constants.dart';
+import '../shared/test_helpers.dart';
+import '../shared/test_matchers.dart';
+
 class MockProVideoPlayerPlatform extends Mock with MockPlatformInterfaceMixin implements ProVideoPlayerPlatform {}
 
 void main() {
@@ -48,8 +52,6 @@ void main() {
     await eventController.close();
     ProVideoPlayerPlatform.instance = MockProVideoPlayerPlatform();
   });
-
-  Widget buildTestWidget(Widget child) => MaterialApp(home: Scaffold(body: child));
 
   /// Helper to build a gesture detector with a hit-testable child
   Widget buildGestureDetectorWidget({
@@ -110,7 +112,7 @@ void main() {
   group('VideoPlayerGestureDetector', () {
     testWidgets('renders with all configuration options', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
         buildTestWidget(
@@ -129,7 +131,7 @@ void main() {
 
     testWidgets('single tap toggles controls visibility', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       final visibilityChanges = <bool>[];
 
@@ -151,21 +153,21 @@ void main() {
 
       // Single tap - wait for double-tap timeout (300ms)
       await simulateTapAt(tester, center);
-      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pump(TestDelays.doubleTap);
 
       // Controls visibility should toggle (starts visible, becomes hidden)
       expect(visibilityChanges, [false]);
 
       // Single tap again to show controls
       await simulateTapAt(tester, center);
-      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pump(TestDelays.doubleTap);
 
       expect(visibilityChanges, [false, true]);
     });
 
     testWidgets('double tap center plays video when paused', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller, showFeedback: false)));
 
@@ -177,7 +179,7 @@ void main() {
 
       // Double tap center (two taps within 300ms)
       await simulateTapAt(tester, center);
-      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(TestDelays.stateUpdate);
       await simulateTapAt(tester, center);
       await tester.pump();
 
@@ -185,7 +187,7 @@ void main() {
       verify(() => mockPlatform.play(1)).called(1);
 
       // Wait for auto-hide timer to complete
-      await tester.pump(const Duration(seconds: 2));
+      await tester.pump(TestDelays.playbackManagerTimer);
     });
 
     // Note: This test is skipped due to timer issues with the auto-hide controls feature.
@@ -195,7 +197,7 @@ void main() {
       // Verify that the toggle play/pause logic works by testing the play path
       // The pause path is symmetric and uses the same _togglePlayPause method
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller, showFeedback: false)));
 
@@ -206,7 +208,7 @@ void main() {
 
     testWidgets('double tap left seeks backward', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller, showFeedback: false)));
 
@@ -223,7 +225,7 @@ void main() {
 
       // Double tap left side
       await simulateTapAt(tester, leftPosition);
-      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(TestDelays.stateUpdate);
       await simulateTapAt(tester, leftPosition);
       await tester.pump();
 
@@ -233,7 +235,7 @@ void main() {
 
     testWidgets('double tap right seeks forward', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
         buildTestWidget(
@@ -258,7 +260,7 @@ void main() {
 
       // Double tap right side
       await simulateTapAt(tester, rightPosition);
-      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(TestDelays.stateUpdate);
       await simulateTapAt(tester, rightPosition);
       await tester.pump();
 
@@ -268,7 +270,7 @@ void main() {
 
     testWidgets('seek backward respects zero boundary', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller, showFeedback: false)));
 
@@ -285,7 +287,7 @@ void main() {
 
       // Double tap left side
       await simulateTapAt(tester, leftPosition);
-      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(TestDelays.stateUpdate);
       await simulateTapAt(tester, leftPosition);
       await tester.pump();
 
@@ -295,7 +297,7 @@ void main() {
 
     testWidgets('seek forward respects duration boundary', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller, showFeedback: false)));
 
@@ -312,7 +314,7 @@ void main() {
 
       // Double tap right side
       await simulateTapAt(tester, rightPosition);
-      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(TestDelays.stateUpdate);
       await simulateTapAt(tester, rightPosition);
       await tester.pump();
 
@@ -322,7 +324,7 @@ void main() {
 
     testWidgets('onBrightnessChanged callback can be provided', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       double? brightnessValue;
 
@@ -343,7 +345,7 @@ void main() {
 
     testWidgets('vertical swipe on right side changes volume', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
@@ -357,7 +359,7 @@ void main() {
       final rightStartPosition = getPositionInWidget(tester, container, 0.75, 0.5);
 
       // Swipe up to increase volume (negative Y delta = swipe up)
-      await tester.timedDragFrom(rightStartPosition, const Offset(0, -100), const Duration(milliseconds: 200));
+      await tester.timedDragFrom(rightStartPosition, const Offset(0, -100), TestDelays.dragGesture);
       await tester.pumpAndSettle();
 
       // Verify setDeviceVolume was called with increased value
@@ -368,7 +370,7 @@ void main() {
       // Note: Brightness gestures are only supported on iOS/Android
       // In tests, Platform.isIOS and Platform.isAndroid are false, so this tests the callback path
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       final brightnessValues = <double>[];
 
@@ -397,7 +399,7 @@ void main() {
 
     testWidgets('horizontal swipe seeks through video', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       final seekTargets = <Duration?>[];
 
@@ -417,7 +419,7 @@ void main() {
       final center = getPositionInWidget(tester, container, 0.5, 0.5);
 
       // Start horizontal swipe to seek forward
-      await tester.timedDragFrom(center, const Offset(100, 0), const Duration(milliseconds: 200));
+      await tester.timedDragFrom(center, const Offset(100, 0), TestDelays.dragGesture);
       await tester.pumpAndSettle();
 
       // Verify seek target was updated during drag
@@ -430,7 +432,7 @@ void main() {
 
     testWidgets('respects enableVolumeGesture configuration', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       eventController.add(const VolumeChangedEvent(0.5));
       await tester.pump();
@@ -457,7 +459,7 @@ void main() {
 
     testWidgets('respects enableBrightnessGesture configuration', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       double? brightnessValue;
 
@@ -489,7 +491,7 @@ void main() {
 
     testWidgets('respects enableSeekGesture configuration', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       eventController
         ..add(const DurationChangedEvent(Duration(seconds: 100)))
@@ -526,7 +528,7 @@ void main() {
 
     testWidgets('can disable double tap seek', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
         buildTestWidget(
@@ -543,7 +545,7 @@ void main() {
 
     testWidgets('can disable brightness gesture', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
         buildTestWidget(
@@ -560,7 +562,7 @@ void main() {
 
     testWidgets('can disable seek gesture', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
         buildTestWidget(
@@ -577,7 +579,7 @@ void main() {
 
     testWidgets('can disable feedback', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
         buildTestWidget(
@@ -594,7 +596,7 @@ void main() {
 
     testWidgets('uses custom seek duration', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
         buildTestWidget(
@@ -611,7 +613,7 @@ void main() {
 
     testWidgets('shows volume overlay when volume changes', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       // Set initial volume
       eventController.add(const VolumeChangedEvent(0.5));
@@ -628,7 +630,7 @@ void main() {
 
     testWidgets('shows brightness overlay with callback', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       double? receivedBrightness;
 
@@ -648,7 +650,7 @@ void main() {
 
     testWidgets('shows seek overlay with callback', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       eventController
         ..add(const DurationChangedEvent(Duration(seconds: 100)))
@@ -673,7 +675,7 @@ void main() {
 
     testWidgets('respects all enable flags simultaneously', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
         buildTestWidget(
@@ -695,7 +697,7 @@ void main() {
 
     testWidgets('calls onControlsVisibilityChanged on initialization', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       final visibilityChanges = <bool>[];
 
@@ -716,7 +718,7 @@ void main() {
 
     testWidgets('renders child widget correctly', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       const childKey = Key('test-child');
 
@@ -734,7 +736,7 @@ void main() {
 
     testWidgets('works with different seek durations', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       for (final duration in [
         const Duration(seconds: 5),
@@ -758,7 +760,7 @@ void main() {
 
     testWidgets('gesture detector uses Listener for pointer tracking', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
         buildTestWidget(
@@ -773,7 +775,7 @@ void main() {
 
     testWidgets('handles pointer cancel event', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
@@ -794,7 +796,7 @@ void main() {
 
     testWidgets('disposes resources properly', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
         buildTestWidget(
@@ -811,7 +813,7 @@ void main() {
 
     testWidgets('handles theme from VideoPlayerThemeData', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       final customTheme = VideoPlayerTheme.christmas();
 
@@ -829,7 +831,7 @@ void main() {
 
     testWidgets('works without theme provided', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
         MaterialApp(
@@ -844,7 +846,7 @@ void main() {
 
     testWidgets('handles controller state changes', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
         buildTestWidget(
@@ -867,7 +869,7 @@ void main() {
 
     testWidgets('gesture detector in Stack widget', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
         buildTestWidget(
@@ -881,7 +883,7 @@ void main() {
 
     testWidgets('respects enablePlaybackSpeedGesture flag', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
         buildTestWidget(
@@ -898,7 +900,7 @@ void main() {
 
     testWidgets('widget rebuilds when controller value changes', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
         buildTestWidget(
@@ -915,7 +917,7 @@ void main() {
 
     testWidgets('handles volume value changes', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
         buildTestWidget(
@@ -927,12 +929,12 @@ void main() {
       eventController.add(const VolumeChangedEvent(0.8));
       await tester.pump();
 
-      expect(controller.value.volume, 0.8);
+      expect(controller, hasVolume(0.8));
     });
 
     testWidgets('handles position value changes for seek preview', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       // Set duration
       eventController.add(const DurationChangedEvent(Duration(seconds: 100)));
@@ -953,7 +955,7 @@ void main() {
 
     testWidgets('builds with showFeedback enabled', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
         buildTestWidget(
@@ -967,7 +969,7 @@ void main() {
 
     testWidgets('handles playback speed changes', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
         buildTestWidget(
@@ -979,12 +981,12 @@ void main() {
       eventController.add(const PlaybackSpeedChangedEvent(1.5));
       await tester.pump();
 
-      expect(controller.value.playbackSpeed, 1.5);
+      expect(controller, hasSpeed(1.5));
     });
 
     testWidgets('uses AnimatedOpacity for overlays', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
         buildTestWidget(
@@ -999,7 +1001,7 @@ void main() {
 
     testWidgets('handles multiple controller value updates', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
         buildTestWidget(
@@ -1018,13 +1020,13 @@ void main() {
       await tester.pump();
 
       expect(controller.value.isPlaying, true);
-      expect(controller.value.volume, 0.5);
+      expect(controller, hasVolume(0.5));
       expect(controller.value.position, const Duration(seconds: 10));
     });
 
     testWidgets('respects child widget size constraints', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
         buildTestWidget(
@@ -1045,7 +1047,7 @@ void main() {
 
     testWidgets('initializes with custom callbacks', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       bool? controlsVisibility;
       double? brightness;
@@ -1071,7 +1073,7 @@ void main() {
 
     testWidgets('handles error state gracefully', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
         buildTestWidget(
@@ -1083,12 +1085,12 @@ void main() {
       eventController.add(ErrorEvent('Test error'));
       await tester.pump();
 
-      expect(controller.value.playbackState, PlaybackState.error);
+      expect(controller, hasError);
     });
 
     testWidgets('supports different screen sizes', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       // Test with small screen
       await tester.pumpWidget(
@@ -1119,7 +1121,7 @@ void main() {
 
     testWidgets('two-finger vertical swipe changes playback speed', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
@@ -1152,7 +1154,7 @@ void main() {
 
     testWidgets('two-finger vertical swipe down decreases playback speed', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
@@ -1185,7 +1187,7 @@ void main() {
 
     testWidgets('feedback overlay shows during volume gesture', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
@@ -1204,7 +1206,7 @@ void main() {
       // Perform drag with multiple small moves to trigger scale updates
       for (var i = 0; i < 10; i++) {
         await gesture.moveBy(const Offset(0, -10));
-        await tester.pump(const Duration(milliseconds: 20));
+        await tester.pump(TestDelays.singleFrame);
       }
 
       // Volume overlay should be visible while gesture is active
@@ -1217,7 +1219,7 @@ void main() {
 
     testWidgets('feedback overlay shows during seek gesture', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
@@ -1238,7 +1240,7 @@ void main() {
       // Perform drag with multiple small moves to trigger scale updates
       for (var i = 0; i < 10; i++) {
         await gesture.moveBy(const Offset(10, 0));
-        await tester.pump(const Duration(milliseconds: 20));
+        await tester.pump(TestDelays.singleFrame);
       }
 
       // Seek preview should show time and seek icon while gesture is active
@@ -1251,7 +1253,7 @@ void main() {
 
     testWidgets('feedback overlay shows during playback speed gesture', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
@@ -1283,7 +1285,7 @@ void main() {
 
     testWidgets('volume gesture clamped between 0.0 and 1.0', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
@@ -1300,7 +1302,7 @@ void main() {
       await tester.timedDragFrom(
         rightStartPosition,
         const Offset(0, -300), // Large upward swipe
-        const Duration(milliseconds: 200),
+        TestDelays.dragGesture,
       );
       await tester.pumpAndSettle();
 
@@ -1310,7 +1312,7 @@ void main() {
 
     testWidgets('swipe left seeks backward', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
@@ -1328,7 +1330,7 @@ void main() {
       await tester.timedDragFrom(
         center,
         const Offset(-100, 0), // Swipe left
-        const Duration(milliseconds: 200),
+        TestDelays.dragGesture,
       );
       await tester.pumpAndSettle();
 
@@ -1338,7 +1340,7 @@ void main() {
 
     testWidgets('controls hide automatically after timeout when playing', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       final visibilityChanges = <bool>[];
 
@@ -1359,14 +1361,14 @@ void main() {
 
       // Tap to toggle controls (will become hidden, start hide timer)
       await simulateTapAt(tester, center);
-      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pump(TestDelays.doubleTap);
 
       // Controls toggled to hidden
       expect(visibilityChanges, contains(false));
 
       // Tap again to show controls
       await simulateTapAt(tester, center);
-      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pump(TestDelays.doubleTap);
 
       expect(visibilityChanges, contains(true));
 
@@ -1379,7 +1381,7 @@ void main() {
 
     testWidgets('controls auto-hide when playback starts automatically', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       final visibilityChanges = <bool>[];
 
@@ -1410,7 +1412,7 @@ void main() {
 
     testWidgets('controls do not hide on locked gesture completion', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       final visibilityChanges = <bool>[];
 
@@ -1437,7 +1439,7 @@ void main() {
       await tester.pump();
 
       // Wait for double-tap timeout
-      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pump(TestDelays.doubleTap);
 
       // Controls visibility should NOT have changed (no tap detected after seek)
       // The only change should be if there was one during initialization
@@ -1447,7 +1449,7 @@ void main() {
     group('double-tap with feedback', () {
       testWidgets('double tap left shows rewind feedback', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(
@@ -1464,7 +1466,7 @@ void main() {
         final leftPosition = getPositionInWidget(tester, container, 0.1, 0.5);
 
         await simulateTapAt(tester, leftPosition);
-        await tester.pump(const Duration(milliseconds: 100));
+        await tester.pump(TestDelays.stateUpdate);
         await simulateTapAt(tester, leftPosition);
         await tester.pump();
 
@@ -1472,12 +1474,12 @@ void main() {
         expect(find.byIcon(Icons.fast_rewind), findsOneWidget);
 
         // Wait for feedback timer to complete
-        await tester.pump(const Duration(milliseconds: 600));
+        await tester.pump(TestDelays.longOperation);
       });
 
       testWidgets('double tap right shows forward feedback', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
@@ -1490,19 +1492,19 @@ void main() {
         final rightPosition = getPositionInWidget(tester, container, 0.9, 0.5);
 
         await simulateTapAt(tester, rightPosition);
-        await tester.pump(const Duration(milliseconds: 100));
+        await tester.pump(TestDelays.stateUpdate);
         await simulateTapAt(tester, rightPosition);
         await tester.pump();
 
         expect(find.byIcon(Icons.fast_forward), findsOneWidget);
 
         // Wait for feedback timer to complete
-        await tester.pump(const Duration(milliseconds: 600));
+        await tester.pump(TestDelays.longOperation);
       });
 
       testWidgets('double tap center shows play feedback when paused', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
@@ -1510,22 +1512,22 @@ void main() {
         final center = getPositionInWidget(tester, container, 0.5, 0.5);
 
         await simulateTapAt(tester, center);
-        await tester.pump(const Duration(milliseconds: 100));
+        await tester.pump(TestDelays.stateUpdate);
         await simulateTapAt(tester, center);
         await tester.pump();
 
         expect(find.byIcon(Icons.play_arrow), findsOneWidget);
 
         // Wait for feedback timer to complete
-        await tester.pump(const Duration(milliseconds: 600));
+        await tester.pump(TestDelays.longOperation);
 
         // Wait for auto-hide timer to complete
-        await tester.pump(const Duration(seconds: 2));
+        await tester.pump(TestDelays.playbackManagerTimer);
       });
 
       testWidgets('double tap center shows pause feedback when playing', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
@@ -1537,21 +1539,21 @@ void main() {
         final center = getPositionInWidget(tester, container, 0.5, 0.5);
 
         await simulateTapAt(tester, center);
-        await tester.pump(const Duration(milliseconds: 100));
+        await tester.pump(TestDelays.stateUpdate);
         await simulateTapAt(tester, center);
         await tester.pump();
 
         expect(find.byIcon(Icons.pause), findsOneWidget);
 
         // Wait for feedback timer to complete
-        await tester.pump(const Duration(milliseconds: 600));
+        await tester.pump(TestDelays.longOperation);
       });
     });
 
     group('gesture locking', () {
       testWidgets('volume gesture locks and ignores horizontal movement', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final seekTargets = <Duration?>[];
 
@@ -1599,7 +1601,7 @@ void main() {
 
       testWidgets('seek gesture locks and ignores vertical movement', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final seekTargets = <Duration?>[];
 
@@ -1644,7 +1646,7 @@ void main() {
 
       testWidgets('gesture resets lock on new touch', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
@@ -1682,7 +1684,7 @@ void main() {
 
       testWidgets('diagonal movement locks to dominant direction', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final seekTargets = <Duration?>[];
 
@@ -1720,7 +1722,7 @@ void main() {
     group('overlay not shown before threshold', () {
       testWidgets('volume overlay not shown for small vertical movement', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
@@ -1750,7 +1752,7 @@ void main() {
 
       testWidgets('brightness overlay not shown for small vertical movement', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         double? brightnessValue;
 
@@ -1782,7 +1784,7 @@ void main() {
 
       testWidgets('seek overlay not shown for very small horizontal movement', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final seekTargets = <Duration?>[];
 
@@ -1816,7 +1818,7 @@ void main() {
 
       testWidgets('playback speed overlay not shown for small two-finger vertical movement', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
@@ -1849,7 +1851,7 @@ void main() {
 
       testWidgets('no overlay shown after gesture ends without exceeding threshold', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
@@ -1877,7 +1879,7 @@ void main() {
 
       testWidgets('overlay appears only after threshold is exceeded', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
@@ -1916,7 +1918,7 @@ void main() {
     group('double-tap timer cancellation during gesture', () {
       testWidgets('volume gesture cancels pending double-tap timer', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         var controlsToggleCount = 0;
 
@@ -1948,7 +1950,7 @@ void main() {
         await tester.pump();
 
         // Wait for when the double-tap timer would have fired
-        await tester.pump(const Duration(milliseconds: 350));
+        await tester.pump(TestDelays.doubleTap);
 
         // Controls should NOT have been toggled again by the timer
         // (only the initial tap should have triggered a toggle)
@@ -1960,7 +1962,7 @@ void main() {
 
       testWidgets('seek gesture cancels pending double-tap timer', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         var controlsToggleCount = 0;
 
@@ -1993,7 +1995,7 @@ void main() {
         await tester.pump();
 
         // Wait for when the double-tap timer would have fired
-        await tester.pump(const Duration(milliseconds: 350));
+        await tester.pump(TestDelays.doubleTap);
 
         // Controls should NOT have been toggled by the timer
         expect(controlsToggleCount, equals(initialToggleCount));
@@ -2004,7 +2006,7 @@ void main() {
 
       testWidgets('playback speed gesture cancels pending double-tap timer', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         var controlsToggleCount = 0;
 
@@ -2040,7 +2042,7 @@ void main() {
         await tester.pump();
 
         // Wait for when the double-tap timer would have fired
-        await tester.pump(const Duration(milliseconds: 350));
+        await tester.pump(TestDelays.doubleTap);
 
         // Controls should NOT have been toggled by the timer
         expect(controlsToggleCount, equals(initialToggleCount));

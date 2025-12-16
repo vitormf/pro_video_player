@@ -3,15 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pro_video_player/src/controls/buttons/background_playback_button.dart';
 import 'package:pro_video_player/src/video_player_theme.dart';
 
+import '../../../shared/test_helpers.dart';
+
 void main() {
   group('BackgroundPlaybackButton', () {
     testWidgets('shows enabled icon when enabled', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: BackgroundPlaybackButton(theme: VideoPlayerTheme.light(), isEnabled: true, onPressed: () {}),
-          ),
-        ),
+        buildTestWidget(BackgroundPlaybackButton(theme: VideoPlayerTheme.light(), isEnabled: true, onPressed: () {})),
       );
 
       // Should show filled headphones icon when enabled
@@ -21,11 +19,7 @@ void main() {
 
     testWidgets('shows disabled icon when disabled', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: BackgroundPlaybackButton(theme: VideoPlayerTheme.light(), isEnabled: false, onPressed: () {}),
-          ),
-        ),
+        buildTestWidget(BackgroundPlaybackButton(theme: VideoPlayerTheme.light(), isEnabled: false, onPressed: () {})),
       );
 
       // Should show outlined headphones icon when disabled
@@ -39,11 +33,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: BackgroundPlaybackButton(theme: customTheme, isEnabled: true, onPressed: () {}),
-          ),
-        ),
+        buildTestWidget(BackgroundPlaybackButton(theme: customTheme, isEnabled: true, onPressed: () {})),
       );
 
       final iconButton = tester.widget<IconButton>(find.byType(IconButton));
@@ -58,11 +48,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: BackgroundPlaybackButton(theme: customTheme, isEnabled: false, onPressed: () {}),
-          ),
-        ),
+        buildTestWidget(BackgroundPlaybackButton(theme: customTheme, isEnabled: false, onPressed: () {})),
       );
 
       final iconButton = tester.widget<IconButton>(find.byType(IconButton));
@@ -74,14 +60,8 @@ void main() {
       var pressed = false;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: BackgroundPlaybackButton(
-              theme: VideoPlayerTheme.light(),
-              isEnabled: false,
-              onPressed: () => pressed = true,
-            ),
-          ),
+        buildTestWidget(
+          BackgroundPlaybackButton(theme: VideoPlayerTheme.light(), isEnabled: false, onPressed: () => pressed = true),
         ),
       );
 
@@ -94,11 +74,7 @@ void main() {
 
     testWidgets('has enable tooltip when disabled', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: BackgroundPlaybackButton(theme: VideoPlayerTheme.light(), isEnabled: false, onPressed: () {}),
-          ),
-        ),
+        buildTestWidget(BackgroundPlaybackButton(theme: VideoPlayerTheme.light(), isEnabled: false, onPressed: () {})),
       );
 
       final iconButton = tester.widget<IconButton>(find.byType(IconButton));
@@ -107,11 +83,7 @@ void main() {
 
     testWidgets('has disable tooltip when enabled', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: BackgroundPlaybackButton(theme: VideoPlayerTheme.light(), isEnabled: true, onPressed: () {}),
-          ),
-        ),
+        buildTestWidget(BackgroundPlaybackButton(theme: VideoPlayerTheme.light(), isEnabled: true, onPressed: () {})),
       );
 
       final iconButton = tester.widget<IconButton>(find.byType(IconButton));
@@ -120,11 +92,7 @@ void main() {
 
     testWidgets('uses correct icon size', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: BackgroundPlaybackButton(theme: VideoPlayerTheme.light(), isEnabled: false, onPressed: () {}),
-          ),
-        ),
+        buildTestWidget(BackgroundPlaybackButton(theme: VideoPlayerTheme.light(), isEnabled: false, onPressed: () {})),
       );
 
       final iconButton = tester.widget<IconButton>(find.byType(IconButton));

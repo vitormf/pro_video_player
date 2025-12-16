@@ -91,7 +91,7 @@ class ProVideoPlayerWeb extends ProVideoPlayerPlatform {
   }
 
   @override
-  Future<void> setLooping(int playerId, {required bool looping}) async => _getPlayer(playerId).looping = looping;
+  Future<void> setLooping(int playerId, bool looping) async => _getPlayer(playerId).looping = looping;
 
   @override
   Future<void> setScalingMode(int playerId, VideoScalingMode mode) async => _getPlayer(playerId).setScalingMode(mode);

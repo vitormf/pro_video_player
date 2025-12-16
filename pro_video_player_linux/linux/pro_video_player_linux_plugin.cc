@@ -98,7 +98,7 @@ void pro_video_player_linux_plugin_register_with_registrar(FlPluginRegistrar* re
   g_autoptr(FlStandardMethodCodec) codec = fl_standard_method_codec_new();
   g_autoptr(FlMethodChannel) channel =
       fl_method_channel_new(fl_plugin_registrar_get_messenger(registrar),
-                            "com.example.pro_video_player_linux/methods",
+                            "dev.pro_video_player.linux/methods",
                             FL_METHOD_CODEC(codec));
   fl_method_channel_set_method_call_handler(channel, method_call_cb,
                                               g_object_ref(plugin),

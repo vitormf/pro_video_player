@@ -2,21 +2,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
-import '../test_helpers.dart';
+import '../shared/test_constants.dart';
+import '../shared/test_setup.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  late ControllerTestFixture fixture;
+  late VideoPlayerTestFixture fixture;
 
-  setUpAll(registerFallbackValues);
+  setUpAll(registerVideoPlayerFallbackValues);
 
   setUp(() {
-    fixture = ControllerTestFixture();
+    fixture = VideoPlayerTestFixture()..setUp();
   });
 
   tearDown(() async {
-    await fixture.dispose();
+    await fixture.tearDown();
   });
 
   group('ProVideoPlayerController playback control', () {
@@ -28,7 +29,7 @@ void main() {
         ),
       ).thenAnswer((_) async => 1);
 
-      await fixture.controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await fixture.controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
     });
 
     test('play calls platform play', () async {
@@ -36,7 +37,7 @@ void main() {
 
       await fixture.controller.play();
 
-      verify(() => fixture.mockPlatform.play(1)).called(1);
+      fixture.verifyPlay();
     });
 
     test('pause calls platform pause', () async {
@@ -44,7 +45,7 @@ void main() {
 
       await fixture.controller.pause();
 
-      verify(() => fixture.mockPlatform.pause(1)).called(1);
+      fixture.verifyPause();
     });
 
     test('stop calls platform stop', () async {
@@ -60,7 +61,7 @@ void main() {
 
       await fixture.controller.seekTo(const Duration(seconds: 30));
 
-      verify(() => fixture.mockPlatform.seekTo(1, const Duration(seconds: 30))).called(1);
+      fixture.verifySeekTo(const Duration(seconds: 30));
     });
 
     test('seekForward seeks forward by duration', () async {
@@ -69,12 +70,12 @@ void main() {
       // Set initial position and duration via events
       fixture.eventController
         ..add(const PositionChangedEvent(Duration(seconds: 30)))
-        ..add(const DurationChangedEvent(Duration(minutes: 5)));
-      await Future<void>.delayed(Duration.zero);
+        ..add(const DurationChangedEvent(TestMetadata.duration));
+      await fixture.waitForEvents();
 
       await fixture.controller.seekForward(const Duration(seconds: 10));
 
-      verify(() => fixture.mockPlatform.seekTo(1, const Duration(seconds: 40))).called(1);
+      fixture.verifySeekTo(const Duration(seconds: 40));
     });
 
     test('seekForward clamps to duration', () async {
@@ -84,57 +85,57 @@ void main() {
       fixture.eventController
         ..add(const PositionChangedEvent(Duration(seconds: 55)))
         ..add(const DurationChangedEvent(Duration(minutes: 1)));
-      await Future<void>.delayed(Duration.zero);
+      await fixture.waitForEvents();
 
       await fixture.controller.seekForward(const Duration(seconds: 10));
 
-      verify(() => fixture.mockPlatform.seekTo(1, const Duration(minutes: 1))).called(1);
+      fixture.verifySeekTo(const Duration(minutes: 1));
     });
 
     test('seekBackward seeks backward by duration', () async {
       when(() => fixture.mockPlatform.seekTo(any(), any())).thenAnswer((_) async {});
 
       // Set initial position
-      fixture.eventController.add(const PositionChangedEvent(Duration(seconds: 30)));
-      await Future<void>.delayed(Duration.zero);
+      fixture.emitEvent(const PositionChangedEvent(Duration(seconds: 30)));
+      await fixture.waitForEvents();
 
       await fixture.controller.seekBackward(const Duration(seconds: 10));
 
-      verify(() => fixture.mockPlatform.seekTo(1, const Duration(seconds: 20))).called(1);
+      fixture.verifySeekTo(const Duration(seconds: 20));
     });
 
     test('seekBackward clamps to zero', () async {
       when(() => fixture.mockPlatform.seekTo(any(), any())).thenAnswer((_) async {});
 
       // Set position near start
-      fixture.eventController.add(const PositionChangedEvent(Duration(seconds: 5)));
-      await Future<void>.delayed(Duration.zero);
+      fixture.emitEvent(const PositionChangedEvent(Duration(seconds: 5)));
+      await fixture.waitForEvents();
 
       await fixture.controller.seekBackward(const Duration(seconds: 10));
 
-      verify(() => fixture.mockPlatform.seekTo(1, Duration.zero)).called(1);
+      fixture.verifySeekTo(Duration.zero);
     });
 
     test('togglePlayPause pauses when playing', () async {
       when(() => fixture.mockPlatform.pause(any())).thenAnswer((_) async {});
 
-      fixture.eventController.add(const PlaybackStateChangedEvent(PlaybackState.playing));
-      await Future<void>.delayed(Duration.zero);
+      fixture.emitEvent(const PlaybackStateChangedEvent(PlaybackState.playing));
+      await fixture.waitForEvents();
 
       await fixture.controller.togglePlayPause();
 
-      verify(() => fixture.mockPlatform.pause(1)).called(1);
+      fixture.verifyPause();
     });
 
     test('togglePlayPause plays when paused', () async {
       when(() => fixture.mockPlatform.play(any())).thenAnswer((_) async {});
 
-      fixture.eventController.add(const PlaybackStateChangedEvent(PlaybackState.paused));
-      await Future<void>.delayed(Duration.zero);
+      fixture.emitEvent(const PlaybackStateChangedEvent(PlaybackState.paused));
+      await fixture.waitForEvents();
 
       await fixture.controller.togglePlayPause();
 
-      verify(() => fixture.mockPlatform.play(1)).called(1);
+      fixture.verifyPlay();
     });
   });
 }

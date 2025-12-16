@@ -1,0 +1,20 @@
+{
+  "threshold": 2.5,
+  "reporters": ["console", "json"],
+  "format": ["dart"],
+  "minLines": 10,
+  "minTokens": 50,
+  "output": "./report",
+  "ignore": [
+    "**/*.g.dart",
+    "**/*.freezed.dart",
+    "**/*.mocks.dart",
+    "**/pigeon_generated/**",
+    "**/pigeons/**",
+    "**/.dart_tool/**",
+    ".fvm/**",
+    "**/build/**",
+    "example-*/**",
+    "**/test/**"
+  ]
+}

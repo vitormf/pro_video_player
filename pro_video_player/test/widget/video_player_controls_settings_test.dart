@@ -8,6 +8,9 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
+import '../shared/test_constants.dart';
+import '../shared/test_helpers.dart';
+
 class MockProVideoPlayerPlatform extends Mock with MockPlatformInterfaceMixin implements ProVideoPlayerPlatform {}
 
 void main() {
@@ -63,13 +66,11 @@ void main() {
     ProVideoPlayerPlatform.instance = MockProVideoPlayerPlatform();
   });
 
-  Widget buildTestWidget(Widget child) => MaterialApp(home: Scaffold(body: child));
-
   group('VideoPlayerControls', () {
     group('compact mode', () {
       testWidgets('shows full controls when compactMode is never even with small size', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         // Use a large size but CompactMode.never still shows full controls
         await tester.pumpWidget(
@@ -91,7 +92,7 @@ void main() {
 
       testWidgets('shows compact controls when compactMode is always', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(
@@ -116,7 +117,7 @@ void main() {
 
       testWidgets('auto mode shows compact controls when compactMode always is used', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(
@@ -136,7 +137,7 @@ void main() {
 
       testWidgets('auto mode shows full controls when above threshold', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         // Default test surface is 800x600, which is above 300x200 threshold
         await tester.pumpWidget(
@@ -150,7 +151,7 @@ void main() {
 
       testWidgets('custom threshold triggers compact mode', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         // Set a very large threshold so the default 800x600 surface is below it
         await tester.pumpWidget(
@@ -171,7 +172,7 @@ void main() {
 
       testWidgets('compact mode shows progress bar', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(
@@ -192,7 +193,7 @@ void main() {
         // Add position/duration events after widget is built
         eventController
           ..add(const DurationChangedEvent(Duration(minutes: 10)))
-          ..add(const PositionChangedEvent(Duration(minutes: 5)));
+          ..add(const PositionChangedEvent(TestMetadata.duration));
         await tester.pump();
 
         // Compact mode uses custom Stack-based progress bar with FractionallySizedBox (not LinearProgressIndicator)
@@ -201,7 +202,7 @@ void main() {
 
       testWidgets('compact mode play button toggles playback', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(
@@ -232,7 +233,7 @@ void main() {
 
       testWidgets('compact mode shows buffering indicator', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         eventController.add(const PlaybackStateChangedEvent(PlaybackState.buffering));
         await tester.pump();
@@ -258,7 +259,7 @@ void main() {
 
       testWidgets('hides all controls in PiP mode, only shows subtitles', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         // Simulate PiP mode activation
         eventController.add(const PipStateChangedEvent(isActive: true));
@@ -285,7 +286,7 @@ void main() {
     group('audio tracks', () {
       testWidgets('does not show audio button when only one audio track', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         // Add single audio track
         eventController.add(const AudioTracksChangedEvent([AudioTrack(id: 'en', label: 'English')]));
@@ -300,7 +301,7 @@ void main() {
 
       testWidgets('shows audio button when multiple audio tracks available', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         // Add multiple audio tracks
         eventController.add(
@@ -320,7 +321,7 @@ void main() {
 
       testWidgets('does not show audio button when showAudioButton is false', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         // Add multiple audio tracks
         eventController.add(
@@ -347,7 +348,7 @@ void main() {
 
       testWidgets('opens audio picker when audio button is tapped', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         // Add multiple audio tracks
         eventController.add(
@@ -375,7 +376,7 @@ void main() {
     group('quality tracks', () {
       testWidgets('does not show quality button when only one quality track', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         // Add single quality track
         eventController.add(
@@ -394,7 +395,7 @@ void main() {
 
       testWidgets('shows quality button when multiple quality tracks available', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         // Add multiple quality tracks
         eventController.add(
@@ -414,7 +415,7 @@ void main() {
 
       testWidgets('does not show quality button when showQualityButton is false', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         // Add multiple quality tracks
         eventController.add(
@@ -441,7 +442,7 @@ void main() {
 
       testWidgets('opens quality picker when quality button is tapped', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         when(() => mockPlatform.setVideoQuality(any(), any())).thenAnswer((_) async => true);
 
@@ -469,7 +470,7 @@ void main() {
 
       testWidgets('quality button shows Auto when no quality selected', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         // Add multiple quality tracks
         eventController.add(
@@ -492,7 +493,7 @@ void main() {
     group('scaling mode', () {
       testWidgets('shows scaling mode button when enabled', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(VideoPlayerControls(controller: controller, enableGestures: false, forceMobileLayout: true)),
@@ -503,7 +504,7 @@ void main() {
 
       testWidgets('does not show scaling mode button when disabled', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(
@@ -521,7 +522,7 @@ void main() {
 
       testWidgets('opens scaling mode picker when button is tapped', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         when(() => mockPlatform.setScalingMode(any(), any())).thenAnswer((_) async {});
 
@@ -543,10 +544,10 @@ void main() {
     group('remaining time display', () {
       testWidgets('shows duration by default', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         eventController
-          ..add(const DurationChangedEvent(Duration(minutes: 5)))
+          ..add(const DurationChangedEvent(TestMetadata.duration))
           ..add(const PositionChangedEvent(Duration(minutes: 2)));
         await tester.pump();
 
@@ -560,10 +561,10 @@ void main() {
 
       testWidgets('toggles between remaining time and duration when tapped', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         eventController
-          ..add(const DurationChangedEvent(Duration(minutes: 5)))
+          ..add(const DurationChangedEvent(TestMetadata.duration))
           ..add(const PositionChangedEvent(Duration(minutes: 2)));
         await tester.pump();
 
@@ -586,10 +587,10 @@ void main() {
 
       testWidgets('toggles back to duration when tapped again', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         eventController
-          ..add(const DurationChangedEvent(Duration(minutes: 5)))
+          ..add(const DurationChangedEvent(TestMetadata.duration))
           ..add(const PositionChangedEvent(Duration(minutes: 2)));
         await tester.pump();
 
@@ -615,7 +616,7 @@ void main() {
     group('player toolbar actions configuration', () {
       testWidgets('shows only specified actions in playerToolbarActions', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(
@@ -639,7 +640,7 @@ void main() {
 
       testWidgets('respects order of playerToolbarActions', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(
@@ -668,7 +669,7 @@ void main() {
 
       testWidgets('shows overflow menu when actions exceed maxPlayerToolbarActions', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(
@@ -699,7 +700,7 @@ void main() {
 
       testWidgets('overflow menu shows hidden actions when tapped', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(
@@ -727,7 +728,7 @@ void main() {
 
       testWidgets('overflow menu action triggers correct callback', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(
@@ -752,7 +753,7 @@ void main() {
         await tester.pumpAndSettle();
 
         // Run async operations
-        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+        await tester.runAsync(() => Future<void>.delayed(TestDelays.stateUpdate));
         await tester.pump();
 
         // onEnterFullscreen callback is used instead of native fullscreen
@@ -761,7 +762,7 @@ void main() {
 
       testWidgets('no overflow menu when actions fit within maxPlayerToolbarActions', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(
@@ -785,7 +786,7 @@ void main() {
 
       testWidgets('conditional actions respect their conditions', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         // No subtitle tracks added, so subtitles action should not appear
         await tester.pumpWidget(
@@ -813,7 +814,7 @@ void main() {
 
       testWidgets('conditional actions count towards maxPlayerToolbarActions only when visible', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         // Add subtitle tracks so the subtitles action becomes visible
         eventController.add(
@@ -848,7 +849,7 @@ void main() {
 
       testWidgets('uses default actions when playerToolbarActions is null', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(VideoPlayerControls(controller: controller, enableGestures: false, forceMobileLayout: true)),
@@ -862,7 +863,7 @@ void main() {
 
       testWidgets('empty playerToolbarActions shows no player toolbar actions', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(
@@ -886,7 +887,7 @@ void main() {
     group('compact mode', () {
       testWidgets('renders compact layout when compactMode is always', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         eventController.add(const PlaybackStateChangedEvent(PlaybackState.paused));
         await tester.pump();
@@ -912,7 +913,7 @@ void main() {
 
       testWidgets('tap toggles visibility in compact mode', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         eventController.add(const PlaybackStateChangedEvent(PlaybackState.paused));
         await tester.pump();
@@ -947,7 +948,7 @@ void main() {
 
       testWidgets('renders compact layout when widget size is small', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         eventController.add(const PlaybackStateChangedEvent(PlaybackState.paused));
         await tester.pump();
@@ -969,7 +970,7 @@ void main() {
 
       testWidgets('renders full layout when compactMode is never', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         eventController.add(const PlaybackStateChangedEvent(PlaybackState.paused));
         await tester.pump();

@@ -174,7 +174,9 @@ class _ProVideoPlayerState extends State<ProVideoPlayer> {
         return widget.placeholder ?? const SizedBox.shrink();
       }
 
-      final videoAspectRatio = widget.aspectRatio ?? value.aspectRatio ?? 16 / 9;
+      // Use widget aspectRatio if provided, otherwise use video aspectRatio (fallback to 16:9 if unknown)
+      final calculatedAspectRatio = value.aspectRatio != 0.0 ? value.aspectRatio : 16 / 9;
+      final videoAspectRatio = widget.aspectRatio ?? calculatedAspectRatio;
 
       return AspectRatio(aspectRatio: videoAspectRatio, child: _buildVideoView(context));
     },

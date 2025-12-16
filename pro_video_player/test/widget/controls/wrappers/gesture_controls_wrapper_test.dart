@@ -7,6 +7,9 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
+import '../../../shared/test_constants.dart';
+import '../../../shared/test_helpers.dart';
+
 class MockProVideoPlayerPlatform extends Mock with MockPlatformInterfaceMixin implements ProVideoPlayerPlatform {}
 
 class MockVideoControlsController extends Mock implements VideoControlsController {}
@@ -55,26 +58,24 @@ void main() {
   group('GestureControlsWrapper', () {
     testWidgets('renders child widget', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: GestureControlsWrapper(
-              controller: controller,
-              controlsController: mockControlsController,
-              enableDoubleTapSeek: true,
-              enableVolumeGesture: true,
-              enableBrightnessGesture: true,
-              enableSeekGesture: true,
-              skipDuration: const Duration(seconds: 10),
-              seekSecondsPerInch: 10,
-              autoHide: true,
-              autoHideDuration: const Duration(seconds: 3),
-              enablePlaybackSpeedGesture: true,
-              onBrightnessChanged: null,
-              child: const Center(child: Text('Test Child')),
-            ),
+        buildTestWidget(
+          GestureControlsWrapper(
+            controller: controller,
+            controlsController: mockControlsController,
+            enableDoubleTapSeek: true,
+            enableVolumeGesture: true,
+            enableBrightnessGesture: true,
+            enableSeekGesture: true,
+            skipDuration: const Duration(seconds: 10),
+            seekSecondsPerInch: 10,
+            autoHide: true,
+            autoHideDuration: const Duration(seconds: 3),
+            enablePlaybackSpeedGesture: true,
+            onBrightnessChanged: null,
+            child: const Center(child: Text('Test Child')),
           ),
         ),
       );
@@ -84,26 +85,24 @@ void main() {
 
     testWidgets('wraps child with VideoPlayerGestureDetector', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: GestureControlsWrapper(
-              controller: controller,
-              controlsController: mockControlsController,
-              enableDoubleTapSeek: true,
-              enableVolumeGesture: true,
-              enableBrightnessGesture: true,
-              enableSeekGesture: true,
-              skipDuration: const Duration(seconds: 10),
-              seekSecondsPerInch: 10,
-              autoHide: true,
-              autoHideDuration: const Duration(seconds: 3),
-              enablePlaybackSpeedGesture: true,
-              onBrightnessChanged: null,
-              child: const Center(child: Text('Video')),
-            ),
+        buildTestWidget(
+          GestureControlsWrapper(
+            controller: controller,
+            controlsController: mockControlsController,
+            enableDoubleTapSeek: true,
+            enableVolumeGesture: true,
+            enableBrightnessGesture: true,
+            enableSeekGesture: true,
+            skipDuration: const Duration(seconds: 10),
+            seekSecondsPerInch: 10,
+            autoHide: true,
+            autoHideDuration: const Duration(seconds: 3),
+            enablePlaybackSpeedGesture: true,
+            onBrightnessChanged: null,
+            child: const Center(child: Text('Video')),
           ),
         ),
       );
@@ -113,28 +112,26 @@ void main() {
 
     testWidgets('passes correct skip duration to gesture detector', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       const testSkipDuration = Duration(seconds: 15);
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: GestureControlsWrapper(
-              controller: controller,
-              controlsController: mockControlsController,
-              enableDoubleTapSeek: true,
-              enableVolumeGesture: true,
-              enableBrightnessGesture: true,
-              enableSeekGesture: true,
-              skipDuration: testSkipDuration,
-              seekSecondsPerInch: 10,
-              autoHide: true,
-              autoHideDuration: const Duration(seconds: 3),
-              enablePlaybackSpeedGesture: true,
-              onBrightnessChanged: null,
-              child: const Center(child: Text('Video')),
-            ),
+        buildTestWidget(
+          GestureControlsWrapper(
+            controller: controller,
+            controlsController: mockControlsController,
+            enableDoubleTapSeek: true,
+            enableVolumeGesture: true,
+            enableBrightnessGesture: true,
+            enableSeekGesture: true,
+            skipDuration: testSkipDuration,
+            seekSecondsPerInch: 10,
+            autoHide: true,
+            autoHideDuration: const Duration(seconds: 3),
+            enablePlaybackSpeedGesture: true,
+            onBrightnessChanged: null,
+            child: const Center(child: Text('Video')),
           ),
         ),
       );
@@ -146,26 +143,24 @@ void main() {
 
     testWidgets('passes enable flags to gesture detector', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: GestureControlsWrapper(
-              controller: controller,
-              controlsController: mockControlsController,
-              enableDoubleTapSeek: false,
-              enableVolumeGesture: false,
-              enableBrightnessGesture: true,
-              enableSeekGesture: true,
-              skipDuration: const Duration(seconds: 10),
-              seekSecondsPerInch: 10,
-              autoHide: true,
-              autoHideDuration: const Duration(seconds: 3),
-              enablePlaybackSpeedGesture: true,
-              onBrightnessChanged: null,
-              child: const Center(child: Text('Video')),
-            ),
+        buildTestWidget(
+          GestureControlsWrapper(
+            controller: controller,
+            controlsController: mockControlsController,
+            enableDoubleTapSeek: false,
+            enableVolumeGesture: false,
+            enableBrightnessGesture: true,
+            enableSeekGesture: true,
+            skipDuration: const Duration(seconds: 10),
+            seekSecondsPerInch: 10,
+            autoHide: true,
+            autoHideDuration: const Duration(seconds: 3),
+            enablePlaybackSpeedGesture: true,
+            onBrightnessChanged: null,
+            child: const Center(child: Text('Video')),
           ),
         ),
       );
@@ -180,26 +175,24 @@ void main() {
 
     testWidgets('shows controls when visibility callback is true', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: GestureControlsWrapper(
-              controller: controller,
-              controlsController: mockControlsController,
-              enableDoubleTapSeek: true,
-              enableVolumeGesture: true,
-              enableBrightnessGesture: true,
-              enableSeekGesture: true,
-              skipDuration: const Duration(seconds: 10),
-              seekSecondsPerInch: 10,
-              autoHide: true,
-              autoHideDuration: const Duration(seconds: 3),
-              enablePlaybackSpeedGesture: true,
-              onBrightnessChanged: null,
-              child: const Center(child: Text('Video')),
-            ),
+        buildTestWidget(
+          GestureControlsWrapper(
+            controller: controller,
+            controlsController: mockControlsController,
+            enableDoubleTapSeek: true,
+            enableVolumeGesture: true,
+            enableBrightnessGesture: true,
+            enableSeekGesture: true,
+            skipDuration: const Duration(seconds: 10),
+            seekSecondsPerInch: 10,
+            autoHide: true,
+            autoHideDuration: const Duration(seconds: 3),
+            enablePlaybackSpeedGesture: true,
+            onBrightnessChanged: null,
+            child: const Center(child: Text('Video')),
           ),
         ),
       );
@@ -216,26 +209,24 @@ void main() {
 
     testWidgets('hides controls when visibility callback is false', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: GestureControlsWrapper(
-              controller: controller,
-              controlsController: mockControlsController,
-              enableDoubleTapSeek: true,
-              enableVolumeGesture: true,
-              enableBrightnessGesture: true,
-              enableSeekGesture: true,
-              skipDuration: const Duration(seconds: 10),
-              seekSecondsPerInch: 10,
-              autoHide: true,
-              autoHideDuration: const Duration(seconds: 3),
-              enablePlaybackSpeedGesture: true,
-              onBrightnessChanged: null,
-              child: const Center(child: Text('Video')),
-            ),
+        buildTestWidget(
+          GestureControlsWrapper(
+            controller: controller,
+            controlsController: mockControlsController,
+            enableDoubleTapSeek: true,
+            enableVolumeGesture: true,
+            enableBrightnessGesture: true,
+            enableSeekGesture: true,
+            skipDuration: const Duration(seconds: 10),
+            seekSecondsPerInch: 10,
+            autoHide: true,
+            autoHideDuration: const Duration(seconds: 3),
+            enablePlaybackSpeedGesture: true,
+            onBrightnessChanged: null,
+            child: const Center(child: Text('Video')),
           ),
         ),
       );
@@ -252,26 +243,24 @@ void main() {
 
     testWidgets('updates gesture seek position when callback is triggered', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: GestureControlsWrapper(
-              controller: controller,
-              controlsController: mockControlsController,
-              enableDoubleTapSeek: true,
-              enableVolumeGesture: true,
-              enableBrightnessGesture: true,
-              enableSeekGesture: true,
-              skipDuration: const Duration(seconds: 10),
-              seekSecondsPerInch: 10,
-              autoHide: true,
-              autoHideDuration: const Duration(seconds: 3),
-              enablePlaybackSpeedGesture: true,
-              onBrightnessChanged: null,
-              child: const Center(child: Text('Video')),
-            ),
+        buildTestWidget(
+          GestureControlsWrapper(
+            controller: controller,
+            controlsController: mockControlsController,
+            enableDoubleTapSeek: true,
+            enableVolumeGesture: true,
+            enableBrightnessGesture: true,
+            enableSeekGesture: true,
+            skipDuration: const Duration(seconds: 10),
+            seekSecondsPerInch: 10,
+            autoHide: true,
+            autoHideDuration: const Duration(seconds: 3),
+            enablePlaybackSpeedGesture: true,
+            onBrightnessChanged: null,
+            child: const Center(child: Text('Video')),
           ),
         ),
       );
@@ -289,27 +278,25 @@ void main() {
 
     testWidgets('all enable flags default to their values', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       // Test with all enabled
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: GestureControlsWrapper(
-              controller: controller,
-              controlsController: mockControlsController,
-              enableDoubleTapSeek: true,
-              enableVolumeGesture: true,
-              enableBrightnessGesture: true,
-              enableSeekGesture: true,
-              skipDuration: const Duration(seconds: 10),
-              seekSecondsPerInch: 10,
-              autoHide: true,
-              autoHideDuration: const Duration(seconds: 3),
-              enablePlaybackSpeedGesture: true,
-              onBrightnessChanged: null,
-              child: const Center(child: Text('Video')),
-            ),
+        buildTestWidget(
+          GestureControlsWrapper(
+            controller: controller,
+            controlsController: mockControlsController,
+            enableDoubleTapSeek: true,
+            enableVolumeGesture: true,
+            enableBrightnessGesture: true,
+            enableSeekGesture: true,
+            skipDuration: const Duration(seconds: 10),
+            seekSecondsPerInch: 10,
+            autoHide: true,
+            autoHideDuration: const Duration(seconds: 3),
+            enablePlaybackSpeedGesture: true,
+            onBrightnessChanged: null,
+            child: const Center(child: Text('Video')),
           ),
         ),
       );
@@ -323,23 +310,21 @@ void main() {
 
       // Test with all disabled
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: GestureControlsWrapper(
-              controller: controller,
-              controlsController: mockControlsController,
-              enableDoubleTapSeek: false,
-              enableVolumeGesture: false,
-              enableBrightnessGesture: false,
-              enableSeekGesture: false,
-              skipDuration: const Duration(seconds: 10),
-              seekSecondsPerInch: 10,
-              autoHide: true,
-              autoHideDuration: const Duration(seconds: 3),
-              enablePlaybackSpeedGesture: true,
-              onBrightnessChanged: null,
-              child: const Center(child: Text('Video')),
-            ),
+        buildTestWidget(
+          GestureControlsWrapper(
+            controller: controller,
+            controlsController: mockControlsController,
+            enableDoubleTapSeek: false,
+            enableVolumeGesture: false,
+            enableBrightnessGesture: false,
+            enableSeekGesture: false,
+            skipDuration: const Duration(seconds: 10),
+            seekSecondsPerInch: 10,
+            autoHide: true,
+            autoHideDuration: const Duration(seconds: 3),
+            enablePlaybackSpeedGesture: true,
+            onBrightnessChanged: null,
+            child: const Center(child: Text('Video')),
           ),
         ),
       );

@@ -3,15 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pro_video_player/src/controls/buttons/subtitle_button.dart';
 import 'package:pro_video_player/src/video_player_theme.dart';
 
+import '../../../shared/test_helpers.dart';
+
 void main() {
   group('SubtitleButton', () {
     testWidgets('shows closed_caption_off icon when no subtitle selected', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SubtitleButton(theme: VideoPlayerTheme.light(), hasSelectedSubtitle: false, onPressed: () {}),
-          ),
-        ),
+        buildTestWidget(SubtitleButton(theme: VideoPlayerTheme.light(), hasSelectedSubtitle: false, onPressed: () {})),
       );
 
       // Should show closed caption off icon
@@ -21,11 +19,7 @@ void main() {
 
     testWidgets('shows closed_caption icon when subtitle selected', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SubtitleButton(theme: VideoPlayerTheme.light(), hasSelectedSubtitle: true, onPressed: () {}),
-          ),
-        ),
+        buildTestWidget(SubtitleButton(theme: VideoPlayerTheme.light(), hasSelectedSubtitle: true, onPressed: () {})),
       );
 
       // Should show closed caption icon
@@ -36,11 +30,7 @@ void main() {
       final customTheme = VideoPlayerTheme.light().copyWith(primaryColor: Colors.purple);
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SubtitleButton(theme: customTheme, hasSelectedSubtitle: false, onPressed: () {}),
-          ),
-        ),
+        buildTestWidget(SubtitleButton(theme: customTheme, hasSelectedSubtitle: false, onPressed: () {})),
       );
 
       final iconButton = tester.widget<IconButton>(find.byType(IconButton));
@@ -52,14 +42,8 @@ void main() {
       var pressed = false;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SubtitleButton(
-              theme: VideoPlayerTheme.light(),
-              hasSelectedSubtitle: false,
-              onPressed: () => pressed = true,
-            ),
-          ),
+        buildTestWidget(
+          SubtitleButton(theme: VideoPlayerTheme.light(), hasSelectedSubtitle: false, onPressed: () => pressed = true),
         ),
       );
 
@@ -72,11 +56,7 @@ void main() {
 
     testWidgets('has Subtitles tooltip', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SubtitleButton(theme: VideoPlayerTheme.light(), hasSelectedSubtitle: false, onPressed: () {}),
-          ),
-        ),
+        buildTestWidget(SubtitleButton(theme: VideoPlayerTheme.light(), hasSelectedSubtitle: false, onPressed: () {})),
       );
 
       final iconButton = tester.widget<IconButton>(find.byType(IconButton));
@@ -85,11 +65,7 @@ void main() {
 
     testWidgets('uses correct icon size', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SubtitleButton(theme: VideoPlayerTheme.light(), hasSelectedSubtitle: false, onPressed: () {}),
-          ),
-        ),
+        buildTestWidget(SubtitleButton(theme: VideoPlayerTheme.light(), hasSelectedSubtitle: false, onPressed: () {})),
       );
 
       final iconButton = tester.widget<IconButton>(find.byType(IconButton));

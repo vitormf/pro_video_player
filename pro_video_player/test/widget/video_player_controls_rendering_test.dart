@@ -8,6 +8,9 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
+import '../shared/test_constants.dart';
+import '../shared/test_helpers.dart';
+
 class MockProVideoPlayerPlatform extends Mock with MockPlatformInterfaceMixin implements ProVideoPlayerPlatform {}
 
 void main() {
@@ -63,12 +66,10 @@ void main() {
     ProVideoPlayerPlatform.instance = MockProVideoPlayerPlatform();
   });
 
-  Widget buildTestWidget(Widget child) => MaterialApp(home: Scaffold(body: child));
-
   group('VideoPlayerControls', () {
     testWidgets('renders play button when paused', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       // Set state to paused
       eventController.add(const PlaybackStateChangedEvent(PlaybackState.paused));
@@ -83,7 +84,7 @@ void main() {
 
     testWidgets('renders pause button when playing', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       // Set state to playing
       eventController.add(const PlaybackStateChangedEvent(PlaybackState.playing));
@@ -98,7 +99,7 @@ void main() {
 
     testWidgets('calls play when play button is tapped', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
         buildTestWidget(VideoPlayerControls(controller: controller, enableGestures: false, forceMobileLayout: true)),
@@ -118,7 +119,7 @@ void main() {
 
     testWidgets('calls pause when pause button is tapped', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       eventController.add(const PlaybackStateChangedEvent(PlaybackState.playing));
       await tester.pump();
@@ -135,10 +136,10 @@ void main() {
 
     testWidgets('displays current position and duration', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       eventController
-        ..add(const DurationChangedEvent(Duration(minutes: 5)))
+        ..add(const DurationChangedEvent(TestMetadata.duration))
         ..add(const PositionChangedEvent(Duration(minutes: 2, seconds: 30)));
       await tester.pump();
 
@@ -152,10 +153,10 @@ void main() {
 
     testWidgets('displays progress bar', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       eventController
-        ..add(const DurationChangedEvent(Duration(minutes: 5)))
+        ..add(const DurationChangedEvent(TestMetadata.duration))
         ..add(const PositionChangedEvent(Duration(minutes: 1)));
       await tester.pump();
 
@@ -170,7 +171,7 @@ void main() {
 
     testWidgets('seeks when progress bar is tapped', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
         buildTestWidget(VideoPlayerControls(controller: controller, enableGestures: false, forceMobileLayout: true)),
@@ -194,7 +195,7 @@ void main() {
 
     testWidgets('renders fullscreen button by default', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
         buildTestWidget(VideoPlayerControls(controller: controller, enableGestures: false, forceMobileLayout: true)),
@@ -205,7 +206,7 @@ void main() {
 
     testWidgets('does not render fullscreen button when showFullscreenButton is false', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
         buildTestWidget(
@@ -224,7 +225,7 @@ void main() {
 
     testWidgets('calls onEnterFullscreen callback when fullscreen button is tapped', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       var enterFullscreenCalled = false;
 
@@ -247,7 +248,7 @@ void main() {
 
     testWidgets('shows fullscreen_exit icon when in fullscreen', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       eventController.add(const FullscreenStateChangedEvent(isFullscreen: true));
       await tester.pump();
@@ -261,7 +262,7 @@ void main() {
 
     testWidgets('calls onExitFullscreen callback when fullscreen_exit button is tapped', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       eventController.add(const FullscreenStateChangedEvent(isFullscreen: true));
       await tester.pump();
@@ -287,7 +288,7 @@ void main() {
 
     testWidgets('shows loading indicator when buffering', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       eventController.add(const PlaybackStateChangedEvent(PlaybackState.buffering));
       await tester.pump();
@@ -301,7 +302,7 @@ void main() {
 
     testWidgets('renders play button when completed', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       eventController.add(const PlaybackStateChangedEvent(PlaybackState.completed));
       await tester.pump();
@@ -316,7 +317,7 @@ void main() {
 
     testWidgets('calls play when play button is tapped after completion', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       eventController.add(const PlaybackStateChangedEvent(PlaybackState.completed));
       await tester.pump();
@@ -337,7 +338,7 @@ void main() {
     group('customization', () {
       testWidgets('uses theme colors from VideoPlayerThemeData', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final customTheme = VideoPlayerTheme.light();
 
@@ -357,7 +358,7 @@ void main() {
 
       testWidgets('uses theme icon size', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final customTheme = const VideoPlayerTheme().copyWith(iconSize: 48);
 

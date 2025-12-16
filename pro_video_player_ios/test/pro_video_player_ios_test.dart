@@ -13,7 +13,7 @@ void main() {
 
   setUp(() {
     plugin = ProVideoPlayerIOS();
-    harness = MethodChannelTestHarness(channelName: 'com.example.pro_video_player_ios/methods')..setUp();
+    harness = MethodChannelTestHarness(channelName: 'dev.pro_video_player.ios/methods')..setUp();
   });
 
   tearDown(() {
@@ -146,7 +146,7 @@ void main() {
       });
 
       test('setLooping calls native method', () async {
-        await plugin.setLooping(1, looping: true);
+        await plugin.setLooping(1, true);
 
         expect(harness.lastCall.method, equals('setLooping'));
         expect(harness.lastCall.args['playerId'], equals(1));

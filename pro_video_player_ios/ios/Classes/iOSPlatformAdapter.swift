@@ -10,7 +10,7 @@ class iOSPlatformAdapter: PlatformAdapter {
     private var isFullscreenMode: Bool = false
 
     var channelPrefix: String {
-        return "com.example.pro_video_player_ios"
+        return "dev.pro_video_player_ios"
     }
 
     var backgroundNotificationName: Notification.Name {

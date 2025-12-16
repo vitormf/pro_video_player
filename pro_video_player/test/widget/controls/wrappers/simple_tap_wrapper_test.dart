@@ -7,6 +7,9 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
+import '../../../shared/test_constants.dart';
+import '../../../shared/test_helpers.dart';
+
 class MockProVideoPlayerPlatform extends Mock with MockPlatformInterfaceMixin implements ProVideoPlayerPlatform {}
 
 class MockVideoControlsController extends Mock implements VideoControlsController {}
@@ -54,16 +57,14 @@ void main() {
   group('SimpleTapWrapper', () {
     testWidgets('taps toggle controls visibility when not casting', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SimpleTapWrapper(
-              controller: controller,
-              controlsController: mockControlsController,
-              child: const Center(child: Text('Video')),
-            ),
+        buildTestWidget(
+          SimpleTapWrapper(
+            controller: controller,
+            controlsController: mockControlsController,
+            child: const Center(child: Text('Video')),
           ),
         ),
       );
@@ -77,23 +78,21 @@ void main() {
 
     testWidgets('shows controls when tapped during casting', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       // Set casting state
       eventController.add(const CastStateChangedEvent(state: CastState.connected));
-      await tester.pump(const Duration(milliseconds: 50));
+      await tester.pump(TestDelays.eventPropagation);
 
       // Mock controls as hidden
       when(() => mockControlsController.controlsState).thenReturn(VideoControlsState()..hideControls());
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SimpleTapWrapper(
-              controller: controller,
-              controlsController: mockControlsController,
-              child: const Center(child: Text('Video')),
-            ),
+        buildTestWidget(
+          SimpleTapWrapper(
+            controller: controller,
+            controlsController: mockControlsController,
+            child: const Center(child: Text('Video')),
           ),
         ),
       );
@@ -108,16 +107,14 @@ void main() {
 
     testWidgets('resets hide timer when controls become visible', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SimpleTapWrapper(
-              controller: controller,
-              controlsController: mockControlsController,
-              child: const Center(child: Text('Video')),
-            ),
+        buildTestWidget(
+          SimpleTapWrapper(
+            controller: controller,
+            controlsController: mockControlsController,
+            child: const Center(child: Text('Video')),
           ),
         ),
       );
@@ -131,19 +128,17 @@ void main() {
 
     testWidgets('does not reset hide timer when controls are hidden', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       // Mock controls as hidden
       when(() => mockControlsController.controlsState).thenReturn(VideoControlsState()..hideControls());
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SimpleTapWrapper(
-              controller: controller,
-              controlsController: mockControlsController,
-              child: const Center(child: Text('Video')),
-            ),
+        buildTestWidget(
+          SimpleTapWrapper(
+            controller: controller,
+            controlsController: mockControlsController,
+            child: const Center(child: Text('Video')),
           ),
         ),
       );
@@ -157,16 +152,14 @@ void main() {
 
     testWidgets('renders child widget', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SimpleTapWrapper(
-              controller: controller,
-              controlsController: mockControlsController,
-              child: const Center(child: Text('Test Child')),
-            ),
+        buildTestWidget(
+          SimpleTapWrapper(
+            controller: controller,
+            controlsController: mockControlsController,
+            child: const Center(child: Text('Test Child')),
           ),
         ),
       );
@@ -176,20 +169,18 @@ void main() {
 
     testWidgets('does not intercept child gestures when not casting', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       var childTapped = false;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SimpleTapWrapper(
-              controller: controller,
-              controlsController: mockControlsController,
-              child: GestureDetector(
-                onTap: () => childTapped = true,
-                child: const Center(child: Text('Tappable Child')),
-              ),
+        buildTestWidget(
+          SimpleTapWrapper(
+            controller: controller,
+            controlsController: mockControlsController,
+            child: GestureDetector(
+              onTap: () => childTapped = true,
+              child: const Center(child: Text('Tappable Child')),
             ),
           ),
         ),
@@ -199,9 +190,9 @@ void main() {
       await tester.tap(find.text('Tappable Child'));
       await tester.pump();
 
-      // Both wrapper and child should receive tap
+      // Child should receive tap, but wrapper should not intercept it
       expect(childTapped, isTrue);
-      verify(() => mockControlsController.toggleControlsVisibility()).called(1);
+      verifyNever(() => mockControlsController.toggleControlsVisibility());
     });
   });
 }

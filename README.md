@@ -30,6 +30,72 @@ A Flutter plugin for video playback using native video players across all platfo
 - Comprehensive event system
 - Customizable or native UI controls
 
+## Migrating from video_player
+
+`pro_video_player` is designed to be **API-compatible** with Flutter's official `video_player` package, making migration straightforward:
+
+### Quick Migration
+
+```dart
+// 1. Update imports
+// import 'package:video_player/video_player.dart';
+import 'package:pro_video_player/pro_video_player.dart';
+
+// 2. Rename classes (API is identical!)
+// final controller = VideoPlayerController.network('https://example.com/video.mp4');
+final controller = ProVideoPlayerController.network('https://example.com/video.mp4');
+await controller.initialize();
+controller.play();
+```
+
+### Why Migrate?
+
+All `video_player` features work identically, plus you get:
+
+- ✅ **Better platform coverage** - Windows and Linux support
+- ✅ **Advanced subtitles** - SRT, VTT, SSA, ASS, TTML, CEA-608/708, embedded tracks
+- ✅ **Chapter navigation** - Auto-extracted from video metadata
+- ✅ **Playlists** - M3U, PLS, XSPF with auto-parsing
+- ✅ **Quality selection** - Manual or adaptive bitrate switching
+- ✅ **Audio track selection** - Multi-language audio support
+- ✅ **Enhanced PiP** - Works across all platforms
+- ✅ **Casting** - Chromecast and AirPlay support
+- ✅ **Better error recovery** - Automatic retry with network monitoring
+
+### Compatible API
+
+These `video_player` features work **without any code changes**:
+
+```dart
+// All standard methods
+controller.play();
+controller.pause();
+controller.seekTo(Duration(seconds: 30));
+controller.setVolume(0.5);
+controller.setPlaybackSpeed(1.5);
+controller.setLooping(true);
+
+// All standard properties
+controller.value.isPlaying
+controller.value.position
+controller.value.duration
+controller.value.aspectRatio
+controller.value.buffered
+controller.value.hasError
+
+// Named constructors
+ProVideoPlayerController.network(url)
+ProVideoPlayerController.file(file)
+ProVideoPlayerController.asset('assets/video.mp4')
+
+// Captions
+controller.setClosedCaptionFile(captionFile)
+controller.value.caption
+controller.setCaptionOffset(offset)
+```
+
+📖 **[Complete Migration Guide](./docs/migration-from-video-player.md)** - Side-by-side examples, breaking changes, and extended features.
+
 ## Platform-Specific Features
 
 | Feature | iOS | Android | Web | macOS | Windows | Linux |

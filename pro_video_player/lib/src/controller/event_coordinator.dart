@@ -79,13 +79,25 @@ class EventCoordinator {
   final Future<void> Function() onPlay;
 
   StreamSubscription<VideoPlayerEvent>? _eventSubscription;
+  bool _isSubscribed = false;
 
   /// Subscribes to platform events.
+  ///
+  /// This method is idempotent - calling it multiple times is safe.
+  /// Subscription happens lazily to avoid test hanging issues.
   void subscribeToEvents() {
+    if (_isSubscribed) return;
+
     final playerId = getPlayerId();
     if (playerId == null) return;
 
     _eventSubscription = platform.events(playerId).listen(_handleEvent);
+    _isSubscribed = true;
+  }
+
+  /// Ensures events are subscribed. Call this before operations that need platform events.
+  void ensureSubscribed() {
+    subscribeToEvents();
   }
 
   /// Handles events from the platform.

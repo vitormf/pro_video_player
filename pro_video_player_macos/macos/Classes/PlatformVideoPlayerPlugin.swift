@@ -6,6 +6,7 @@ import Foundation
 public class ProVideoPlayerPlugin: NSObject, FlutterPlugin, PlatformPluginBehavior {
     private(set) var sharedBase: SharedPluginBase!
     private var registrar: FlutterPluginRegistrar!
+    private var pigeonHandler: PigeonHostApiHandler?
 
     /// Test-friendly initializer that creates a plugin instance with a custom registrar
     /// - Parameter registrar: The Flutter plugin registrar to use
@@ -17,6 +18,7 @@ public class ProVideoPlayerPlugin: NSObject, FlutterPlugin, PlatformPluginBehavi
             platformBehavior: self,
             config: .macOS
         )
+        self.pigeonHandler = PigeonHostApiHandler(sharedBase: self.sharedBase, platformBehavior: self)
     }
 
     override init() {
@@ -32,18 +34,23 @@ public class ProVideoPlayerPlugin: NSObject, FlutterPlugin, PlatformPluginBehavi
             config: .macOS
         )
 
+        // Register traditional MethodChannel (for backward compatibility during migration)
         let channel = FlutterMethodChannel(
             name: PlatformConfig.macOS.channelName,
             binaryMessenger: registrar.messenger
         )
         registrar.addMethodCallDelegate(instance, channel: channel)
 
+        // Register Pigeon API
+        instance.pigeonHandler = PigeonHostApiHandler(sharedBase: instance.sharedBase, platformBehavior: instance)
+        ProVideoPlayerHostApiSetup.setUp(binaryMessenger: registrar.messenger, api: instance.pigeonHandler)
+
         let factory = VideoPlayerViewFactory(plugin: instance.sharedBase)
         registrar.register(factory, withId: PlatformConfig.macOS.viewTypeId)
 
         // Register AirPlay route picker view factory
         let airPlayFactory = AirPlayRoutePickerViewFactory(messenger: registrar.messenger)
-        registrar.register(airPlayFactory, withId: "com.example.pro_video_player_macos/airplay_picker")
+        registrar.register(airPlayFactory, withId: "dev.pro_video_player_macos/airplay_picker")
     }
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {

@@ -81,6 +81,41 @@ class PlatformCapabilities {
     additionalInfo: map['additionalInfo'] as Map<String, dynamic>?,
   );
 
+  /// Creates desktop platform capabilities (Linux/Windows placeholder).
+  ///
+  /// This factory provides common capabilities for desktop platforms (Linux/Windows)
+  /// that haven't yet implemented full native player functionality.
+  ///
+  /// Currently all advanced features are disabled as placeholders, with only
+  /// playback speed control supported as it's available in both GStreamer and
+  /// Media Foundation.
+  factory PlatformCapabilities.desktop({required String platformName, required String nativePlayerType}) =>
+      PlatformCapabilities(
+        supportsPictureInPicture: false, // Not implemented yet
+        supportsFullscreen: false, // Not implemented yet
+        supportsBackgroundPlayback: false, // Not implemented yet
+        supportsCasting: false, // Could support DLNA/UPnP in future
+        supportsAirPlay: false, // AirPlay is iOS/macOS only
+        supportsChromecast: false, // Android only
+        supportsRemotePlayback: false, // Web only
+        supportsQualitySelection: false, // Not implemented yet
+        supportsPlaybackSpeedControl: true, // GStreamer/Media Foundation supports this
+        supportsSubtitles: false, // Not implemented yet
+        supportsExternalSubtitles: false, // Not implemented yet
+        supportsAudioTrackSelection: false, // Not implemented yet
+        supportsChapters: false, // Not implemented yet
+        supportsVideoMetadataExtraction: false, // Not implemented yet
+        supportsNetworkMonitoring: false, // Not implemented yet
+        supportsBandwidthEstimation: false, // Not implemented yet
+        supportsAdaptiveBitrate: false, // Not implemented yet
+        supportsHLS: false, // Not implemented yet
+        supportsDASH: false, // Not implemented yet
+        supportsDeviceVolumeControl: false, // Not implemented yet
+        supportsScreenBrightnessControl: false, // Not supported on desktop
+        platformName: platformName,
+        nativePlayerType: nativePlayerType,
+      );
+
   // ==================== Core Playback Features ====================
 
   /// Whether Picture-in-Picture mode is supported.

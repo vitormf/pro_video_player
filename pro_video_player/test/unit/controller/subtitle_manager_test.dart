@@ -3,7 +3,9 @@ import 'package:mocktail/mocktail.dart';
 import 'package:pro_video_player/src/controller/subtitle_manager.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
-import '../../test_helpers.dart';
+import '../../shared/mocks.dart';
+import '../../shared/test_constants.dart';
+import '../../shared/test_setup.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -14,7 +16,7 @@ void main() {
   late VideoPlayerOptions options;
   late bool isInitialized;
 
-  setUpAll(registerFallbackValues);
+  setUpAll(registerVideoPlayerFallbackValues);
 
   setUp(() {
     mockPlatform = MockProVideoPlayerPlatform();
@@ -271,7 +273,7 @@ void main() {
         // SubtitleDiscovery is called directly, so we can't easily mock it
         // But the method should not throw even if discovery fails
         expect(
-          () => manager.discoverAndAddSubtitles('/path/to/video.mp4', SubtitleDiscoveryMode.strict),
+          () => manager.discoverAndAddSubtitles(TestMedia.filePath, SubtitleDiscoveryMode.strict),
           returnsNormally,
         );
       });

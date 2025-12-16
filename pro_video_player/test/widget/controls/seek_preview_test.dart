@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 
+import '../../shared/test_helpers.dart';
+
 void main() {
   group('SeekPreview', () {
     late VideoPlayerTheme theme;
@@ -12,14 +14,12 @@ void main() {
 
     testWidgets('displays target position and forward difference', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SeekPreview(
-              dragProgress: 0.5,
-              dragStartPosition: const Duration(seconds: 10),
-              duration: const Duration(seconds: 100),
-              theme: theme,
-            ),
+        buildTestWidget(
+          SeekPreview(
+            dragProgress: 0.5,
+            dragStartPosition: const Duration(seconds: 10),
+            duration: const Duration(seconds: 100),
+            theme: theme,
           ),
         ),
       );
@@ -33,14 +33,12 @@ void main() {
 
     testWidgets('displays target position and backward difference', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SeekPreview(
-              dragProgress: 0.2,
-              dragStartPosition: const Duration(seconds: 50),
-              duration: const Duration(seconds: 100),
-              theme: theme,
-            ),
+        buildTestWidget(
+          SeekPreview(
+            dragProgress: 0.2,
+            dragStartPosition: const Duration(seconds: 50),
+            duration: const Duration(seconds: 100),
+            theme: theme,
           ),
         ),
       );
@@ -54,14 +52,12 @@ void main() {
 
     testWidgets('handles zero difference', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SeekPreview(
-              dragProgress: 0.3,
-              dragStartPosition: const Duration(seconds: 30),
-              duration: const Duration(seconds: 100),
-              theme: theme,
-            ),
+        buildTestWidget(
+          SeekPreview(
+            dragProgress: 0.3,
+            dragStartPosition: const Duration(seconds: 30),
+            duration: const Duration(seconds: 100),
+            theme: theme,
           ),
         ),
       );
@@ -75,14 +71,12 @@ void main() {
 
     testWidgets('formats duration with hours correctly', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SeekPreview(
-              dragProgress: 0.5,
-              dragStartPosition: const Duration(hours: 1),
-              duration: const Duration(hours: 2),
-              theme: theme,
-            ),
+        buildTestWidget(
+          SeekPreview(
+            dragProgress: 0.5,
+            dragStartPosition: const Duration(hours: 1),
+            duration: const Duration(hours: 2),
+            theme: theme,
           ),
         ),
       );
@@ -95,14 +89,12 @@ void main() {
 
     testWidgets('handles drag to beginning', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SeekPreview(
-              dragProgress: 0,
-              dragStartPosition: const Duration(seconds: 50),
-              duration: const Duration(seconds: 100),
-              theme: theme,
-            ),
+        buildTestWidget(
+          SeekPreview(
+            dragProgress: 0,
+            dragStartPosition: const Duration(seconds: 50),
+            duration: const Duration(seconds: 100),
+            theme: theme,
           ),
         ),
       );
@@ -114,14 +106,12 @@ void main() {
 
     testWidgets('handles drag to end', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SeekPreview(
-              dragProgress: 1,
-              dragStartPosition: const Duration(seconds: 50),
-              duration: const Duration(seconds: 100),
-              theme: theme,
-            ),
+        buildTestWidget(
+          SeekPreview(
+            dragProgress: 1,
+            dragStartPosition: const Duration(seconds: 50),
+            duration: const Duration(seconds: 100),
+            theme: theme,
           ),
         ),
       );
@@ -135,14 +125,12 @@ void main() {
       final customTheme = VideoPlayerTheme.light().copyWith(primaryColor: Colors.red);
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SeekPreview(
-              dragProgress: 0.5,
-              dragStartPosition: const Duration(seconds: 10),
-              duration: const Duration(seconds: 100),
-              theme: customTheme,
-            ),
+        buildTestWidget(
+          SeekPreview(
+            dragProgress: 0.5,
+            dragStartPosition: const Duration(seconds: 10),
+            duration: const Duration(seconds: 100),
+            theme: customTheme,
           ),
         ),
       );
@@ -155,14 +143,12 @@ void main() {
       final customTheme = VideoPlayerTheme.light().copyWith(secondaryColor: Colors.blue);
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SeekPreview(
-              dragProgress: 0.5,
-              dragStartPosition: const Duration(seconds: 10),
-              duration: const Duration(seconds: 100),
-              theme: customTheme,
-            ),
+        buildTestWidget(
+          SeekPreview(
+            dragProgress: 0.5,
+            dragStartPosition: const Duration(seconds: 10),
+            duration: const Duration(seconds: 100),
+            theme: customTheme,
           ),
         ),
       );
@@ -176,14 +162,12 @@ void main() {
 
     testWidgets('has text shadows for better visibility', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SeekPreview(
-              dragProgress: 0.5,
-              dragStartPosition: const Duration(seconds: 10),
-              duration: const Duration(seconds: 100),
-              theme: theme,
-            ),
+        buildTestWidget(
+          SeekPreview(
+            dragProgress: 0.5,
+            dragStartPosition: const Duration(seconds: 10),
+            duration: const Duration(seconds: 100),
+            theme: theme,
           ),
         ),
       );
@@ -203,17 +187,15 @@ void main() {
 
     testWidgets('scales down when content is too large (FittedBox)', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              width: 50, // Very narrow
-              height: 50, // Very short
-              child: SeekPreview(
-                dragProgress: 0.5,
-                dragStartPosition: const Duration(seconds: 10),
-                duration: const Duration(seconds: 100),
-                theme: theme,
-              ),
+        buildTestWidget(
+          SizedBox(
+            width: 50, // Very narrow
+            height: 50, // Very short
+            child: SeekPreview(
+              dragProgress: 0.5,
+              dragStartPosition: const Duration(seconds: 10),
+              duration: const Duration(seconds: 100),
+              theme: theme,
             ),
           ),
         ),

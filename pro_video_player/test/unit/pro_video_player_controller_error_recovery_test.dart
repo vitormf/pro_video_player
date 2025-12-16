@@ -3,21 +3,23 @@ import 'package:mocktail/mocktail.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
-import '../test_helpers.dart';
+import '../shared/test_constants.dart';
+import '../shared/test_matchers.dart';
+import '../shared/test_setup.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  late ControllerTestFixture fixture;
+  late VideoPlayerTestFixture fixture;
 
-  setUpAll(registerFallbackValues);
+  setUpAll(registerVideoPlayerFallbackValues);
 
   setUp(() {
-    fixture = ControllerTestFixture();
+    fixture = VideoPlayerTestFixture()..setUp();
   });
 
   tearDown(() async {
-    await fixture.dispose();
+    await fixture.tearDown();
   });
 
   group('ProVideoPlayerController error recovery', () {
@@ -31,27 +33,27 @@ void main() {
       when(() => fixture.mockPlatform.play(any())).thenAnswer((_) async {});
       when(() => fixture.mockPlatform.dispose(any())).thenAnswer((_) async {});
 
-      await fixture.controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await fixture.controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
     });
 
     test('clearError resets error state', () async {
       // Set error state
-      fixture.eventController.add(ErrorEvent('Test error'));
-      await Future<void>.delayed(Duration.zero);
+      fixture.emitEvent(ErrorEvent('Test error'));
+      await fixture.waitForEvents();
       expect(fixture.controller.value.hasError, isTrue);
 
       fixture.controller.clearError();
 
       expect(fixture.controller.value.hasError, isFalse);
-      expect(fixture.controller.value.playbackState, PlaybackState.ready);
+      expect(fixture.controller, isReady);
     });
 
     test('clearError does nothing if no error', () async {
-      expect(fixture.controller.value.playbackState, PlaybackState.ready);
+      expect(fixture.controller, isReady);
 
       fixture.controller.clearError();
 
-      expect(fixture.controller.value.playbackState, PlaybackState.ready);
+      expect(fixture.controller, isReady);
     });
 
     test('retry throws when no error', () async {
@@ -66,8 +68,8 @@ void main() {
 
     test('retry calls play and returns true on success', () async {
       // Set error state
-      fixture.eventController.add(ErrorEvent('Test error'));
-      await Future<void>.delayed(Duration.zero);
+      fixture.emitEvent(ErrorEvent('Test error'));
+      await fixture.waitForEvents();
 
       final result = await fixture.controller.retry();
 
@@ -83,8 +85,8 @@ void main() {
         severity: VideoPlayerErrorSeverity.recoverable,
         maxRetries: 0,
       );
-      fixture.eventController.add(ErrorEvent.withError(error));
-      await Future<void>.delayed(Duration.zero);
+      fixture.emitEvent(ErrorEvent.withError(error));
+      await fixture.waitForEvents();
 
       final result = await fixture.controller.retry();
 

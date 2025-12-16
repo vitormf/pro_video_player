@@ -83,6 +83,23 @@ JSObject? _createDashPlayer() {
   }
 }
 
+/// Parses a roles array from a DASH track JSObject.
+///
+/// Returns null if the array is null or empty, otherwise returns a list of role strings.
+List<String>? _parseRolesFromJs(JSArray? rolesJs) {
+  if (rolesJs == null) return null;
+
+  final roles = <String>[];
+  for (var i = 0; i < rolesJs.length; i++) {
+    final role = rolesJs[i] as JSString?;
+    if (role != null) {
+      roles.add(role.toDart);
+    }
+  }
+
+  return roles.isEmpty ? null : roles;
+}
+
 /// dash.js event constants.
 ///
 /// These match the event names used by dash.js library.
@@ -203,32 +220,15 @@ class DashPlayer {
   }
 
   /// Gets the list of available video bitrates/qualities.
-  List<DashBitrateInfo> getVideoBitrateInfoList() {
-    try {
-      final list = _player.callMethod('getBitrateInfoListFor'.toJS, 'video'.toJS) as JSArray?;
-      if (list == null) return [];
-
-      final result = <DashBitrateInfo>[];
-      final length = list.length;
-
-      for (var i = 0; i < length; i++) {
-        final info = list[i] as JSObject?;
-        if (info != null) {
-          result.add(DashBitrateInfo._fromJs(info, i));
-        }
-      }
-
-      return result;
-    } catch (e) {
-      verboseLog('Failed to get video bitrate list: $e', tag: 'DashPlayer');
-      return [];
-    }
-  }
+  List<DashBitrateInfo> getVideoBitrateInfoList() => _getBitrateInfoListFor('video');
 
   /// Gets the list of available audio bitrates.
-  List<DashBitrateInfo> getAudioBitrateInfoList() {
+  List<DashBitrateInfo> getAudioBitrateInfoList() => _getBitrateInfoListFor('audio');
+
+  /// Helper method to get bitrate info list for a specific type (video/audio).
+  List<DashBitrateInfo> _getBitrateInfoListFor(String type) {
     try {
-      final list = _player.callMethod('getBitrateInfoListFor'.toJS, 'audio'.toJS) as JSArray?;
+      final list = _player.callMethod('getBitrateInfoListFor'.toJS, type.toJS) as JSArray?;
       if (list == null) return [];
 
       final result = <DashBitrateInfo>[];
@@ -243,7 +243,7 @@ class DashPlayer {
 
       return result;
     } catch (e) {
-      verboseLog('Failed to get audio bitrate list: $e', tag: 'DashPlayer');
+      verboseLog('Failed to get $type bitrate list: $e', tag: 'DashPlayer');
       return [];
     }
   }
@@ -508,27 +508,13 @@ class DashBitrateInfo {
 class DashTextTrack {
   DashTextTrack._({required this.index, this.id, this.lang, this.roles, this.isDefault = false});
 
-  factory DashTextTrack._fromJs(JSObject js, int index) {
-    final rolesJs = js['roles'] as JSArray?;
-    List<String>? roles;
-    if (rolesJs != null) {
-      roles = [];
-      for (var i = 0; i < rolesJs.length; i++) {
-        final role = rolesJs[i] as JSString?;
-        if (role != null) {
-          roles.add(role.toDart);
-        }
-      }
-    }
-
-    return DashTextTrack._(
-      index: index,
-      id: (js['id'] as JSString?)?.toDart,
-      lang: (js['lang'] as JSString?)?.toDart,
-      roles: roles,
-      isDefault: (js['isDefault'] as JSBoolean?)?.toDart ?? false,
-    );
-  }
+  factory DashTextTrack._fromJs(JSObject js, int index) => DashTextTrack._(
+    index: index,
+    id: (js['id'] as JSString?)?.toDart,
+    lang: (js['lang'] as JSString?)?.toDart,
+    roles: _parseRolesFromJs(js['roles'] as JSArray?),
+    isDefault: (js['isDefault'] as JSBoolean?)?.toDart ?? false,
+  );
 
   /// The track index.
   final int index;
@@ -559,27 +545,13 @@ class DashTextTrack {
 class DashAudioTrack {
   DashAudioTrack._({required this.index, this.id, this.lang, this.roles, this.isDefault = false});
 
-  factory DashAudioTrack._fromJs(JSObject js, int index) {
-    final rolesJs = js['roles'] as JSArray?;
-    List<String>? roles;
-    if (rolesJs != null) {
-      roles = [];
-      for (var i = 0; i < rolesJs.length; i++) {
-        final role = rolesJs[i] as JSString?;
-        if (role != null) {
-          roles.add(role.toDart);
-        }
-      }
-    }
-
-    return DashAudioTrack._(
-      index: index,
-      id: (js['id'] as JSString?)?.toDart,
-      lang: (js['lang'] as JSString?)?.toDart,
-      roles: roles,
-      isDefault: (js['isDefault'] as JSBoolean?)?.toDart ?? false,
-    );
-  }
+  factory DashAudioTrack._fromJs(JSObject js, int index) => DashAudioTrack._(
+    index: index,
+    id: (js['id'] as JSString?)?.toDart,
+    lang: (js['lang'] as JSString?)?.toDart,
+    roles: _parseRolesFromJs(js['roles'] as JSArray?),
+    isDefault: (js['isDefault'] as JSBoolean?)?.toDart ?? false,
+  );
 
   /// The track index.
   final int index;

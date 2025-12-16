@@ -3,21 +3,22 @@ import 'package:mocktail/mocktail.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
-import '../test_helpers.dart';
+import '../shared/test_constants.dart';
+import '../shared/test_setup.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  late ControllerTestFixture fixture;
+  late VideoPlayerTestFixture fixture;
 
-  setUpAll(registerFallbackValues);
+  setUpAll(registerVideoPlayerFallbackValues);
 
   setUp(() {
-    fixture = ControllerTestFixture();
+    fixture = VideoPlayerTestFixture()..setUp();
   });
 
   tearDown(() async {
-    await fixture.dispose();
+    await fixture.tearDown();
   });
 
   group('ProVideoPlayerController subtitles configuration', () {
@@ -32,7 +33,7 @@ void main() {
 
     test('subtitlesEnabled returns options value', () async {
       await fixture.controller.initialize(
-        source: const VideoSource.network('https://example.com/video.mp4'),
+        source: const VideoSource.network(TestMedia.networkUrl),
         options: const VideoPlayerOptions(subtitlesEnabled: false),
       );
 
@@ -41,7 +42,7 @@ void main() {
 
     test('setSubtitleTrack returns early when subtitles disabled', () async {
       await fixture.controller.initialize(
-        source: const VideoSource.network('https://example.com/video.mp4'),
+        source: const VideoSource.network(TestMedia.networkUrl),
         options: const VideoPlayerOptions(subtitlesEnabled: false),
       );
 
@@ -54,13 +55,13 @@ void main() {
 
     test('SubtitleTracksChangedEvent is ignored when subtitles disabled', () async {
       await fixture.controller.initialize(
-        source: const VideoSource.network('https://example.com/video.mp4'),
+        source: const VideoSource.network(TestMedia.networkUrl),
         options: const VideoPlayerOptions(subtitlesEnabled: false),
       );
 
       const tracks = [SubtitleTrack(id: 'en', label: 'English')];
-      fixture.eventController.add(const SubtitleTracksChangedEvent(tracks));
-      await Future<void>.delayed(Duration.zero);
+      fixture.emitEvent(const SubtitleTracksChangedEvent(tracks));
+      await fixture.waitForEvents();
 
       expect(fixture.controller.value.subtitleTracks, isEmpty);
     });
@@ -69,13 +70,13 @@ void main() {
       when(() => fixture.mockPlatform.setSubtitleTrack(any(), any())).thenAnswer((_) async {});
 
       await fixture.controller.initialize(
-        source: const VideoSource.network('https://example.com/video.mp4'),
+        source: const VideoSource.network(TestMedia.networkUrl),
         options: const VideoPlayerOptions(showSubtitlesByDefault: true),
       );
 
       const tracks = [SubtitleTrack(id: 'en', label: 'English', language: 'en')];
-      fixture.eventController.add(const SubtitleTracksChangedEvent(tracks));
-      await Future<void>.delayed(Duration.zero);
+      fixture.emitEvent(const SubtitleTracksChangedEvent(tracks));
+      await fixture.waitForEvents();
 
       // Auto-selection should trigger setSubtitleTrack
       verify(() => fixture.mockPlatform.setSubtitleTrack(1, tracks[0])).called(1);
@@ -85,7 +86,7 @@ void main() {
       when(() => fixture.mockPlatform.setSubtitleTrack(any(), any())).thenAnswer((_) async {});
 
       await fixture.controller.initialize(
-        source: const VideoSource.network('https://example.com/video.mp4'),
+        source: const VideoSource.network(TestMedia.networkUrl),
         options: const VideoPlayerOptions(showSubtitlesByDefault: true, preferredSubtitleLanguage: 'es'),
       );
 
@@ -93,8 +94,8 @@ void main() {
         SubtitleTrack(id: 'en', label: 'English', language: 'en'),
         SubtitleTrack(id: 'es', label: 'Spanish', language: 'es'),
       ];
-      fixture.eventController.add(const SubtitleTracksChangedEvent(tracks));
-      await Future<void>.delayed(Duration.zero);
+      fixture.emitEvent(const SubtitleTracksChangedEvent(tracks));
+      await fixture.waitForEvents();
 
       // Should select Spanish (preferred language)
       verify(() => fixture.mockPlatform.setSubtitleTrack(1, tracks[1])).called(1);
@@ -122,7 +123,7 @@ void main() {
       );
 
       await fixture.controller.initialize(
-        source: const VideoSource.network('https://example.com/video.mp4'),
+        source: const VideoSource.network(TestMedia.networkUrl),
         options: const VideoPlayerOptions(subtitlesEnabled: false),
       );
 
@@ -153,7 +154,7 @@ void main() {
 
       when(() => fixture.mockPlatform.addExternalSubtitle(any(), any())).thenAnswer((_) async => expectedTrack);
 
-      await fixture.controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await fixture.controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       final result = await fixture.controller.addExternalSubtitle(
         const SubtitleSource.network('https://example.com/subs.vtt', label: 'English', language: 'en'),
@@ -173,7 +174,7 @@ void main() {
 
       when(() => fixture.mockPlatform.removeExternalSubtitle(any(), any())).thenAnswer((_) async => true);
 
-      await fixture.controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await fixture.controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       final result = await fixture.controller.removeExternalSubtitle('ext-1');
 
@@ -202,7 +203,7 @@ void main() {
 
       when(() => fixture.mockPlatform.getExternalSubtitles(any())).thenAnswer((_) async => expectedTracks);
 
-      await fixture.controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await fixture.controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       final result = await fixture.controller.getExternalSubtitles();
 

@@ -1,0 +1,9 @@
+# Exclude generated files from code duplication detection
+**/*.g.dart
+**/*.freezed.dart
+**/*.mocks.dart
+**/pigeon_generated/
+
+# Exclude Pigeon API definitions (intentionally duplicated across platform packages)
+**/pigeons/**
+**/.dart_tool/**

@@ -2,23 +2,12 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:plugin_platform_interface/plugin_platform_interface.dart';
-import 'package:pro_video_player/src/controller/error_recovery_manager.dart';
 import 'package:pro_video_player/src/controller/event_coordinator.dart';
-import 'package:pro_video_player/src/controller/playback_manager.dart';
-import 'package:pro_video_player/src/controller/playlist_manager.dart';
-import 'package:pro_video_player/src/controller/track_manager.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
-class MockProVideoPlayerPlatform extends Mock with MockPlatformInterfaceMixin implements ProVideoPlayerPlatform {}
-
-class MockPlaybackManager extends Mock implements PlaybackManager {}
-
-class MockTrackManager extends Mock implements TrackManager {}
-
-class MockErrorRecoveryManager extends Mock implements ErrorRecoveryManager {}
-
-class MockPlaylistManager extends Mock implements PlaylistManager {}
+import '../../shared/mocks.dart';
+import '../../shared/test_constants.dart';
+import '../../shared/test_setup.dart';
 
 void main() {
   late EventCoordinator coordinator;
@@ -34,9 +23,7 @@ void main() {
   late bool retrying;
   late StreamController<VideoPlayerEvent> eventStream;
 
-  setUpAll(() {
-    registerFallbackValue(VideoPlayerError.fromCode(message: 'Unknown error', code: 'unknown'));
-  });
+  setUpAll(registerVideoPlayerFallbackValues);
 
   setUp(() {
     mockPlatform = MockProVideoPlayerPlatform();
@@ -95,7 +82,7 @@ void main() {
         when(() => mockPlaybackManager.handlePlaybackStateChanged(any())).thenReturn(true);
 
         eventStream.add(const PlaybackStateChangedEvent(PlaybackState.playing));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         expect(currentValue.playbackState, PlaybackState.playing);
         verify(() => mockPlaybackManager.handlePlaybackStateChanged(PlaybackState.playing)).called(1);
@@ -106,7 +93,7 @@ void main() {
         currentValue = const VideoPlayerValue(playbackState: PlaybackState.paused);
 
         eventStream.add(const PlaybackStateChangedEvent(PlaybackState.playing));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         expect(currentValue.playbackState, PlaybackState.paused);
       });
@@ -115,7 +102,7 @@ void main() {
         currentValue = const VideoPlayerValue(playbackState: PlaybackState.playing);
 
         eventStream.add(const PlaybackStateChangedEvent(PlaybackState.playing));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         verifyNever(() => mockPlaybackManager.handlePlaybackStateChanged(any()));
       });
@@ -124,7 +111,7 @@ void main() {
         when(() => mockPlaybackManager.handlePositionChanged(any())).thenReturn(true);
 
         eventStream.add(const PositionChangedEvent(Duration(seconds: 30)));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         expect(currentValue.position, equals(const Duration(seconds: 30)));
         verify(() => mockPlaybackManager.handlePositionChanged(const Duration(seconds: 30))).called(1);
@@ -135,28 +122,28 @@ void main() {
         currentValue = const VideoPlayerValue(position: Duration(seconds: 10));
 
         eventStream.add(const PositionChangedEvent(Duration(seconds: 30)));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         expect(currentValue.position, equals(const Duration(seconds: 10)));
       });
 
       test('updates buffered position on BufferedPositionChangedEvent', () async {
         eventStream.add(const BufferedPositionChangedEvent(Duration(seconds: 60)));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         expect(currentValue.bufferedPosition, equals(const Duration(seconds: 60)));
       });
 
       test('updates duration on DurationChangedEvent', () async {
-        eventStream.add(const DurationChangedEvent(Duration(minutes: 5)));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        eventStream.add(const DurationChangedEvent(TestMetadata.duration));
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
-        expect(currentValue.duration, equals(const Duration(minutes: 5)));
+        expect(currentValue.duration, equals(TestMetadata.duration));
       });
 
       test('handles PlaybackCompletedEvent', () async {
         eventStream.add(const PlaybackCompletedEvent());
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         expect(currentValue.playbackState, PlaybackState.completed);
       });
@@ -165,7 +152,7 @@ void main() {
         final error = VideoPlayerError.network(message: 'Network failed', code: 'network_error');
 
         eventStream.add(ErrorEvent.withError(error));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         expect(currentValue.playbackState, PlaybackState.error);
         expect(currentValue.errorMessage, 'Network failed');
@@ -174,7 +161,7 @@ void main() {
 
       test('updates video size on VideoSizeChangedEvent', () async {
         eventStream.add(const VideoSizeChangedEvent(width: 1920, height: 1080));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         expect(currentValue.size!.width, 1920);
         expect(currentValue.size!.height, 1080);
@@ -185,7 +172,7 @@ void main() {
         options = const VideoPlayerOptions(showSubtitlesByDefault: true);
 
         eventStream.add(const SubtitleTracksChangedEvent(tracks));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         expect(currentValue.subtitleTracks, tracks);
         verify(() => mockTrackManager.autoSelectSubtitle(tracks)).called(1);
@@ -196,28 +183,28 @@ void main() {
         options = const VideoPlayerOptions(subtitlesEnabled: false);
 
         eventStream.add(const SubtitleTracksChangedEvent(tracks));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         expect(currentValue.subtitleTracks, isEmpty);
       });
 
       test('updates pip state on PipStateChangedEvent', () async {
         eventStream.add(const PipStateChangedEvent(isActive: true));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         expect(currentValue.isPipActive, isTrue);
       });
 
       test('updates fullscreen state on FullscreenStateChangedEvent', () async {
         eventStream.add(const FullscreenStateChangedEvent(isFullscreen: true));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         expect(currentValue.isFullscreen, isTrue);
       });
 
       test('handles BufferingStartedEvent', () async {
         eventStream.add(const BufferingStartedEvent(reason: BufferingReason.networkUnstable));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         expect(currentValue.isNetworkBuffering, isTrue);
         expect(currentValue.bufferingReason, BufferingReason.networkUnstable);
@@ -228,7 +215,7 @@ void main() {
         currentValue = const VideoPlayerValue(isNetworkBuffering: true);
 
         eventStream.add(const BufferingEndedEvent());
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         expect(currentValue.isNetworkBuffering, isFalse);
         verify(() => mockErrorRecovery.cancelRetryTimer()).called(1);
@@ -237,7 +224,7 @@ void main() {
 
       test('handles NetworkErrorEvent', () async {
         eventStream.add(const NetworkErrorEvent(message: 'Connection lost'));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         verify(() => mockErrorRecovery.handleNetworkError('Connection lost')).called(1);
       });
@@ -246,7 +233,7 @@ void main() {
         currentValue = const VideoPlayerValue(networkRetryCount: 2);
 
         eventStream.add(const PlaybackRecoveredEvent(retriesUsed: 2));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         expect(currentValue.networkRetryCount, 0);
         expect(currentValue.isRecoveringFromError, isFalse);
@@ -256,7 +243,7 @@ void main() {
 
       test('handles NetworkStateChangedEvent', () async {
         eventStream.add(const NetworkStateChangedEvent(isConnected: true));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         verify(() => mockErrorRecovery.handleNetworkStateChange(isConnected: true)).called(1);
       });
@@ -265,7 +252,7 @@ void main() {
         const metadata = VideoMetadata(videoCodec: 'h264', width: 1920, height: 1080, videoBitrate: 5000000);
 
         eventStream.add(const VideoMetadataExtractedEvent(metadata));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         expect(currentValue.videoMetadata, metadata);
       });
@@ -274,7 +261,7 @@ void main() {
         const chapters = [Chapter(id: '1', title: 'Intro', startTime: Duration.zero, endTime: Duration(minutes: 1))];
 
         eventStream.add(const ChaptersExtractedEvent(chapters));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         expect(currentValue.chapters, chapters);
       });
@@ -283,7 +270,7 @@ void main() {
         disposed = true;
 
         eventStream.add(const PlaybackStateChangedEvent(PlaybackState.playing));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         verifyNever(() => mockPlaybackManager.handlePlaybackStateChanged(any()));
       });
@@ -298,7 +285,7 @@ void main() {
         // Verify subscription is cancelled by checking events are not processed
         disposed = true;
         eventStream.add(const PlaybackStateChangedEvent(PlaybackState.playing));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         verifyNever(() => mockPlaybackManager.handlePlaybackStateChanged(any()));
       });

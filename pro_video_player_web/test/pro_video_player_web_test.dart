@@ -104,7 +104,7 @@ void main() {
       });
 
       test('setLooping throws StateError for non-existent player', () async {
-        expect(() => platform.setLooping(999, looping: true), throwsStateError);
+        expect(() => platform.setLooping(999, true), throwsStateError);
       });
 
       test('setSubtitleTrack throws StateError for non-existent player', () async {
@@ -266,7 +266,7 @@ void main() {
       });
 
       test('setLooping completes without error', () async {
-        await expectLater(platform.setLooping(playerId, looping: true), completes);
+        await expectLater(platform.setLooping(playerId, true), completes);
       });
 
       test('setSubtitleTrack completes without error', () async {

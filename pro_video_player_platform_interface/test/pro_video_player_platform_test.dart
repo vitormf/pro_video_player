@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use_from_same_package
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
@@ -101,7 +103,7 @@ void main() {
 
       test('setLooping throws UnimplementedError', () {
         expect(
-          () => platform.setLooping(1, looping: true),
+          () => platform.setLooping(1, true),
           throwsA(isA<UnimplementedError>().having((e) => e.message, 'message', contains('setLooping()'))),
         );
       });

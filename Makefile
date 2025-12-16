@@ -78,8 +78,9 @@ help:
 	@echo "  make fix           - Apply automatic Dart fixes"
 	@echo ""
 	@echo "$(ROCKET) Development:"
-	@echo "  make run           - Run the example-showcase app"
-	@echo "  make run-simple    - Run the example-simple-player app"
+	@echo "  make run              - Run the example-showcase app"
+	@echo "  make run-simple       - Run the example-simple-player app"
+	@echo "  make pigeon-generate  - Regenerate Pigeon code (Android/iOS/macOS)"
 	@echo ""
 	@echo "$(INFO) Use 'make' for interactive mode or 'make <command>' directly"
 

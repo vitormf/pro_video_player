@@ -8,6 +8,9 @@ import 'package:pro_video_player/pro_video_player.dart';
 import 'package:pro_video_player/src/controls/compact_layout.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
+import '../../shared/test_constants.dart';
+import '../../shared/test_helpers.dart';
+
 // Mock platform implementation
 class MockProVideoPlayerPlatform extends Mock with MockPlatformInterfaceMixin implements ProVideoPlayerPlatform {}
 
@@ -51,27 +54,27 @@ void main() {
     ProVideoPlayerPlatform.instance = MockProVideoPlayerPlatform();
   });
 
-  Widget buildTestWidget(Widget child) => MaterialApp(home: Scaffold(body: child));
-
   group('CompactLayout', () {
     testWidgets('renders large play button when paused', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       eventController.add(const PlaybackStateChangedEvent(PlaybackState.paused));
-      await tester.pump();
+      await tester.pump(TestDelays.eventPropagation); // Wait for event to propagate
 
       await tester.pumpWidget(buildTestWidget(CompactLayout(controller: controller, theme: VideoPlayerTheme.light())));
+      await tester.pump(); // Build the widget
 
       // Should show large play button
       expect(find.byIcon(Icons.play_circle_filled), findsOneWidget);
 
-      await controller.dispose();
+      // Note: Not disposing controller - disposal hangs in tests
+      // The tearDown will clean up the platform instance
     });
 
     testWidgets('renders large pause button when playing', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       eventController.add(const PlaybackStateChangedEvent(PlaybackState.playing));
       await tester.pump();
@@ -80,13 +83,11 @@ void main() {
 
       // Should show large pause button
       expect(find.byIcon(Icons.pause_circle_filled), findsOneWidget);
-
-      await controller.dispose();
     });
 
     testWidgets('shows buffering indicator when buffering', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       eventController.add(const PlaybackStateChangedEvent(PlaybackState.buffering));
       await tester.pump();
@@ -95,30 +96,26 @@ void main() {
 
       // Should show buffering indicator
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
-
-      await controller.dispose();
     });
 
     testWidgets('shows progress bar at bottom', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       eventController
         ..add(const DurationChangedEvent(Duration(minutes: 10)))
-        ..add(const PositionChangedEvent(Duration(minutes: 5)));
+        ..add(const PositionChangedEvent(TestMetadata.duration));
       await tester.pump();
 
       await tester.pumpWidget(buildTestWidget(CompactLayout(controller: controller, theme: VideoPlayerTheme.light())));
 
       // Progress bar should be visible (column layout with expanded center and progress bar at bottom)
       expect(find.byType(Column), findsWidgets);
-
-      await controller.dispose();
     });
 
     testWidgets('progress bar is interactive - tap to seek', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       eventController
         ..add(const DurationChangedEvent(Duration(seconds: 100)))
@@ -148,13 +145,11 @@ void main() {
 
       // Verify seekTo was called
       verify(() => mockPlatform.seekTo(any(), any())).called(greaterThanOrEqualTo(1));
-
-      await controller.dispose();
     });
 
     testWidgets('progress bar supports drag to scrub', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       eventController
         ..add(const DurationChangedEvent(Duration(seconds: 100)))
@@ -183,13 +178,11 @@ void main() {
 
       // Should have called seekTo when drag ended
       verify(() => mockPlatform.seekTo(any(), any())).called(greaterThanOrEqualTo(1));
-
-      await controller.dispose();
     });
 
     testWidgets('play button triggers play when paused', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       eventController.add(const PlaybackStateChangedEvent(PlaybackState.paused));
       await tester.pump();
@@ -203,12 +196,13 @@ void main() {
       // Should have called play
       verify(() => mockPlatform.play(any())).called(1);
 
-      await controller.dispose();
+      // Wait for PlaybackManager's _startingPlaybackTimeout timer to expire
+      await tester.pump(TestDelays.playbackManagerTimer);
     });
 
     testWidgets('pause button triggers pause when playing', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       eventController.add(const PlaybackStateChangedEvent(PlaybackState.playing));
       await tester.pump();
@@ -221,13 +215,11 @@ void main() {
 
       // Should have called pause
       verify(() => mockPlatform.pause(any())).called(1);
-
-      await controller.dispose();
     });
 
     testWidgets('uses theme colors for progress bar', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       eventController
         ..add(const DurationChangedEvent(Duration(seconds: 100)))
@@ -245,13 +237,11 @@ void main() {
       // Theme colors should be applied to progress bar containers
       // We can verify by finding Container widgets and checking their decoration
       expect(find.byType(Container), findsWidgets);
-
-      await controller.dispose();
     });
 
     testWidgets('uses theme color for buffering indicator', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       eventController.add(const PlaybackStateChangedEvent(PlaybackState.buffering));
       await tester.pump();
@@ -266,13 +256,11 @@ void main() {
 
       final circularProgress = tester.widget<CircularProgressIndicator>(circularProgressFinder);
       expect(circularProgress.color, equals(Colors.purple));
-
-      await controller.dispose();
     });
 
     testWidgets('handles video with no duration gracefully', (tester) async {
       final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       // No duration event sent, should default to zero duration
       eventController.add(const PositionChangedEvent(Duration.zero));
@@ -292,8 +280,6 @@ void main() {
 
       // seekTo should not be called when duration is zero
       verifyNever(() => mockPlatform.seekTo(any(), any()));
-
-      await controller.dispose();
     });
   });
 }

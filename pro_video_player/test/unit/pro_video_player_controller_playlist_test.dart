@@ -3,21 +3,23 @@ import 'package:mocktail/mocktail.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
-import '../test_helpers.dart';
+import '../shared/test_constants.dart';
+import '../shared/test_matchers.dart';
+import '../shared/test_setup.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  late ControllerTestFixture fixture;
+  late VideoPlayerTestFixture fixture;
 
-  setUpAll(registerFallbackValues);
+  setUpAll(registerVideoPlayerFallbackValues);
 
   setUp(() {
-    fixture = ControllerTestFixture();
+    fixture = VideoPlayerTestFixture()..setUp();
   });
 
   tearDown(() async {
-    await fixture.dispose();
+    await fixture.tearDown();
   });
 
   group('ProVideoPlayerController playlist management', () {
@@ -84,7 +86,7 @@ void main() {
     });
 
     test('playlistNext throws when no playlist', () async {
-      await fixture.controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await fixture.controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       expect(fixture.controller.playlistNext, throwsA(isA<StateError>()));
     });
@@ -120,7 +122,7 @@ void main() {
       final result = await fixture.controller.playlistNext();
 
       expect(result, isFalse);
-      expect(fixture.controller.value.playbackState, PlaybackState.completed);
+      expect(fixture.controller, isCompleted);
     });
 
     test('playlistNext wraps with repeat all', () async {
@@ -152,7 +154,7 @@ void main() {
     });
 
     test('playlistPrevious throws when no playlist', () async {
-      await fixture.controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await fixture.controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       expect(fixture.controller.playlistPrevious, throwsA(isA<StateError>()));
     });
@@ -192,7 +194,7 @@ void main() {
     });
 
     test('playlistJumpTo throws when no playlist', () async {
-      await fixture.controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await fixture.controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       expect(() => fixture.controller.playlistJumpTo(0), throwsA(isA<StateError>()));
     });
@@ -282,8 +284,8 @@ void main() {
 
       await fixture.controller.initializeWithPlaylist(playlist: playlist);
 
-      fixture.eventController.add(const PlaylistTrackChangedEvent(1));
-      await Future<void>.delayed(Duration.zero);
+      fixture.emitEvent(const PlaylistTrackChangedEvent(1));
+      await fixture.waitForEvents();
 
       expect(fixture.controller.value.playlistIndex, equals(1));
     });

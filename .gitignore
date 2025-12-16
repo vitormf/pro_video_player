@@ -69,6 +69,12 @@ unlinked_spec.ds
 **/android/key.properties
 *.jks
 
+# Eclipse IDE
+**/android/.settings/
+**/android/bin/
+**/android/.project
+**/android/.classpath
+
 # iOS/XCode related
 **/ios/**/*.mode1v3
 **/ios/**/*.mode2v3
@@ -118,6 +124,9 @@ unlinked_spec.ds
 
 # Coverage
 coverage/
+
+# Code duplication reports
+report/
 
 # Symbols
 app.*.symbols

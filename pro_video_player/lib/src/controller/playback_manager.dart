@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
+import 'manager_callbacks.dart';
+
 // Alias for cleaner code
 typedef _Logger = ProVideoPlayerLogger;
 
@@ -13,7 +15,7 @@ typedef _Logger = ProVideoPlayerLogger;
 /// - Playback speed control
 /// - Volume control
 /// - State synchronization with platform
-class PlaybackManager {
+class PlaybackManager with ManagerCallbacks {
   /// Creates a playback manager with dependency injection via callbacks.
   PlaybackManager({
     required this.getValue,
@@ -23,19 +25,19 @@ class PlaybackManager {
     required this.ensureInitialized,
   });
 
-  /// Gets the current video player value.
+  @override
   final VideoPlayerValue Function() getValue;
 
-  /// Updates the video player value.
+  @override
   final void Function(VideoPlayerValue) setValue;
 
-  /// Gets the player ID (null if not initialized).
+  @override
   final int? Function() getPlayerId;
 
-  /// Platform implementation for playback operations.
+  @override
   final ProVideoPlayerPlatform platform;
 
-  /// Ensures the controller is initialized before operations.
+  @override
   final void Function() ensureInitialized;
 
   // State flags for synchronization
@@ -222,7 +224,10 @@ class PlaybackManager {
     final value = getValue();
     if (value.playbackState != PlaybackState.playing && value.playbackState != PlaybackState.buffering) {
       final lastPos = _lastPositionForStateCheck;
-      if (lastPos != null && position != lastPos) {
+      if (lastPos == null) {
+        // First position update - start counting
+        _positionUpdateCount = 1;
+      } else if (position != lastPos) {
         _positionUpdateCount++;
         // If we've seen 3 consecutive position changes while not playing, likely a state mismatch
         if (_positionUpdateCount >= 3) {

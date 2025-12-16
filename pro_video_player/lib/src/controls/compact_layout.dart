@@ -5,6 +5,7 @@ import 'package:pro_video_player_platform_interface/pro_video_player_platform_in
 
 import '../pro_video_player_controller.dart';
 import '../video_player_theme.dart';
+import 'widgets/progress_bar_track.dart';
 
 /// A compact video player layout optimized for small player sizes or PiP mode.
 ///
@@ -133,41 +134,10 @@ class _CompactLayoutState extends State<CompactLayout> {
                       alignment: Alignment.center,
                       children: [
                         // Progress bar (4px tall, centered in 16px hit area)
-                        SizedBox(
-                          height: 4,
-                          child: Stack(
-                            children: [
-                              // Background
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: widget.theme.progressBarInactiveColor,
-                                  borderRadius: BorderRadius.circular(2),
-                                ),
-                              ),
-                              // Buffered
-                              FractionallySizedBox(
-                                alignment: Alignment.centerLeft,
-                                widthFactor: bufferedProgress.clamp(0.0, 1.0),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: widget.theme.progressBarBufferedColor,
-                                    borderRadius: BorderRadius.circular(2),
-                                  ),
-                                ),
-                              ),
-                              // Played
-                              FractionallySizedBox(
-                                alignment: Alignment.centerLeft,
-                                widthFactor: displayProgress.clamp(0.0, 1.0),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: widget.theme.progressBarActiveColor,
-                                    borderRadius: BorderRadius.circular(2),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                        ProgressBarTrack(
+                          theme: widget.theme,
+                          bufferedProgress: bufferedProgress,
+                          displayProgress: displayProgress,
                         ),
                       ],
                     ),

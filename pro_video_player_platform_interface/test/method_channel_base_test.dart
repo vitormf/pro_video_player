@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use_from_same_package
+
 // ignore_for_file: avoid_dynamic_calls - Necessary: testing method channel communication requires dynamic access to mock method call arguments
 
 import 'dart:async';
@@ -26,7 +28,7 @@ void main() {
     methodCallLog = [];
 
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-      const MethodChannel('com.example.test_platform/methods'),
+      const MethodChannel('dev.pro_video_player.test_platform/methods'),
       (methodCall) async {
         methodCallLog.add(methodCall);
         switch (methodCall.method) {
@@ -51,7 +53,7 @@ void main() {
 
   tearDown(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-      const MethodChannel('com.example.test_platform/methods'),
+      const MethodChannel('dev.pro_video_player.test_platform/methods'),
       null,
     );
   });
@@ -204,7 +206,7 @@ void main() {
 
       test('throws when create returns null', () async {
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-          const MethodChannel('com.example.test_platform/methods'),
+          const MethodChannel('dev.pro_video_player.test_platform/methods'),
           (methodCall) async => null,
         );
 
@@ -276,7 +278,7 @@ void main() {
       });
 
       test('setLooping calls native method', () async {
-        await platform.setLooping(42, looping: true);
+        await platform.setLooping(42, true);
 
         expect(methodCallLog[0].method, 'setLooping');
         expect(methodCallLog[0].arguments['playerId'], 42);
@@ -341,7 +343,7 @@ void main() {
 
       test('getPosition returns zero when native returns null', () async {
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-          const MethodChannel('com.example.test_platform/methods'),
+          const MethodChannel('dev.pro_video_player.test_platform/methods'),
           (methodCall) async => null,
         );
 
@@ -359,7 +361,7 @@ void main() {
 
       test('getDuration returns zero when native returns null', () async {
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-          const MethodChannel('com.example.test_platform/methods'),
+          const MethodChannel('dev.pro_video_player.test_platform/methods'),
           (methodCall) async => null,
         );
 
@@ -386,7 +388,7 @@ void main() {
 
       test('enterPip returns false when native returns null', () async {
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-          const MethodChannel('com.example.test_platform/methods'),
+          const MethodChannel('dev.pro_video_player.test_platform/methods'),
           (methodCall) async => null,
         );
 
@@ -410,7 +412,7 @@ void main() {
 
       test('isPipSupported returns false when native returns null', () async {
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-          const MethodChannel('com.example.test_platform/methods'),
+          const MethodChannel('dev.pro_video_player.test_platform/methods'),
           (methodCall) async => null,
         );
 
@@ -430,7 +432,7 @@ void main() {
 
       test('enterFullscreen returns false when native returns null', () async {
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-          const MethodChannel('com.example.test_platform/methods'),
+          const MethodChannel('dev.pro_video_player.test_platform/methods'),
           (methodCall) async => null,
         );
 
@@ -478,7 +480,7 @@ void main() {
 
       setUp(() {
         eventController = StreamController<dynamic>.broadcast();
-        const eventChannel = EventChannel('com.example.test_platform/events/42');
+        const eventChannel = EventChannel('dev.pro_video_player.test_platform/events/42');
 
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockStreamHandler(
           eventChannel,

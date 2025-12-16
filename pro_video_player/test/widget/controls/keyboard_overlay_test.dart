@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 
+import '../../shared/test_helpers.dart';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-
-  Widget buildTestWidget(Widget child) => MaterialApp(home: Scaffold(body: child));
 
   group('KeyboardOverlay', () {
     group('null handling', () {

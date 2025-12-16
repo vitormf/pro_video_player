@@ -47,22 +47,40 @@ clean:
 
 # format: Format all Dart code (120 char line length)
 # Use when: Before committing or after large refactors
+# Excludes: Generated files (*.g.dart, *.freezed.dart, *.mocks.dart, pigeon_generated/, generated_plugin_registrant.dart)
 format:
 	@start_time=$$(date +%s); printf "$(PAINT) Formatting Dart code..."; \
-	${DART} format . -l 120 $(OUTPUT_REDIRECT); \
+	find . -name "*.dart" \
+		! -name "*.g.dart" \
+		! -name "*.freezed.dart" \
+		! -name "*.mocks.dart" \
+		! -name "generated_plugin_registrant.dart" \
+		! -path "*/pigeon_generated/*" \
+		! -path "*/.dart_tool/*" \
+		! -path "*/build/*" \
+		-exec ${DART} format -l 120 {} + $(OUTPUT_REDIRECT); \
 	elapsed=$$(( $$(date +%s) - $$start_time )); \
 	printf "\r$(CHECK) Code formatted successfully ($${elapsed}s)\n"
 
 # format-check: Check formatting without changes
 # Use when: CI validation or pre-commit check
+# Excludes: Generated files (*.g.dart, *.freezed.dart, *.mocks.dart, pigeon_generated/, generated_plugin_registrant.dart)
 format-check:
 	@start_time=$$(date +%s); printf "$(SEARCH) Checking code format..."; \
-	if ${DART} format . -l 120 --set-exit-if-changed --output=none; then \
-		elapsed=$$(( $$(date +%s) - $$start_time )); \
-		printf "\r$(CHECK) Format check passed ($${elapsed}s)\n"; \
-	else \
+	dart_files=$$(find . -name "*.dart" \
+		! -name "*.g.dart" \
+		! -name "*.freezed.dart" \
+		! -name "*.mocks.dart" \
+		! -name "generated_plugin_registrant.dart" \
+		! -path "*/pigeon_generated/*" \
+		! -path "*/.dart_tool/*" \
+		! -path "*/build/*"); \
+	if [ -n "$$dart_files" ] && ! echo "$$dart_files" | xargs ${DART} format -l 120 --set-exit-if-changed --output=none; then \
 		printf "\r$(CROSS) Format check failed - run 'make format'\n"; \
 		exit 1; \
+	else \
+		elapsed=$$(( $$(date +%s) - $$start_time )); \
+		printf "\r$(CHECK) Format check passed ($${elapsed}s)\n"; \
 	fi
 
 # fix: Apply automatic Dart fixes

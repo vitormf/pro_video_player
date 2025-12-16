@@ -7,7 +7,7 @@ import Foundation
 /// Protocol defining platform-specific functionality that differs between iOS and macOS.
 /// Implementations provide the platform-specific behavior while sharing common AVPlayer logic.
 public protocol PlatformAdapter: AnyObject {
-    /// The event channel name prefix for this platform (e.g., "com.example.pro_video_player_ios")
+    /// The event channel name prefix for this platform (e.g., "dev.pro_video_player_ios")
     var channelPrefix: String { get }
 
     /// Configure audio session for the platform.

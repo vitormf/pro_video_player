@@ -3,15 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pro_video_player/src/controls/buttons/quality_button.dart';
 import 'package:pro_video_player/src/video_player_theme.dart';
 
+import '../../../shared/test_helpers.dart';
+
 void main() {
   group('QualityButton', () {
     testWidgets('displays quality label correctly', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: QualityButton(theme: VideoPlayerTheme.light(), qualityLabel: '1080p', onPressed: () {}),
-          ),
-        ),
+        buildTestWidget(QualityButton(theme: VideoPlayerTheme.light(), qualityLabel: '1080p', onPressed: () {})),
       );
 
       // Should show quality label text
@@ -21,11 +19,7 @@ void main() {
 
     testWidgets('displays high_quality icon', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: QualityButton(theme: VideoPlayerTheme.light(), qualityLabel: 'Auto', onPressed: () {}),
-          ),
-        ),
+        buildTestWidget(QualityButton(theme: VideoPlayerTheme.light(), qualityLabel: 'Auto', onPressed: () {})),
       );
 
       expect(find.byIcon(Icons.high_quality), findsOneWidget);
@@ -33,11 +27,7 @@ void main() {
 
     testWidgets('displays Auto label when in auto mode', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: QualityButton(theme: VideoPlayerTheme.light(), qualityLabel: 'Auto', onPressed: () {}),
-          ),
-        ),
+        buildTestWidget(QualityButton(theme: VideoPlayerTheme.light(), qualityLabel: 'Auto', onPressed: () {})),
       );
 
       expect(find.text('Auto'), findsOneWidget);
@@ -47,11 +37,7 @@ void main() {
       final customTheme = VideoPlayerTheme.light().copyWith(primaryColor: Colors.purple);
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: QualityButton(theme: customTheme, qualityLabel: '720p', onPressed: () {}),
-          ),
-        ),
+        buildTestWidget(QualityButton(theme: customTheme, qualityLabel: '720p', onPressed: () {})),
       );
 
       final textButton = tester.widget<TextButton>(find.byType(TextButton));
@@ -65,11 +51,7 @@ void main() {
 
     testWidgets('uses correct text font size', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: QualityButton(theme: VideoPlayerTheme.light(), qualityLabel: '1080p', onPressed: () {}),
-          ),
-        ),
+        buildTestWidget(QualityButton(theme: VideoPlayerTheme.light(), qualityLabel: '1080p', onPressed: () {})),
       );
 
       final textButton = tester.widget<TextButton>(find.byType(TextButton));
@@ -81,11 +63,7 @@ void main() {
 
     testWidgets('uses correct icon size', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: QualityButton(theme: VideoPlayerTheme.light(), qualityLabel: '480p', onPressed: () {}),
-          ),
-        ),
+        buildTestWidget(QualityButton(theme: VideoPlayerTheme.light(), qualityLabel: '480p', onPressed: () {})),
       );
 
       final textButton = tester.widget<TextButton>(find.byType(TextButton));
@@ -99,10 +77,8 @@ void main() {
       var pressed = false;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: QualityButton(theme: VideoPlayerTheme.light(), qualityLabel: 'Auto', onPressed: () => pressed = true),
-          ),
+        buildTestWidget(
+          QualityButton(theme: VideoPlayerTheme.light(), qualityLabel: 'Auto', onPressed: () => pressed = true),
         ),
       );
 
@@ -115,11 +91,7 @@ void main() {
 
     testWidgets('has Video quality tooltip', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: QualityButton(theme: VideoPlayerTheme.light(), qualityLabel: '1080p', onPressed: () {}),
-          ),
-        ),
+        buildTestWidget(QualityButton(theme: VideoPlayerTheme.light(), qualityLabel: '1080p', onPressed: () {})),
       );
 
       // Tooltip wraps the TextButton
@@ -130,11 +102,7 @@ void main() {
 
     testWidgets('has correct button padding', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: QualityButton(theme: VideoPlayerTheme.light(), qualityLabel: '720p', onPressed: () {}),
-          ),
-        ),
+        buildTestWidget(QualityButton(theme: VideoPlayerTheme.light(), qualityLabel: '720p', onPressed: () {})),
       );
 
       final textButton = tester.widget<TextButton>(find.byType(TextButton));

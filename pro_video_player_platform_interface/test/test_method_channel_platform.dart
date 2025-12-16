@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use_from_same_package
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -16,7 +18,7 @@ class TestMethodChannelPlatform extends MethodChannelBase {
 
   @override
   Widget buildView(int playerId, {ControlsMode controlsMode = ControlsMode.none}) {
-    const viewType = 'com.example.pro_video_player/video_view';
+    const viewType = 'dev.pro_video_player/video_view';
 
     final creationParams = {'playerId': playerId, 'controlsMode': controlsMode.toJson()};
 

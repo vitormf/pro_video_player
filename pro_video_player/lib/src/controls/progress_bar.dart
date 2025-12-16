@@ -7,6 +7,7 @@ import 'package:pro_video_player_platform_interface/pro_video_player_platform_in
 import '../pro_video_player_controller.dart';
 import '../video_player_theme.dart';
 import 'controls_enums.dart';
+import 'widgets/progress_bar_track.dart';
 
 /// A video player progress bar with seek functionality.
 ///
@@ -143,41 +144,10 @@ class _ProgressBarState extends State<ProgressBar> {
               alignment: Alignment.center,
               children: [
                 // Progress bar container
-                SizedBox(
-                  height: 4,
-                  child: Stack(
-                    children: [
-                      // Background (inactive)
-                      Container(
-                        decoration: BoxDecoration(
-                          color: widget.theme.progressBarInactiveColor,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      // Buffered
-                      FractionallySizedBox(
-                        alignment: Alignment.centerLeft,
-                        widthFactor: bufferedProgress.clamp(0.0, 1.0),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: widget.theme.progressBarBufferedColor,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                      ),
-                      // Played
-                      FractionallySizedBox(
-                        alignment: Alignment.centerLeft,
-                        widthFactor: displayProgress.clamp(0.0, 1.0),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: widget.theme.progressBarActiveColor,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                ProgressBarTrack(
+                  theme: widget.theme,
+                  bufferedProgress: bufferedProgress,
+                  displayProgress: displayProgress,
                 ),
                 // Position indicator circle
                 Positioned(

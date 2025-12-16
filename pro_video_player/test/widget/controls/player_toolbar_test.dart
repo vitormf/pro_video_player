@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 import 'package:pro_video_player/src/controls/buttons/speed_button.dart';
 
+import '../../shared/test_constants.dart';
+import '../../shared/test_helpers.dart';
 import '../../shared/test_setup.dart';
 
 // Mock for VideoControlsState
@@ -31,8 +33,6 @@ void main() {
   tearDown(() async {
     await fixture.tearDown();
   });
-
-  Widget buildTestWidget(Widget child) => MaterialApp(home: Scaffold(body: child));
 
   PlayerToolbar buildToolbar({
     required ProVideoPlayerController controller,
@@ -77,7 +77,7 @@ void main() {
     group('basic rendering', () {
       testWidgets('renders toolbar with action buttons', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(SizedBox(width: 800, height: 50, child: buildToolbar(controller: controller))),
@@ -92,7 +92,7 @@ void main() {
         var dismissCalled = false;
         final controller = ProVideoPlayerController();
         await controller.initialize(
-          source: const VideoSource.network('https://example.com/video.mp4'),
+          source: const VideoSource.network(TestMedia.networkUrl),
           options: const VideoPlayerOptions(fullscreenOnly: true),
         );
 
@@ -122,7 +122,7 @@ void main() {
     group('action buttons', () {
       testWidgets('renders action buttons based on configuration', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(SizedBox(width: 800, height: 50, child: buildToolbar(controller: controller))),
@@ -141,7 +141,7 @@ void main() {
     group('overflow handling', () {
       testWidgets('respects maxPlayerToolbarActions setting', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(
@@ -164,7 +164,7 @@ void main() {
 
       testWidgets('respects autoOverflowActions setting', (tester) async {
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(
@@ -190,7 +190,7 @@ void main() {
         final theme = VideoPlayerTheme.light().copyWith(primaryColor: Colors.red, backgroundColor: Colors.black);
 
         final controller = ProVideoPlayerController();
-        await controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
           buildTestWidget(

@@ -3,21 +3,23 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 
-import '../test_helpers.dart';
+import '../shared/test_constants.dart';
+import '../shared/test_matchers.dart';
+import '../shared/test_setup.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  late ControllerTestFixture fixture;
+  late VideoPlayerTestFixture fixture;
 
-  setUpAll(registerFallbackValues);
+  setUpAll(registerVideoPlayerFallbackValues);
 
   setUp(() {
-    fixture = ControllerTestFixture();
+    fixture = VideoPlayerTestFixture()..setUp();
   });
 
   tearDown(() async {
-    await fixture.dispose();
+    await fixture.tearDown();
   });
 
   group('ProVideoPlayerController settings', () {
@@ -29,7 +31,7 @@ void main() {
         ),
       ).thenAnswer((_) async => 1);
 
-      await fixture.controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await fixture.controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
     });
 
     test('setPlaybackSpeed calls platform and updates value', () async {
@@ -38,7 +40,7 @@ void main() {
       await fixture.controller.setPlaybackSpeed(1.5);
 
       verify(() => fixture.mockPlatform.setPlaybackSpeed(1, 1.5)).called(1);
-      expect(fixture.controller.value.playbackSpeed, 1.5);
+      expect(fixture.controller, hasSpeed(1.5));
     });
 
     test('setPlaybackSpeed throws for invalid speed', () async {
@@ -52,7 +54,7 @@ void main() {
       await fixture.controller.setVolume(0.5);
 
       verify(() => fixture.mockPlatform.setVolume(1, 0.5)).called(1);
-      expect(fixture.controller.value.volume, 0.5);
+      expect(fixture.controller, hasVolume(0.5));
     });
 
     test('setVolume throws for invalid volume', () async {
@@ -61,12 +63,12 @@ void main() {
     });
 
     test('setLooping calls platform and updates value', () async {
-      when(() => fixture.mockPlatform.setLooping(any(), looping: any(named: 'looping'))).thenAnswer((_) async {});
+      when(() => fixture.mockPlatform.setLooping(any(), any())).thenAnswer((_) async {});
 
-      await fixture.controller.setLooping(looping: true);
+      await fixture.controller.setLooping(true);
 
-      verify(() => fixture.mockPlatform.setLooping(1, looping: true)).called(1);
-      expect(fixture.controller.value.isLooping, isTrue);
+      verify(() => fixture.mockPlatform.setLooping(1, true)).called(1);
+      expect(fixture.controller, isLooping);
     });
 
     test('setSubtitleTrack calls platform and updates value', () async {
@@ -117,7 +119,7 @@ void main() {
         ),
       ).thenAnswer((_) async => 1);
 
-      await fixture.controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await fixture.controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
     });
 
     test('setScalingMode calls platform', () async {
@@ -144,7 +146,7 @@ void main() {
         ),
       ).thenAnswer((_) async => 1);
 
-      await fixture.controller.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+      await fixture.controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
     });
 
     test('setBackgroundPlayback calls platform and updates value on success', () async {
@@ -192,8 +194,8 @@ void main() {
     });
 
     test('updates value on BackgroundPlaybackChangedEvent', () async {
-      fixture.eventController.add(const BackgroundPlaybackChangedEvent(isEnabled: true));
-      await Future<void>.delayed(Duration.zero);
+      fixture.emitEvent(const BackgroundPlaybackChangedEvent(isEnabled: true));
+      await fixture.waitForEvents();
 
       expect(fixture.controller.value.isBackgroundPlaybackEnabled, isTrue);
     });

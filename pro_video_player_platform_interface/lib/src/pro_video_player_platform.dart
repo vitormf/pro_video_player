@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use_from_same_package
+
 import 'package:flutter/widgets.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
@@ -168,7 +170,8 @@ abstract class ProVideoPlayerPlatform extends PlatformInterface {
   }
 
   /// Sets whether the video should loop.
-  Future<void> setLooping(int playerId, {required bool looping}) {
+  // ignore: avoid_positional_boolean_parameters
+  Future<void> setLooping(int playerId, bool looping) {
     throw UnimplementedError('setLooping() has not been implemented.');
   }
 
@@ -200,6 +203,14 @@ abstract class ProVideoPlayerPlatform extends PlatformInterface {
   /// External subtitles are always rendered in Flutter regardless of this setting.
   Future<void> setSubtitleRenderMode(int playerId, SubtitleRenderMode mode) {
     throw UnimplementedError('setSubtitleRenderMode() has not been implemented.');
+  }
+
+  /// Sets the subtitle timing offset.
+  ///
+  /// Adjusts the timing of subtitles by the given [offset]. Positive values delay
+  /// subtitles, negative values advance them.
+  Future<void> setSubtitleOffset(int playerId, Duration offset) {
+    throw UnimplementedError('setSubtitleOffset() has not been implemented.');
   }
 
   /// Selects an audio track.
@@ -750,7 +761,7 @@ abstract class ProVideoPlayerPlatform extends PlatformInterface {
 /// In practice, this should never be used in production as platform packages
 /// (iOS, Android, Web, macOS, etc.) register their own implementations.
 class _DefaultMethodChannelProVideoPlayer extends MethodChannelBase {
-  _DefaultMethodChannelProVideoPlayer() : super('com.example.pro_video_player/methods');
+  _DefaultMethodChannelProVideoPlayer() : super('dev.pro_video_player/methods');
 
   @override
   Widget buildView(int playerId, {ControlsMode controlsMode = ControlsMode.none}) =>

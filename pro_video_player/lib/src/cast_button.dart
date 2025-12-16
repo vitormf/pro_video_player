@@ -142,13 +142,13 @@ class _CastButtonState extends State<CastButton> {
 
   String _getViewType() {
     if (kIsWeb) {
-      return 'com.example.pro_video_player_web/cast_button';
+      return 'dev.pro_video_player_web/cast_button';
     } else if (Platform.isIOS) {
-      return 'com.example.pro_video_player_ios/airplay_picker';
+      return 'dev.pro_video_player.ios/airplay_picker';
     } else if (Platform.isMacOS) {
-      return 'com.example.pro_video_player_macos/airplay_picker';
+      return 'dev.pro_video_player.macos/airplay_picker';
     } else if (Platform.isAndroid) {
-      return 'com.example.pro_video_player_android/cast_button';
+      return 'dev.pro_video_player.android/cast_button';
     } else {
       return '';
     }
@@ -202,13 +202,13 @@ class _CastButtonState extends State<CastButton> {
 
   String _getChannelName(int viewId) {
     if (kIsWeb) {
-      return 'com.example.pro_video_player/cast_button_$viewId';
+      return 'dev.pro_video_player/cast_button_$viewId';
     } else if (Platform.isIOS) {
-      return 'com.example.pro_video_player/airplay_picker_$viewId';
+      return 'dev.pro_video_player/airplay_picker_$viewId';
     } else if (Platform.isMacOS) {
-      return 'com.example.pro_video_player/airplay_picker_$viewId';
+      return 'dev.pro_video_player/airplay_picker_$viewId';
     } else if (Platform.isAndroid) {
-      return 'com.example.pro_video_player_android/cast_button_$viewId';
+      return 'dev.pro_video_player.android/cast_button_$viewId';
     } else {
       return '';
     }

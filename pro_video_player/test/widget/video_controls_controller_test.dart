@@ -8,6 +8,9 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
+import '../shared/test_constants.dart';
+import '../shared/test_helpers.dart';
+
 class MockProVideoPlayerPlatform extends Mock with MockPlatformInterfaceMixin implements ProVideoPlayerPlatform {}
 
 void main() {
@@ -106,7 +109,7 @@ void main() {
     );
 
     // Wait for async initialization (PiP, background playback, casting checks)
-    await Future<void>.delayed(const Duration(milliseconds: 150));
+    await Future<void>.delayed(TestDelays.controllerInitialization);
 
     return controller;
   }
@@ -115,7 +118,7 @@ void main() {
     group('initialization', () {
       test('initializes with correct default state', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(videoController: videoController);
 
@@ -131,18 +134,18 @@ void main() {
 
       test('adds listener to video controller', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(
           videoController: videoController,
-          autoHideDuration: const Duration(milliseconds: 100),
+          autoHideDuration: TestDelays.stateUpdate,
         );
 
         var notifyCount = 0;
         controller.addListener(() => notifyCount++);
 
         // Trigger video controller change
-        eventController.add(const PlaybackStateChangedEvent(PlaybackState.playing));
+        videoController.value = videoController.value.copyWith(playbackState: PlaybackState.playing);
         await Future<void>.delayed(const Duration(milliseconds: 200));
 
         expect(notifyCount, greaterThan(0));
@@ -152,11 +155,11 @@ void main() {
 
       test('checks PiP availability on init', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(videoController: videoController);
 
-        await Future<void>.delayed(const Duration(milliseconds: 100));
+        await Future<void>.delayed(TestDelays.stateUpdate);
 
         expect(controller.controlsState.isPipAvailable, isTrue);
 
@@ -165,11 +168,11 @@ void main() {
 
       test('checks background playback support on init', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(videoController: videoController);
 
-        await Future<void>.delayed(const Duration(milliseconds: 100));
+        await Future<void>.delayed(TestDelays.stateUpdate);
 
         expect(controller.controlsState.isBackgroundPlaybackSupported, isFalse);
 
@@ -178,11 +181,11 @@ void main() {
 
       test('checks casting support on init', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(videoController: videoController);
 
-        await Future<void>.delayed(const Duration(milliseconds: 100));
+        await Future<void>.delayed(TestDelays.stateUpdate);
 
         expect(controller.controlsState.isCastingSupported, isFalse);
 
@@ -193,7 +196,7 @@ void main() {
     group('disposal', () {
       test('disposes resources properly', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(videoController: videoController);
 
@@ -206,7 +209,7 @@ void main() {
 
       test('removes listener from video controller', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(videoController: videoController);
 
@@ -216,8 +219,8 @@ void main() {
           ..dispose();
 
         // Trigger video controller change after disposal
-        eventController.add(const PlaybackStateChangedEvent(PlaybackState.playing));
-        await Future<void>.delayed(const Duration(milliseconds: 100));
+        videoController.value = videoController.value.copyWith(playbackState: PlaybackState.playing);
+        await Future<void>.delayed(TestDelays.stateUpdate);
 
         // Should not notify after disposal
         expect(notifyCount, equals(0));
@@ -225,7 +228,7 @@ void main() {
 
       test('cancels hide timer on disposal', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(
           videoController: videoController,
@@ -233,8 +236,8 @@ void main() {
         );
 
         // Start playing to activate auto-hide timer
-        eventController.add(const PlaybackStateChangedEvent(PlaybackState.playing));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        videoController.value = videoController.value.copyWith(playbackState: PlaybackState.playing);
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         // Timer should be active, controls still visible
         expect(controller.controlsState.visible, isTrue);
@@ -251,19 +254,19 @@ void main() {
     group('auto-hide behavior', () {
       test('starts hide timer when playing', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(
           videoController: videoController,
-          autoHideDuration: const Duration(milliseconds: 100),
+          autoHideDuration: TestDelays.stateUpdate,
         );
 
-        eventController.add(const PlaybackStateChangedEvent(PlaybackState.playing));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        videoController.value = videoController.value.copyWith(playbackState: PlaybackState.playing);
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         expect(controller.controlsState.visible, isTrue);
 
-        await Future<void>.delayed(const Duration(milliseconds: 100));
+        await Future<void>.delayed(TestDelays.stateUpdate);
 
         expect(controller.controlsState.visible, isFalse);
 
@@ -272,19 +275,19 @@ void main() {
 
       test('does not auto-hide when paused', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(
           videoController: videoController,
-          autoHideDuration: const Duration(milliseconds: 100),
+          autoHideDuration: TestDelays.stateUpdate,
         );
 
-        eventController.add(const PlaybackStateChangedEvent(PlaybackState.paused));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        videoController.value = videoController.value.copyWith(playbackState: PlaybackState.paused);
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         expect(controller.controlsState.visible, isTrue);
 
-        await Future<void>.delayed(const Duration(milliseconds: 150));
+        await Future<void>.delayed(TestDelays.controllerInitialization);
 
         expect(controller.controlsState.visible, isTrue);
 
@@ -293,19 +296,19 @@ void main() {
 
       test('does not auto-hide when buffering', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(
           videoController: videoController,
-          autoHideDuration: const Duration(milliseconds: 100),
+          autoHideDuration: TestDelays.stateUpdate,
         );
 
-        eventController.add(const PlaybackStateChangedEvent(PlaybackState.buffering));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        videoController.value = videoController.value.copyWith(playbackState: PlaybackState.buffering);
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         expect(controller.controlsState.visible, isTrue);
 
-        await Future<void>.delayed(const Duration(milliseconds: 150));
+        await Future<void>.delayed(TestDelays.controllerInitialization);
 
         expect(controller.controlsState.visible, isTrue);
 
@@ -314,20 +317,20 @@ void main() {
 
       test('does not auto-hide when autoHide is false', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(
           videoController: videoController,
           autoHide: false,
-          autoHideDuration: const Duration(milliseconds: 100),
+          autoHideDuration: TestDelays.stateUpdate,
         );
 
-        eventController.add(const PlaybackStateChangedEvent(PlaybackState.playing));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        videoController.value = videoController.value.copyWith(playbackState: PlaybackState.playing);
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         expect(controller.controlsState.visible, isTrue);
 
-        await Future<void>.delayed(const Duration(milliseconds: 150));
+        await Future<void>.delayed(TestDelays.controllerInitialization);
 
         expect(controller.controlsState.visible, isTrue);
 
@@ -336,21 +339,21 @@ void main() {
 
       test('does not auto-hide during dragging', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         // Set position first so dragging has a value
         eventController
-          ..add(const DurationChangedEvent(Duration(minutes: 5)))
+          ..add(const DurationChangedEvent(TestMetadata.duration))
           ..add(const PositionChangedEvent(Duration(seconds: 30)));
-        await Future<void>.delayed(const Duration(milliseconds: 100));
+        await Future<void>.delayed(TestDelays.stateUpdate);
 
         final controller = await createController(
           videoController: videoController,
-          autoHideDuration: const Duration(milliseconds: 100),
+          autoHideDuration: TestDelays.stateUpdate,
         );
 
         // Start playing first (which triggers auto-hide timer)
-        eventController.add(const PlaybackStateChangedEvent(PlaybackState.playing));
+        videoController.value = videoController.value.copyWith(playbackState: PlaybackState.playing);
         await Future<void>.delayed(const Duration(milliseconds: 10));
 
         // Start dragging immediately (before timer fires)
@@ -368,14 +371,14 @@ void main() {
 
       test('restarts timer after dragging ends', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(
           videoController: videoController,
-          autoHideDuration: const Duration(milliseconds: 100),
+          autoHideDuration: TestDelays.stateUpdate,
         );
 
-        eventController.add(const PlaybackStateChangedEvent(PlaybackState.playing));
+        videoController.value = videoController.value.copyWith(playbackState: PlaybackState.playing);
         await Future<void>.delayed(const Duration(milliseconds: 20));
 
         // Start dragging
@@ -401,7 +404,7 @@ void main() {
     group('show/hide controls', () {
       test('showControls makes controls visible', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(videoController: videoController);
 
@@ -416,7 +419,7 @@ void main() {
 
       test('hideControls makes controls invisible', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(videoController: videoController);
 
@@ -430,7 +433,7 @@ void main() {
 
       test('toggleControlsVisibility toggles state', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(videoController: videoController);
 
@@ -447,15 +450,15 @@ void main() {
 
       test('resetHideTimer restarts auto-hide timer', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(
           videoController: videoController,
-          autoHideDuration: const Duration(milliseconds: 100),
+          autoHideDuration: TestDelays.stateUpdate,
         );
 
-        eventController.add(const PlaybackStateChangedEvent(PlaybackState.playing));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        videoController.value = videoController.value.copyWith(playbackState: PlaybackState.playing);
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         // Reset timer
         controller.resetHideTimer();
@@ -467,7 +470,7 @@ void main() {
         expect(controller.controlsState.visible, isTrue);
 
         // Wait for the new timeout
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         expect(controller.controlsState.visible, isFalse);
 
@@ -478,7 +481,7 @@ void main() {
     group('keyboard event handling', () {
       test('Space key toggles play/pause', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(videoController: videoController);
 
@@ -490,8 +493,8 @@ void main() {
         );
 
         // Initially paused
-        eventController.add(const PlaybackStateChangedEvent(PlaybackState.paused));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        videoController.value = videoController.value.copyWith(playbackState: PlaybackState.paused);
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         final result = controller.handleKeyEvent(focusNode, event);
         expect(result, equals(KeyEventResult.handled));
@@ -503,7 +506,7 @@ void main() {
 
       test('Space key when playing pauses video', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(videoController: videoController);
 
@@ -515,8 +518,8 @@ void main() {
         );
 
         // Set to playing
-        eventController.add(const PlaybackStateChangedEvent(PlaybackState.playing));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        videoController.value = videoController.value.copyWith(playbackState: PlaybackState.playing);
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         final result = controller.handleKeyEvent(focusNode, event);
         expect(result, equals(KeyEventResult.handled));
@@ -528,12 +531,12 @@ void main() {
 
       test('Left arrow seeks backward', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         eventController
           ..add(const DurationChangedEvent(Duration(minutes: 10)))
           ..add(const PositionChangedEvent(Duration(seconds: 30)));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         final controller = await createController(videoController: videoController);
 
@@ -554,12 +557,12 @@ void main() {
 
       test('Right arrow seeks forward', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         eventController
           ..add(const DurationChangedEvent(Duration(minutes: 10)))
           ..add(const PositionChangedEvent(Duration(seconds: 30)));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         final controller = await createController(videoController: videoController);
 
@@ -580,10 +583,10 @@ void main() {
 
       test('Up arrow increases volume', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
-        eventController.add(const VolumeChangedEvent(0.5));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        videoController.value = videoController.value.copyWith(volume: 0.5);
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         final controller = await createController(videoController: videoController);
 
@@ -604,10 +607,10 @@ void main() {
 
       test('Down arrow decreases volume', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
-        eventController.add(const VolumeChangedEvent(0.5));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        videoController.value = videoController.value.copyWith(volume: 0.5);
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         final controller = await createController(videoController: videoController);
 
@@ -628,16 +631,16 @@ void main() {
 
       test('M key toggles mute', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         // Set volume to 0.5 BEFORE creating controller so it's the initial state
-        eventController.add(const VolumeChangedEvent(0.5));
-        await Future<void>.delayed(const Duration(milliseconds: 100));
+        videoController.value = videoController.value.copyWith(volume: 0.5);
+        await Future<void>.delayed(TestDelays.stateUpdate);
 
         final controller = await createController(videoController: videoController);
 
         // Wait for controller to process the volume
-        await Future<void>.delayed(const Duration(milliseconds: 100));
+        await Future<void>.delayed(TestDelays.stateUpdate);
 
         final focusNode = FocusNode();
         const event = KeyDownEvent(
@@ -652,8 +655,8 @@ void main() {
         verify(() => mockPlatform.setVolume(1, 0)).called(1);
 
         // Update volume to 0
-        eventController.add(const VolumeChangedEvent(0));
-        await Future<void>.delayed(const Duration(milliseconds: 100));
+        videoController.value = videoController.value.copyWith(volume: 0);
+        await Future<void>.delayed(TestDelays.stateUpdate);
 
         // Unmute - should restore to 0.5
         final result2 = controller.handleKeyEvent(focusNode, event);
@@ -666,12 +669,12 @@ void main() {
 
       test('keyboard events show overlay indicators', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         eventController
           ..add(const DurationChangedEvent(Duration(minutes: 10)))
           ..add(const PositionChangedEvent(Duration(seconds: 30)));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         final controller = await createController(videoController: videoController);
 
@@ -697,10 +700,10 @@ void main() {
 
       test('volume keys clamp to 0.0-1.0 range', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
-        eventController.add(const VolumeChangedEvent(0.98));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        videoController.value = videoController.value.copyWith(volume: 0.98);
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         final controller = await createController(videoController: videoController);
 
@@ -715,9 +718,9 @@ void main() {
         controller.handleKeyEvent(focusNode, upEvent);
         verify(() => mockPlatform.setVolume(1, 1)).called(1);
 
-        // Set volume to 0.02
-        eventController.add(const VolumeChangedEvent(0.02));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        // Set volume to 0.02 using setVolume to ensure proper state update
+        await videoController.setVolume(0.02);
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         const downEvent = KeyDownEvent(
           physicalKey: PhysicalKeyboardKey.arrowDown,
@@ -735,12 +738,12 @@ void main() {
 
       test('seek keys clamp to video duration', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         eventController
           ..add(const DurationChangedEvent(Duration(seconds: 100)))
           ..add(const PositionChangedEvent(Duration(seconds: 95)));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         final controller = await createController(videoController: videoController);
 
@@ -768,7 +771,7 @@ void main() {
     group('mouse hover', () {
       test('onMouseHover shows controls', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(videoController: videoController);
 
@@ -783,15 +786,15 @@ void main() {
 
       test('onMouseHover resets hide timer', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(
           videoController: videoController,
-          autoHideDuration: const Duration(milliseconds: 100),
+          autoHideDuration: TestDelays.stateUpdate,
         );
 
-        eventController.add(const PlaybackStateChangedEvent(PlaybackState.playing));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        videoController.value = videoController.value.copyWith(playbackState: PlaybackState.playing);
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         // Hover to reset timer
         controller.onMouseHover();
@@ -809,7 +812,7 @@ void main() {
     group('drag state management', () {
       test('startDragging updates drag state', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(videoController: videoController);
 
@@ -832,7 +835,7 @@ void main() {
 
       test('endDragging clears drag state', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(videoController: videoController);
 
@@ -849,7 +852,7 @@ void main() {
 
       test('gestureSeekPositionValue updates value notifier', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(videoController: videoController);
 
@@ -864,7 +867,7 @@ void main() {
 
       test('dragStartPositionValue updates value notifier', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(videoController: videoController);
 
@@ -879,13 +882,13 @@ void main() {
 
       test('startDragging pauses video if playing', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(videoController: videoController);
 
         // Simulate playing state
-        eventController.add(const PlaybackStateChangedEvent(PlaybackState.playing));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        videoController.value = videoController.value.copyWith(playbackState: PlaybackState.playing);
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         controller.startDragging();
 
@@ -897,13 +900,13 @@ void main() {
 
       test('startDragging does not pause if already paused', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(videoController: videoController);
 
         // Simulate paused state
-        eventController.add(const PlaybackStateChangedEvent(PlaybackState.paused));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        videoController.value = videoController.value.copyWith(playbackState: PlaybackState.paused);
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         controller.startDragging();
 
@@ -915,13 +918,13 @@ void main() {
 
       test('endDragging resumes playback only if video was playing before drag', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(videoController: videoController);
 
         // Simulate playing state
-        eventController.add(const PlaybackStateChangedEvent(PlaybackState.playing));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        videoController.value = videoController.value.copyWith(playbackState: PlaybackState.playing);
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         // Start dragging (should pause)
         controller.startDragging();
@@ -936,13 +939,13 @@ void main() {
 
       test('endDragging does not resume if video was paused before drag', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(videoController: videoController);
 
         // Simulate paused state
-        eventController.add(const PlaybackStateChangedEvent(PlaybackState.paused));
-        await Future<void>.delayed(const Duration(milliseconds: 50));
+        videoController.value = videoController.value.copyWith(playbackState: PlaybackState.paused);
+        await Future<void>.delayed(TestDelays.eventPropagation);
 
         // Start dragging (should not pause again)
         controller.startDragging();
@@ -959,17 +962,18 @@ void main() {
     group('player event handling', () {
       test('responds to playback state changes', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(
           videoController: videoController,
-          autoHideDuration: const Duration(milliseconds: 100),
+          autoHideDuration: TestDelays.stateUpdate,
         );
 
         var notifyCount = 0;
         controller.addListener(() => notifyCount++);
 
-        eventController.add(const PlaybackStateChangedEvent(PlaybackState.playing));
+        // Directly update controller value (lazy subscription prevents test hangs)
+        videoController.value = videoController.value.copyWith(playbackState: PlaybackState.playing);
         await Future<void>.delayed(const Duration(milliseconds: 200));
 
         expect(notifyCount, greaterThan(0));
@@ -979,14 +983,15 @@ void main() {
 
       test('responds to fullscreen state changes', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(videoController: videoController);
 
         var notifyCount = 0;
         controller.addListener(() => notifyCount++);
 
-        eventController.add(const FullscreenStateChangedEvent(isFullscreen: true));
+        // Directly update controller value (lazy subscription prevents test hangs)
+        videoController.value = videoController.value.copyWith(isFullscreen: true);
         await Future<void>.delayed(const Duration(milliseconds: 200));
 
         expect(notifyCount, greaterThan(0));
@@ -996,14 +1001,15 @@ void main() {
 
       test('responds to PiP state changes', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(videoController: videoController);
 
         var notifyCount = 0;
         controller.addListener(() => notifyCount++);
 
-        eventController.add(const PipStateChangedEvent(isActive: true));
+        // Directly update controller value (lazy subscription prevents test hangs)
+        videoController.value = videoController.value.copyWith(isPipActive: true);
         await Future<void>.delayed(const Duration(milliseconds: 200));
 
         expect(notifyCount, greaterThan(0));
@@ -1017,7 +1023,7 @@ void main() {
       // The menu logic itself is tested through the controller's state and methods.
       testWidgets('showContextMenu displays menu at position', (tester) async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(
           videoController: videoController,
@@ -1025,32 +1031,26 @@ void main() {
         );
 
         await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: Builder(
-                builder: (context) {
-                  unawaited(
-                    controller.showContextMenu(
-                      context: context,
-                      position: const Offset(100, 100),
-                      theme: const VideoPlayerTheme(),
-                      onEnterFullscreenCallback: () {},
-                      onExitFullscreenCallback: () {},
-                    ),
-                  );
-                  return const SizedBox();
-                },
-              ),
+          buildTestWidget(
+            Builder(
+              builder: (context) {
+                unawaited(
+                  controller.showContextMenu(
+                    context: context,
+                    position: const Offset(100, 100),
+                    theme: const VideoPlayerTheme(),
+                    onEnterFullscreenCallback: () {},
+                    onExitFullscreenCallback: () {},
+                  ),
+                );
+                return const SizedBox();
+              },
             ),
           ),
         );
 
         // Use pumpAndSettle with timeout to avoid hanging on menu animations
-        await tester.pumpAndSettle(
-          const Duration(milliseconds: 100),
-          EnginePhase.sendSemanticsUpdate,
-          const Duration(seconds: 5),
-        );
+        await tester.pumpAndSettle(TestDelays.stateUpdate, EnginePhase.sendSemanticsUpdate, const Duration(seconds: 5));
 
         // Verify menu is shown (PopupMenuButton creates a Material widget)
         expect(find.byType(Material), findsWidgets);
@@ -1060,7 +1060,7 @@ void main() {
 
       testWidgets('context menu includes playback speed option', (tester) async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(
           videoController: videoController,
@@ -1068,32 +1068,26 @@ void main() {
         );
 
         await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: Builder(
-                builder: (context) {
-                  unawaited(
-                    controller.showContextMenu(
-                      context: context,
-                      position: const Offset(100, 100),
-                      theme: const VideoPlayerTheme(),
-                      onEnterFullscreenCallback: () {},
-                      onExitFullscreenCallback: () {},
-                    ),
-                  );
-                  return const SizedBox();
-                },
-              ),
+          buildTestWidget(
+            Builder(
+              builder: (context) {
+                unawaited(
+                  controller.showContextMenu(
+                    context: context,
+                    position: const Offset(100, 100),
+                    theme: const VideoPlayerTheme(),
+                    onEnterFullscreenCallback: () {},
+                    onExitFullscreenCallback: () {},
+                  ),
+                );
+                return const SizedBox();
+              },
             ),
           ),
         );
 
         // Use pumpAndSettle with timeout to avoid hanging on menu animations
-        await tester.pumpAndSettle(
-          const Duration(milliseconds: 100),
-          EnginePhase.sendSemanticsUpdate,
-          const Duration(seconds: 5),
-        );
+        await tester.pumpAndSettle(TestDelays.stateUpdate, EnginePhase.sendSemanticsUpdate, const Duration(seconds: 5));
 
         // Verify playback speed option exists
         expect(find.text('Playback Speed'), findsOneWidget);
@@ -1103,7 +1097,7 @@ void main() {
 
       testWidgets('context menu includes fullscreen options', (tester) async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(
           videoController: videoController,
@@ -1111,32 +1105,26 @@ void main() {
         );
 
         await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: Builder(
-                builder: (context) {
-                  unawaited(
-                    controller.showContextMenu(
-                      context: context,
-                      position: const Offset(100, 100),
-                      theme: const VideoPlayerTheme(),
-                      onEnterFullscreenCallback: () {},
-                      onExitFullscreenCallback: () {},
-                    ),
-                  );
-                  return const SizedBox();
-                },
-              ),
+          buildTestWidget(
+            Builder(
+              builder: (context) {
+                unawaited(
+                  controller.showContextMenu(
+                    context: context,
+                    position: const Offset(100, 100),
+                    theme: const VideoPlayerTheme(),
+                    onEnterFullscreenCallback: () {},
+                    onExitFullscreenCallback: () {},
+                  ),
+                );
+                return const SizedBox();
+              },
             ),
           ),
         );
 
         // Use pumpAndSettle with timeout to avoid hanging on menu animations
-        await tester.pumpAndSettle(
-          const Duration(milliseconds: 100),
-          EnginePhase.sendSemanticsUpdate,
-          const Duration(seconds: 5),
-        );
+        await tester.pumpAndSettle(TestDelays.stateUpdate, EnginePhase.sendSemanticsUpdate, const Duration(seconds: 5));
 
         // When not fullscreen, should show "Enter Fullscreen"
         expect(find.text('Enter Fullscreen'), findsOneWidget);
@@ -1146,10 +1134,10 @@ void main() {
 
       testWidgets('context menu shows correct fullscreen text based on state', (tester) async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
-        eventController.add(const FullscreenStateChangedEvent(isFullscreen: true));
-        await tester.pump(const Duration(milliseconds: 50));
+        videoController.value = videoController.value.copyWith(isFullscreen: true);
+        await tester.pump(TestDelays.eventPropagation);
 
         final controller = await createController(
           videoController: videoController,
@@ -1157,32 +1145,26 @@ void main() {
         );
 
         await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: Builder(
-                builder: (context) {
-                  unawaited(
-                    controller.showContextMenu(
-                      context: context,
-                      position: const Offset(100, 100),
-                      theme: const VideoPlayerTheme(),
-                      onEnterFullscreenCallback: () {},
-                      onExitFullscreenCallback: () {},
-                    ),
-                  );
-                  return const SizedBox();
-                },
-              ),
+          buildTestWidget(
+            Builder(
+              builder: (context) {
+                unawaited(
+                  controller.showContextMenu(
+                    context: context,
+                    position: const Offset(100, 100),
+                    theme: const VideoPlayerTheme(),
+                    onEnterFullscreenCallback: () {},
+                    onExitFullscreenCallback: () {},
+                  ),
+                );
+                return const SizedBox();
+              },
             ),
           ),
         );
 
         // Use pumpAndSettle with timeout to avoid hanging on menu animations
-        await tester.pumpAndSettle(
-          const Duration(milliseconds: 100),
-          EnginePhase.sendSemanticsUpdate,
-          const Duration(seconds: 5),
-        );
+        await tester.pumpAndSettle(TestDelays.stateUpdate, EnginePhase.sendSemanticsUpdate, const Duration(seconds: 5));
 
         // When fullscreen, should show "Exit Fullscreen"
         expect(find.text('Exit Fullscreen'), findsOneWidget);
@@ -1194,7 +1176,7 @@ void main() {
     group('toggle remaining time display', () {
       test('toggles showRemainingTime state', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(videoController: videoController);
 
@@ -1211,7 +1193,7 @@ void main() {
 
       test('notifies listeners when toggled', () async {
         final videoController = ProVideoPlayerController();
-        await videoController.initialize(source: const VideoSource.network('https://example.com/video.mp4'));
+        await videoController.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         final controller = await createController(videoController: videoController);
 

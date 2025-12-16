@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 
+import '../../shared/test_helpers.dart';
+
 void main() {
   group('BottomControlsBar', () {
     late ProVideoPlayerController controller;
@@ -18,21 +20,19 @@ void main() {
 
     testWidgets('renders progress bar', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: BottomControlsBar(
-              controller: controller,
-              theme: theme,
-              showRemainingTime: false,
-              gestureSeekPosition: null,
-              showSkipButtons: false,
-              skipDuration: const Duration(seconds: 10),
-              liveScrubbingMode: LiveScrubbingMode.adaptive,
-              enableSeekBarHoverPreview: false,
-              onDragStart: () {},
-              onDragEnd: () {},
-              onToggleTimeDisplay: () {},
-            ),
+        buildTestWidget(
+          BottomControlsBar(
+            controller: controller,
+            theme: theme,
+            showRemainingTime: false,
+            gestureSeekPosition: null,
+            showSkipButtons: false,
+            skipDuration: const Duration(seconds: 10),
+            liveScrubbingMode: LiveScrubbingMode.adaptive,
+            enableSeekBarHoverPreview: false,
+            onDragStart: () {},
+            onDragEnd: () {},
+            onToggleTimeDisplay: () {},
           ),
         ),
       );
@@ -42,21 +42,19 @@ void main() {
 
     testWidgets('renders play/pause button when paused', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: BottomControlsBar(
-              controller: controller,
-              theme: theme,
-              showRemainingTime: false,
-              gestureSeekPosition: null,
-              showSkipButtons: false,
-              skipDuration: const Duration(seconds: 10),
-              liveScrubbingMode: LiveScrubbingMode.adaptive,
-              enableSeekBarHoverPreview: false,
-              onDragStart: () {},
-              onDragEnd: () {},
-              onToggleTimeDisplay: () {},
-            ),
+        buildTestWidget(
+          BottomControlsBar(
+            controller: controller,
+            theme: theme,
+            showRemainingTime: false,
+            gestureSeekPosition: null,
+            showSkipButtons: false,
+            skipDuration: const Duration(seconds: 10),
+            liveScrubbingMode: LiveScrubbingMode.adaptive,
+            enableSeekBarHoverPreview: false,
+            onDragStart: () {},
+            onDragEnd: () {},
+            onToggleTimeDisplay: () {},
           ),
         ),
       );
@@ -67,21 +65,19 @@ void main() {
 
     testWidgets('shows skip buttons when enabled', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: BottomControlsBar(
-              controller: controller,
-              theme: theme,
-              showRemainingTime: false,
-              gestureSeekPosition: null,
-              showSkipButtons: true,
-              skipDuration: const Duration(seconds: 10),
-              liveScrubbingMode: LiveScrubbingMode.adaptive,
-              enableSeekBarHoverPreview: false,
-              onDragStart: () {},
-              onDragEnd: () {},
-              onToggleTimeDisplay: () {},
-            ),
+        buildTestWidget(
+          BottomControlsBar(
+            controller: controller,
+            theme: theme,
+            showRemainingTime: false,
+            gestureSeekPosition: null,
+            showSkipButtons: true,
+            skipDuration: const Duration(seconds: 10),
+            liveScrubbingMode: LiveScrubbingMode.adaptive,
+            enableSeekBarHoverPreview: false,
+            onDragStart: () {},
+            onDragEnd: () {},
+            onToggleTimeDisplay: () {},
           ),
         ),
       );
@@ -93,21 +89,19 @@ void main() {
 
     testWidgets('hides skip buttons when disabled', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: BottomControlsBar(
-              controller: controller,
-              theme: theme,
-              showRemainingTime: false,
-              gestureSeekPosition: null,
-              showSkipButtons: false,
-              skipDuration: const Duration(seconds: 10),
-              liveScrubbingMode: LiveScrubbingMode.adaptive,
-              enableSeekBarHoverPreview: false,
-              onDragStart: () {},
-              onDragEnd: () {},
-              onToggleTimeDisplay: () {},
-            ),
+        buildTestWidget(
+          BottomControlsBar(
+            controller: controller,
+            theme: theme,
+            showRemainingTime: false,
+            gestureSeekPosition: null,
+            showSkipButtons: false,
+            skipDuration: const Duration(seconds: 10),
+            liveScrubbingMode: LiveScrubbingMode.adaptive,
+            enableSeekBarHoverPreview: false,
+            onDragStart: () {},
+            onDragEnd: () {},
+            onToggleTimeDisplay: () {},
           ),
         ),
       );
@@ -119,21 +113,19 @@ void main() {
 
     testWidgets('displays time in correct format', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: BottomControlsBar(
-              controller: controller,
-              theme: theme,
-              showRemainingTime: false,
-              gestureSeekPosition: null,
-              showSkipButtons: false,
-              skipDuration: const Duration(seconds: 10),
-              liveScrubbingMode: LiveScrubbingMode.adaptive,
-              enableSeekBarHoverPreview: false,
-              onDragStart: () {},
-              onDragEnd: () {},
-              onToggleTimeDisplay: () {},
-            ),
+        buildTestWidget(
+          BottomControlsBar(
+            controller: controller,
+            theme: theme,
+            showRemainingTime: false,
+            gestureSeekPosition: null,
+            showSkipButtons: false,
+            skipDuration: const Duration(seconds: 10),
+            liveScrubbingMode: LiveScrubbingMode.adaptive,
+            enableSeekBarHoverPreview: false,
+            onDragStart: () {},
+            onDragEnd: () {},
+            onToggleTimeDisplay: () {},
           ),
         ),
       );
@@ -144,21 +136,19 @@ void main() {
 
     testWidgets('shows remaining time when enabled', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: BottomControlsBar(
-              controller: controller,
-              theme: theme,
-              showRemainingTime: true,
-              gestureSeekPosition: null,
-              showSkipButtons: false,
-              skipDuration: const Duration(seconds: 10),
-              liveScrubbingMode: LiveScrubbingMode.adaptive,
-              enableSeekBarHoverPreview: false,
-              onDragStart: () {},
-              onDragEnd: () {},
-              onToggleTimeDisplay: () {},
-            ),
+        buildTestWidget(
+          BottomControlsBar(
+            controller: controller,
+            theme: theme,
+            showRemainingTime: true,
+            gestureSeekPosition: null,
+            showSkipButtons: false,
+            skipDuration: const Duration(seconds: 10),
+            liveScrubbingMode: LiveScrubbingMode.adaptive,
+            enableSeekBarHoverPreview: false,
+            onDragStart: () {},
+            onDragEnd: () {},
+            onToggleTimeDisplay: () {},
           ),
         ),
       );
@@ -171,23 +161,21 @@ void main() {
       var toggleCalled = false;
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: BottomControlsBar(
-              controller: controller,
-              theme: theme,
-              showRemainingTime: false,
-              gestureSeekPosition: null,
-              showSkipButtons: false,
-              skipDuration: const Duration(seconds: 10),
-              liveScrubbingMode: LiveScrubbingMode.adaptive,
-              enableSeekBarHoverPreview: false,
-              onDragStart: () {},
-              onDragEnd: () {},
-              onToggleTimeDisplay: () {
-                toggleCalled = true;
-              },
-            ),
+        buildTestWidget(
+          BottomControlsBar(
+            controller: controller,
+            theme: theme,
+            showRemainingTime: false,
+            gestureSeekPosition: null,
+            showSkipButtons: false,
+            skipDuration: const Duration(seconds: 10),
+            liveScrubbingMode: LiveScrubbingMode.adaptive,
+            enableSeekBarHoverPreview: false,
+            onDragStart: () {},
+            onDragEnd: () {},
+            onToggleTimeDisplay: () {
+              toggleCalled = true;
+            },
           ),
         ),
       );
@@ -203,21 +191,19 @@ void main() {
 
     testWidgets('uses custom skip duration for icons', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: BottomControlsBar(
-              controller: controller,
-              theme: theme,
-              showRemainingTime: false,
-              gestureSeekPosition: null,
-              showSkipButtons: true,
-              skipDuration: const Duration(seconds: 5),
-              liveScrubbingMode: LiveScrubbingMode.adaptive,
-              enableSeekBarHoverPreview: false,
-              onDragStart: () {},
-              onDragEnd: () {},
-              onToggleTimeDisplay: () {},
-            ),
+        buildTestWidget(
+          BottomControlsBar(
+            controller: controller,
+            theme: theme,
+            showRemainingTime: false,
+            gestureSeekPosition: null,
+            showSkipButtons: true,
+            skipDuration: const Duration(seconds: 5),
+            liveScrubbingMode: LiveScrubbingMode.adaptive,
+            enableSeekBarHoverPreview: false,
+            onDragStart: () {},
+            onDragEnd: () {},
+            onToggleTimeDisplay: () {},
           ),
         ),
       );
@@ -231,21 +217,19 @@ void main() {
       final customTheme = VideoPlayerTheme.light().copyWith(primaryColor: Colors.red, secondaryColor: Colors.blue);
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: BottomControlsBar(
-              controller: controller,
-              theme: customTheme,
-              showRemainingTime: false,
-              gestureSeekPosition: null,
-              showSkipButtons: false,
-              skipDuration: const Duration(seconds: 10),
-              liveScrubbingMode: LiveScrubbingMode.adaptive,
-              enableSeekBarHoverPreview: false,
-              onDragStart: () {},
-              onDragEnd: () {},
-              onToggleTimeDisplay: () {},
-            ),
+        buildTestWidget(
+          BottomControlsBar(
+            controller: controller,
+            theme: customTheme,
+            showRemainingTime: false,
+            gestureSeekPosition: null,
+            showSkipButtons: false,
+            skipDuration: const Duration(seconds: 10),
+            liveScrubbingMode: LiveScrubbingMode.adaptive,
+            enableSeekBarHoverPreview: false,
+            onDragStart: () {},
+            onDragEnd: () {},
+            onToggleTimeDisplay: () {},
           ),
         ),
       );
@@ -265,21 +249,19 @@ void main() {
       final customTheme = VideoPlayerTheme.light().copyWith(controlsPadding: const EdgeInsets.all(32));
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: BottomControlsBar(
-              controller: controller,
-              theme: customTheme,
-              showRemainingTime: false,
-              gestureSeekPosition: null,
-              showSkipButtons: false,
-              skipDuration: const Duration(seconds: 10),
-              liveScrubbingMode: LiveScrubbingMode.adaptive,
-              enableSeekBarHoverPreview: false,
-              onDragStart: () {},
-              onDragEnd: () {},
-              onToggleTimeDisplay: () {},
-            ),
+        buildTestWidget(
+          BottomControlsBar(
+            controller: controller,
+            theme: customTheme,
+            showRemainingTime: false,
+            gestureSeekPosition: null,
+            showSkipButtons: false,
+            skipDuration: const Duration(seconds: 10),
+            liveScrubbingMode: LiveScrubbingMode.adaptive,
+            enableSeekBarHoverPreview: false,
+            onDragStart: () {},
+            onDragEnd: () {},
+            onToggleTimeDisplay: () {},
           ),
         ),
       );

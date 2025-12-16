@@ -236,16 +236,12 @@ check-duplicates:
 		exit 0; \
 	fi; \
 	printf "$(SEARCH) Scanning for duplicate code...\n"; \
-	jscpd pro_video_player*/lib \
-		--min-lines 10 \
-		--min-tokens 50 \
-		--format "dart" \
-		--reporters "console" \
-		--threshold 2.5 \
-		2>&1 | tail -20; \
+	rm -rf report; \
+	npx jscpd . --config .jscpd.json 2>&1 | tail -20; \
 	exit_code=$$?; \
 	if [ $$exit_code -eq 0 ]; then \
-		echo "$(CHECK) Duplicate code check passed (≤2.5% duplication)"; \
+		echo "$(CHECK) Duplicate code check passed (≤1.0% duplication)"; \
+		./makefiles/scripts/check-clone-instances.sh; \
 	else \
 		echo "$(WARN)  Code duplication detected - must refactor (see output above)"; \
 	fi
@@ -300,10 +296,13 @@ quick-check:
 		start=$$(date +%s); \
 		if ! command -v jscpd >/dev/null 2>&1; then \
 			echo "SKIPPED:$$(( $$(date +%s) - $$start ))" > $$duplicates_log; \
-		elif jscpd pro_video_player*/lib --min-lines 10 --min-tokens 50 --format "dart" --reporters "console" --threshold 2.5 > /dev/null 2>&1; then \
-			echo "OK:$$(( $$(date +%s) - $$start ))" > $$duplicates_log; \
 		else \
-			echo "FAILED:$$(( $$(date +%s) - $$start ))" > $$duplicates_log; \
+			rm -rf report > /dev/null 2>&1; \
+			if npx jscpd . --config .jscpd.json > /dev/null 2>&1 && ./makefiles/scripts/check-clone-instances.sh > /dev/null 2>&1; then \
+				echo "OK:$$(( $$(date +%s) - $$start ))" > $$duplicates_log; \
+			else \
+				echo "FAILED:$$(( $$(date +%s) - $$start ))" > $$duplicates_log; \
+			fi; \
 		fi \
 	) & \
 	\

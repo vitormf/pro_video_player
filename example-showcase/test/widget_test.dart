@@ -48,7 +48,7 @@ void main() {
     when(() => mockPlatform.seekTo(any(), any())).thenAnswer((_) async {});
     when(() => mockPlatform.setVolume(any(), any())).thenAnswer((_) async {});
     when(() => mockPlatform.setPlaybackSpeed(any(), any())).thenAnswer((_) async {});
-    when(() => mockPlatform.setLooping(any(), looping: any(named: 'looping'))).thenAnswer((_) async {});
+    when(() => mockPlatform.setLooping(any(), any(named: 'looping'))).thenAnswer((_) async {});
     when(() => mockPlatform.isPipSupported()).thenAnswer((_) async => true);
     when(() => mockPlatform.enterPip(any(), options: any(named: 'options'))).thenAnswer((_) async => true);
     when(() => mockPlatform.exitPip(any())).thenAnswer((_) async {});

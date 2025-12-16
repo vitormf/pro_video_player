@@ -22,14 +22,14 @@ MANDATORY after any code changes (Dart, Kotlin, Swift), run from project root:
 
 ```bash
 cd /Users/vitor/resilio/Dev/goodinside/git/pro_video_player
-make quick-check
+make format quick-check
 ```
 
 IMPORTANT: Always run from project root, NOT from subdirectories.
 
-Runs all checks in parallel (~17 sec): Dart analyze, Kotlin compile, iOS/macOS Swift compile, format check, shared links verification, logging verification, code duplication.
+Formats code first, then runs all checks in parallel (~17 sec): Dart analyze, Kotlin compile, iOS/macOS Swift compile, format check, shared links verification, logging verification, code duplication.
 
-Do NOT consider task complete until `make quick-check` passes. If fails: fix errors, run again, repeat until passes.
+Do NOT consider task complete until `make format quick-check` passes. If fails: fix errors, run again, repeat until passes.
 
 ## Copyright and Legal Compliance
 

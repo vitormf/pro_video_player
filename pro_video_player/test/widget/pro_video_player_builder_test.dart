@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 
+import '../shared/test_helpers.dart';
 import '../shared/test_setup.dart';
 
 void main() {
@@ -95,9 +96,8 @@ void main() {
       ).thenReturn(const Text('Video View', textDirection: TextDirection.ltr));
 
       await tester.pumpWidget(
-        Directionality(
-          textDirection: TextDirection.ltr,
-          child: ProVideoPlayerBuilder(
+        buildTestWidget(
+          ProVideoPlayerBuilder(
             controller: fixture.controller,
             builder: (context, controller, child) => const Text('Normal View'),
             // No fullscreenBuilder provided, useDefaultFullscreen defaults to true
@@ -277,9 +277,8 @@ void main() {
         ).thenReturn(const Text('Video', textDirection: TextDirection.ltr));
 
         await tester.pumpWidget(
-          Directionality(
-            textDirection: TextDirection.ltr,
-            child: ProVideoPlayerBuilder(
+          buildTestWidget(
+            ProVideoPlayerBuilder(
               controller: fixture.controller,
               builder: (context, controller, child) => const Text('Normal View'),
             ),
@@ -309,9 +308,8 @@ void main() {
         ).thenReturn(const Text('Video', textDirection: TextDirection.ltr));
 
         await tester.pumpWidget(
-          Directionality(
-            textDirection: TextDirection.ltr,
-            child: ProVideoPlayerBuilder(
+          buildTestWidget(
+            ProVideoPlayerBuilder(
               controller: fixture.controller,
               builder: (context, controller, child) => const Text('Normal View'),
             ),
@@ -332,9 +330,8 @@ void main() {
         ).thenReturn(const Text('Video', textDirection: TextDirection.ltr));
 
         await tester.pumpWidget(
-          Directionality(
-            textDirection: TextDirection.ltr,
-            child: ProVideoPlayerBuilder(
+          buildTestWidget(
+            ProVideoPlayerBuilder(
               controller: fixture.controller,
               builder: (context, controller, child) => const Text('Normal View'),
             ),
@@ -363,9 +360,8 @@ void main() {
         ).thenReturn(const Text('Video', textDirection: TextDirection.ltr));
 
         await tester.pumpWidget(
-          Directionality(
-            textDirection: TextDirection.ltr,
-            child: ProVideoPlayerBuilder(
+          buildTestWidget(
+            ProVideoPlayerBuilder(
               controller: fixture.controller,
               controlsMode: ControlsMode.none,
               builder: (context, controller, child) => const Text('Normal View'),
@@ -393,9 +389,8 @@ void main() {
         var builderCalled = false;
 
         await tester.pumpWidget(
-          Directionality(
-            textDirection: TextDirection.ltr,
-            child: ProVideoPlayerBuilder(
+          buildTestWidget(
+            ProVideoPlayerBuilder(
               controller: fixture.controller,
               controlsBuilder: (context, ctrl) {
                 builderCalled = true;
@@ -428,9 +423,8 @@ void main() {
         ).thenReturn(const Text('Video', textDirection: TextDirection.ltr));
 
         await tester.pumpWidget(
-          Directionality(
-            textDirection: TextDirection.ltr,
-            child: ProVideoPlayerBuilder(
+          buildTestWidget(
+            ProVideoPlayerBuilder(
               controller: fixture.controller,
               builder: (context, controller, child) => const Text('Normal View'),
             ),
