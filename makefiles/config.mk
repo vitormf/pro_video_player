@@ -42,8 +42,13 @@ OUTPUT_REDIRECT := > /dev/null 2>&1
 POD_SILENT := --silent
 endif
 
-# iOS simulator ID (default)
+# iOS simulator ID (default: iPhone 16)
+# Override with: make test-e2e-ios IOS_SIMULATOR_ID=your-simulator-id
 IOS_SIMULATOR_ID ?= 029E85C7-1570-45A5-B798-14DE432CD3E3
+
+# Android AVD name (default: auto-detect best available)
+# Override with: make test-e2e-android ANDROID_AVD_NAME=your-avd-name
+ANDROID_AVD_NAME ?=
 
 # Helper target for testing - print any variable value
 # Usage: make print-VARIABLE_NAME

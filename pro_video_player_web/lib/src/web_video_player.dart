@@ -106,6 +106,13 @@ class WebVideoPlayer {
     _videoElement.playbackRate = options.playbackSpeed;
     _videoElement.controls = false; // We'll manage controls separately
 
+    // Set autoplay and muted attributes for reliable autoplay on web
+    // Chrome requires videos to be muted for autoplay without user interaction
+    _videoElement.autoplay = options.autoPlay;
+    if (options.autoPlay) {
+      _videoElement.muted = true; // Mute for autoplay
+    }
+
     // Register platform view
     ui_web.platformViewRegistry.registerViewFactory(viewType, (int viewId) => _videoElement);
 

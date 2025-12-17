@@ -61,10 +61,18 @@ public class ProVideoPlayerPlugin: NSObject, FlutterPlugin, PlatformPluginBehavi
     }
 
     public func isPipSupported() -> Bool {
+        // On iOS, AVPictureInPictureController.isPictureInPictureSupported() is unreliable
+        // and often returns false even when PiP is available. We check version instead.
+        // PiP requires iOS 14.0+ and UIBackgroundModes with 'audio' in Info.plist.
+        let supported: Bool
         if #available(iOS 14.0, *) {
-            return AVPictureInPictureController.isPictureInPictureSupported()
+            supported = true
+        } else {
+            supported = false
         }
-        return false
+
+        verboseLog("isPipSupported returning: \(supported)", tag: "Plugin")
+        return supported
     }
 
     public func handleSetPipActions(

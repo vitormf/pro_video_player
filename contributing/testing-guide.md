@@ -1384,6 +1384,38 @@ Located in `example-showcase/integration_test/e2e_ui_test.dart`. Covers:
 
 Test keys defined in `example-showcase/lib/test_keys.dart`. Requires device/simulator.
 
+### Running E2E Tests
+
+The E2E test commands automatically launch emulators/simulators if they're not already running:
+
+```bash
+# iOS - automatically boots simulator if needed
+make test-e2e-ios
+
+# Android - automatically launches emulator if needed
+make test-e2e-android
+
+# macOS - runs on host machine
+make test-e2e-macos
+
+# Web - launches Chrome with required flags
+make test-e2e-web
+
+# All platforms in parallel
+make test-e2e
+```
+
+**Emulator/Simulator Auto-Launch:**
+- **iOS**: Detects simulator state (Shutdown/Booted) and boots if needed, waits up to 60s for boot completion
+- **Android**: Checks for running emulators, launches if needed (auto-selects best available AVD), waits up to 120s for boot completion
+- **Configuration**:
+  - iOS: `make test-e2e-ios IOS_SIMULATOR_ID=your-id` (default: iPhone 16)
+  - Android: `make test-e2e-android ANDROID_AVD_NAME=your-avd` (default: auto-detect Pixel API 33+)
+
+**Helper Scripts:**
+- `makefiles/scripts/ensure-ios-simulator.sh [simulator_id]` - Ensures iOS simulator is booted
+- `makefiles/scripts/ensure-android-emulator.sh [avd_name]` - Ensures Android emulator is running
+
 ### Cross-Platform E2E Test Guidelines
 
 **E2E tests MUST pass on ALL platforms** (iOS, Android, macOS, web). Do NOT skip tests gracefully - fix the underlying issues instead.

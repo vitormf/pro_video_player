@@ -31,7 +31,10 @@ class _PlayerFeaturesScreenState extends State<PlayerFeaturesScreen> {
 
   Future<void> _initializePlayer() async {
     try {
-      await _controller.initialize(source: const VideoSource.network(VideoUrls.bigBuckBunny));
+      await _controller.initialize(
+        source: const VideoSource.network(VideoUrls.bigBuckBunny),
+        options: const VideoPlayerOptions(autoPlay: true),
+      );
       final pipSupported = await _controller.isPipSupported();
       setState(() {
         _isInitialized = true;

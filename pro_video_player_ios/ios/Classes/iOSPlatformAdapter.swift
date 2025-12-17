@@ -78,17 +78,19 @@ class iOSPlatformAdapter: PlatformAdapter {
     }
 
     func isPipSupported() -> Bool {
+        // On iOS, AVPictureInPictureController.isPictureInPictureSupported() is unreliable
+        // and often returns false even when PiP is available. Return true on iOS 14.0+.
         if #available(iOS 14.0, *) {
-            return AVPictureInPictureController.isPictureInPictureSupported()
+            return true
         }
         return false
     }
 
     func createPipController(playerLayer: AVPlayerLayer) -> AVPictureInPictureController? {
+        // On iOS, just try to create the controller. The isPictureInPictureSupported() check
+        // is unreliable and often returns false. If creation fails, we'll return nil.
         if #available(iOS 14.0, *) {
-            if AVPictureInPictureController.isPictureInPictureSupported() {
-                return AVPictureInPictureController(playerLayer: playerLayer)
-            }
+            return AVPictureInPictureController(playerLayer: playerLayer)
         }
         return nil
     }

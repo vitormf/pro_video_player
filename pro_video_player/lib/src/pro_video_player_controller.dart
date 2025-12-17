@@ -661,6 +661,9 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
 
   /// Returns whether background playback is supported on this platform.
   ///
+  /// **Note:** This method does NOT require the player to be initialized since
+  /// it only checks platform capabilities, not player state.
+  ///
   /// **Platform support:**
   /// - **iOS**: `true` (requires proper Info.plist configuration)
   /// - **Android**: `true` (requires proper manifest configuration)
@@ -668,7 +671,8 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   ///   by default and cannot be disabled. The toggle button is hidden in the UI.
   /// - **Web/Windows/Linux**: `false`
   Future<bool> isBackgroundPlaybackSupported() async {
-    _ensureInitialized();
+    // Note: Does NOT call _ensureInitialized() because this is a platform
+    // capability check, not a player operation. Can be called before initialization.
     return _configurationManager.isBackgroundPlaybackSupported();
   }
 
@@ -948,6 +952,9 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// for this player (see [VideoPlayerOptions.allowPip]). To check both,
   /// use [isPipAvailable].
   ///
+  /// **Note:** This method does NOT require the player to be initialized since
+  /// it only checks platform capabilities, not player state.
+  ///
   /// ## Platform Behavior
   ///
   /// **Android:** Returns `false` if the app's `AndroidManifest.xml` is missing
@@ -960,7 +967,8 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   ///
   /// See the package README for detailed setup instructions.
   Future<bool> isPipSupported() {
-    _ensureInitialized();
+    // Note: Does NOT call _ensureInitialized() because this is a platform
+    // capability check, not a player operation. Can be called before initialization.
     return _pipManager.isPipSupported();
   }
 

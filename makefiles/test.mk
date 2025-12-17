@@ -582,9 +582,7 @@ test-e2e: verify-setup
 # test-e2e-ios: Run E2E UI tests on iOS simulator
 test-e2e-ios: verify-setup
 	@echo "$(TEST) Running E2E UI tests on iOS simulator..."
-	@echo "$(HOURGLASS) Booting simulator if needed..."
-	@xcrun simctl boot $(IOS_SIMULATOR_ID) 2>/dev/null || true
-	@sleep 2
+	@./makefiles/scripts/ensure-ios-simulator.sh $(IOS_SIMULATOR_ID)
 	@cd example-showcase && ${FLUTTER} drive --driver=test_driver/integration_test.dart --target=integration_test/e2e_ui_test.dart -d $(IOS_SIMULATOR_ID)
 	@echo ""
 	@echo "$(CHECK) E2E UI tests on iOS complete!"
@@ -592,8 +590,10 @@ test-e2e-ios: verify-setup
 # test-e2e-android: Run E2E UI tests on Android emulator
 test-e2e-android: verify-setup
 	@echo "$(TEST) Running E2E UI tests on Android emulator..."
-	@echo "$(INFO) Note: Requires a running Android emulator"
-	@cd example-showcase && ${FLUTTER} test integration_test/e2e_ui_test.dart -d emulator-5554
+	@./makefiles/scripts/ensure-android-emulator.sh $(ANDROID_AVD_NAME)
+	@# Detect emulator device ID
+	@DEVICE_ID=$$(adb devices -l | grep "emulator-" | head -1 | awk '{print $$1}'); \
+	cd example-showcase && ${FLUTTER} test integration_test/e2e_ui_test.dart -d $$DEVICE_ID
 	@echo ""
 	@echo "$(CHECK) E2E UI tests on Android complete!"
 
@@ -607,8 +607,8 @@ test-e2e-macos: verify-setup
 	@echo "$(CHECK) E2E UI tests on macOS complete!"
 
 # test-e2e-web: Run E2E UI tests on Chrome (web)
-# Note: Uses -d chrome for reliable test execution
-# Note: Tests are designed to handle web autoplay restrictions gracefully
+# Note: Uses custom Chrome wrapper to bypass autoplay restrictions for video testing
+# Note: chrome-no-autoplay.sh launches Chrome with --autoplay-policy=no-user-gesture-required
 test-e2e-web: verify-setup
 	@echo "$(TEST) Running E2E UI tests on Chrome (web)..."
 	@# Check if chromedriver is installed
@@ -624,10 +624,13 @@ test-e2e-web: verify-setup
 		CHROMEDRIVER_PID=$$!; \
 		sleep 2; \
 		echo "$(INFO) chromedriver started (PID: $$CHROMEDRIVER_PID)"; \
+		echo "$(INFO) Using Chrome with autoplay restrictions disabled"; \
+		CHROME_WRAPPER="$$(pwd)/example-showcase/chrome-no-autoplay.sh"; \
 		cd example-showcase && ${FLUTTER} drive \
 			--driver=test_driver/integration_test.dart \
 			--target=integration_test/e2e_ui_test.dart \
-			-d chrome; \
+			-d chrome \
+			--chrome-binary="$$CHROME_WRAPPER"; \
 		EXIT_CODE=$$?; \
 		echo "$(INFO) Stopping chromedriver..."; \
 		pkill -f chromedriver 2>/dev/null || true; \

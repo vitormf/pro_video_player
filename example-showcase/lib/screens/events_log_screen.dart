@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
@@ -33,7 +34,10 @@ class _EventsLogScreenState extends State<EventsLogScreen> {
   }
 
   Future<void> _initializePlayer() async {
-    await _controller.initialize(source: const VideoSource.network(VideoUrls.bigBuckBunny));
+    await _controller.initialize(
+      source: const VideoSource.network(VideoUrls.bigBuckBunny),
+      options: VideoPlayerOptions(autoPlay: kIsWeb),
+    );
 
     // Subscribe to events from the platform interface
     final playerId = _controller.playerId;

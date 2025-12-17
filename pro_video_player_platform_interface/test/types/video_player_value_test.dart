@@ -68,14 +68,14 @@ void main() {
         expect(value.hasError, isTrue);
       });
 
-      test('aspectRatio returns null when size is null', () {
+      test('aspectRatio returns 0.0 when size is null', () {
         const value = VideoPlayerValue();
-        expect(value.aspectRatio, isNull);
+        expect(value.aspectRatio, 0.0);
       });
 
-      test('aspectRatio returns null when height is 0', () {
+      test('aspectRatio returns 0.0 when height is 0', () {
         const value = VideoPlayerValue(size: (width: 1920, height: 0));
-        expect(value.aspectRatio, isNull);
+        expect(value.aspectRatio, 0.0);
       });
 
       test('aspectRatio returns correct value', () {
