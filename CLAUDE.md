@@ -266,24 +266,27 @@ Flutter version in .fvmrc. Always prefix commands with fvm.
 - Update documentation if needed
 - Follow conventional commit messages
 
-## Project Roadmap
+## Task Tracking with ROADMAP.md
 
-See ROADMAP.md for complete feature tracking and status.
+ROADMAP.md is the single source of truth for tracking all tasks: future, current (in progress), and completed.
 
-When starting work on roadmap item:
-1. Move item from current section to "In Progress" section
-2. Check off completed sub-tasks immediately as you complete each one (don't batch updates)
-3. Before marking item as "Completed", verify compliance with:
+CRITICAL: When working on any task from the roadmap:
+
+1. **Starting a task**: Move the entire task from its current section to "In Progress" section
+2. **During work**: Tick checkboxes for each completed step immediately as you finish them (don't batch updates)
+3. **Before completing**: Verify compliance with all requirements:
    - contributing/architecture.md - State management patterns, refactoring guidelines, file size limits
    - contributing/developer-guide.md - API documentation requirements, configurability patterns
    - contributing/testing-guide.md - Test patterns, TDD practices, documented solutions
    - Code coverage expectations - 95% Dart per file, 80% native, 80% global minimum
-4. Move item to "Completed" only after verification passes
-5. When moving to "Completed": Condense the item to brief summary format
+   - Run `make format quick-check` and ensure it passes
+4. **After all steps complete**: Move task to "Completed" section with condensed summary
    - Remove implementation details, test coverage numbers, sub-bullet explanations
    - Keep only "what was accomplished" without "how it was implemented"
    - Pending tasks should remain detailed; completed tasks should be concise
    - Details preserved in git history and documentation if needed later
+
+Always keep ROADMAP.md synchronized with your actual progress - it's the primary way to track what's done, what's in flight, and what's coming next.
 
 ## Documentation Structure
 
