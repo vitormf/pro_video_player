@@ -1,4 +1,4 @@
-import 'dart:async';
+import 'dart:async' show unawaited;
 import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -7,23 +7,14 @@ import 'package:flutter/material.dart';
 import 'controls/seek_preview.dart';
 import 'controls/seek_preview_progress_bar.dart';
 import 'controls/widgets/value_indicator_overlay.dart';
+import 'gestures/brightness_gesture_manager.dart';
+import 'gestures/gesture_coordinator.dart';
+import 'gestures/playback_speed_gesture_manager.dart';
+import 'gestures/seek_gesture_manager.dart';
+import 'gestures/tap_gesture_manager.dart';
+import 'gestures/volume_gesture_manager.dart';
 import 'pro_video_player_controller.dart';
 import 'video_player_theme.dart';
-
-/// The type of gesture currently being performed.
-enum _GestureType {
-  /// Horizontal swipe for seeking through video.
-  seek,
-
-  /// Vertical swipe on right side for volume control.
-  volume,
-
-  /// Vertical swipe on left side for brightness control.
-  brightness,
-
-  /// Two-finger vertical swipe for playback speed.
-  playbackSpeed,
-}
 
 /// A widget that provides gesture-based controls for video playback.
 ///
@@ -182,32 +173,117 @@ class VideoPlayerGestureDetector extends StatefulWidget {
   State<VideoPlayerGestureDetector> createState() => _VideoPlayerGestureDetectorState();
 }
 
-class _VideoPlayerGestureDetectorState extends State<VideoPlayerGestureDetector> with SingleTickerProviderStateMixin {
+class _VideoPlayerGestureDetectorState extends State<VideoPlayerGestureDetector>
+    with SingleTickerProviderStateMixin
+    implements GestureCoordinatorCallbacks {
+  // UI state (feedback overlays)
   bool _controlsVisible = true;
-  Timer? _hideControlsTimer;
-  Timer? _doubleTapTimer;
   Duration? _seekTargetPosition;
+  Duration? _dragStartPlaybackPosition; // Needed for seek preview
   IconData? _feedbackIcon;
   String? _feedbackText;
   late AnimationController _feedbackController;
-  double? _dragStartVolume;
-  double? _dragStartBrightness;
-  Duration? _dragStartPlaybackPosition;
   double? _currentVolume;
   double? _currentBrightness;
-  double? _dragStartPlaybackSpeed;
   double? _currentPlaybackSpeed;
-  int _pointerCount = 0;
-  Offset? _scaleStartPosition;
-  bool _hadSignificantMovement = false;
-  _GestureType? _lockedGestureType;
-  Offset? _lastTapPosition;
-  bool _wasPlayingBeforeSeek = false;
+
+  // Gesture managers
+  late TapGestureManager _tapManager;
+  late SeekGestureManager _seekManager;
+  late VolumeGestureManager _volumeManager;
+  late BrightnessGestureManager _brightnessManager;
+  late PlaybackSpeedGestureManager _speedManager;
+  late GestureCoordinator _gestureCoordinator;
+
+  // GestureCoordinatorCallbacks implementation
+  @override
+  bool get enableSeekGesture => widget.enableSeekGesture;
+  @override
+  bool get enableVolumeGesture => widget.enableVolumeGesture;
+  @override
+  bool get enableBrightnessGesture => widget.enableBrightnessGesture;
+  @override
+  bool get enablePlaybackSpeedGesture => widget.enablePlaybackSpeedGesture;
+  @override
+  double get sideGestureAreaFraction => widget.sideGestureAreaFraction;
+  @override
+  double get bottomGestureExclusionHeight => widget.bottomExclusionHeight;
+  @override
+  double get verticalGestureThreshold => widget.verticalGestureThreshold;
 
   @override
   void initState() {
     super.initState();
     _feedbackController = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
+
+    // Initialize gesture managers
+    _tapManager = TapGestureManager(
+      getControlsVisible: () => _controlsVisible,
+      setControlsVisible: ({required visible}) {
+        setState(() => _controlsVisible = visible);
+        widget.onControlsVisibilityChanged?.call(visible);
+      },
+      getIsPlaying: () => widget.controller.value.isPlaying,
+      onSingleTap: () {}, // Single tap just toggles controls (handled by setControlsVisible)
+      onDoubleTapLeft: (position) => _handleDoubleTapSeek(-widget.seekDuration),
+      onDoubleTapCenter: (position) => _handleDoubleTapPlayPause(),
+      onDoubleTapRight: (position) => _handleDoubleTapSeek(widget.seekDuration),
+      autoHideEnabled: widget.autoHideControls,
+      autoHideDelay: widget.autoHideDelay,
+      doubleTapEnabled: widget.enableDoubleTapSeek,
+      context: context,
+    );
+
+    _seekManager = SeekGestureManager(
+      getCurrentPosition: () => widget.controller.value.position,
+      getDuration: () => widget.controller.value.duration,
+      getIsPlaying: () => widget.controller.value.isPlaying,
+      seekSecondsPerInch: 10,
+      setSeekTarget: (target) {
+        setState(() {
+          if (target != null && _dragStartPlaybackPosition == null) {
+            _dragStartPlaybackPosition = widget.controller.value.position;
+          } else if (target == null) {
+            _dragStartPlaybackPosition = null;
+          }
+          _seekTargetPosition = target;
+        });
+      },
+      seekTo: widget.controller.seekTo,
+      pause: widget.controller.pause,
+      play: widget.controller.play,
+      onSeekGestureUpdate: (target) => widget.onSeekGestureUpdate?.call(target),
+    );
+
+    _volumeManager = VolumeGestureManager(
+      getDeviceVolume: widget.controller.getDeviceVolume,
+      setDeviceVolume: widget.controller.setDeviceVolume,
+      setCurrentVolume: (volume) => setState(() => _currentVolume = volume),
+    );
+
+    _brightnessManager = BrightnessGestureManager(
+      getScreenBrightness: widget.controller.getScreenBrightness,
+      setScreenBrightness: widget.controller.setScreenBrightness,
+      setCurrentBrightness: (brightness) => setState(() => _currentBrightness = brightness),
+      onBrightnessChanged: (brightness) => widget.onBrightnessChanged?.call(brightness),
+      isBrightnessSupported: () => !kIsWeb && (Platform.isIOS || Platform.isAndroid),
+    );
+
+    _speedManager = PlaybackSpeedGestureManager(
+      getPlaybackSpeed: () => widget.controller.value.playbackSpeed,
+      setPlaybackSpeed: widget.controller.setPlaybackSpeed,
+      setCurrentSpeed: (speed) => setState(() => _currentPlaybackSpeed = speed),
+    );
+
+    _gestureCoordinator = GestureCoordinator(
+      tapManager: _tapManager,
+      seekManager: _seekManager,
+      volumeManager: _volumeManager,
+      brightnessManager: _brightnessManager,
+      speedManager: _speedManager,
+      callbacks: this,
+    );
+
     widget.controller.addListener(_onControllerChanged);
   }
 
@@ -223,8 +299,7 @@ class _VideoPlayerGestureDetectorState extends State<VideoPlayerGestureDetector>
   @override
   void dispose() {
     widget.controller.removeListener(_onControllerChanged);
-    _hideControlsTimer?.cancel();
-    _doubleTapTimer?.cancel();
+    _gestureCoordinator.dispose();
     _feedbackController.dispose();
     super.dispose();
   }
@@ -232,462 +307,100 @@ class _VideoPlayerGestureDetectorState extends State<VideoPlayerGestureDetector>
   /// Called when the controller value changes.
   /// Handles auto-hide timer when playback starts.
   void _onControllerChanged() {
-    // Only start the auto-hide timer if it's not already running
-    // This prevents constantly resetting the timer on every controller update
-    if (widget.controller.value.isPlaying &&
-        _controlsVisible &&
-        widget.autoHideControls &&
-        _hideControlsTimer == null) {
-      _resetHideTimer();
-    }
+    // Delegate to tap manager for auto-hide logic
+    _tapManager.resetHideTimer();
   }
 
-  void _toggleControlsVisibility() {
-    setState(() {
-      _controlsVisible = !_controlsVisible;
-    });
-    widget.onControlsVisibilityChanged?.call(_controlsVisible);
-    _resetHideTimer();
-  }
-
-  void _resetHideTimer() {
-    _hideControlsTimer?.cancel();
-    if (widget.autoHideControls && _controlsVisible && widget.controller.value.isPlaying) {
-      _hideControlsTimer = Timer(widget.autoHideDelay, () {
-        if (mounted && widget.controller.value.isPlaying) {
-          setState(() => _controlsVisible = false);
-          widget.onControlsVisibilityChanged?.call(false);
-        }
-      });
-    }
-  }
-
-  void _handleDoubleTap(Offset position) {
-    final renderBox = context.findRenderObject() as RenderBox?;
-    if (renderBox == null) return;
-
-    final width = renderBox.size.width;
-    final relativeX = position.dx / width;
-
-    if (relativeX <= 0.3) {
-      // Left side - seek backward (30% of width)
-      unawaited(_seekBackward());
-    } else if (relativeX >= 0.7) {
-      // Right side - seek forward (30% of width)
-      unawaited(_seekForward());
-    } else {
-      // Center - play/pause (40% of width)
-      unawaited(_togglePlayPause());
-    }
-  }
-
-  Future<void> _seekBackward() async {
+  /// Handles double-tap seek (left/right zones).
+  void _handleDoubleTapSeek(Duration offset) {
     final currentPosition = widget.controller.value.position;
-    final newPosition = currentPosition - widget.seekDuration;
-    final targetPosition = newPosition.isNegative ? Duration.zero : newPosition;
-
-    await widget.controller.seekTo(targetPosition);
-
-    if (widget.showFeedback) {
-      _showFeedback(Icons.fast_rewind, '${widget.seekDuration.inSeconds}s');
-    }
-  }
-
-  Future<void> _seekForward() async {
-    final currentPosition = widget.controller.value.position;
+    final newPosition = currentPosition + offset;
     final duration = widget.controller.value.duration;
-    final newPosition = currentPosition + widget.seekDuration;
-    final targetPosition = newPosition > duration ? duration : newPosition;
 
-    await widget.controller.seekTo(targetPosition);
+    // Clamp to valid range
+    Duration clampedPosition;
+    if (newPosition < Duration.zero) {
+      clampedPosition = Duration.zero;
+    } else if (newPosition > duration) {
+      clampedPosition = duration;
+    } else {
+      clampedPosition = newPosition;
+    }
+
+    // Seek and show feedback
+    unawaited(widget.controller.seekTo(clampedPosition));
 
     if (widget.showFeedback) {
-      _showFeedback(Icons.fast_forward, '${widget.seekDuration.inSeconds}s');
+      final isForward = !offset.isNegative;
+      _showFeedback(isForward ? Icons.fast_forward : Icons.fast_rewind, '${offset.inSeconds.abs()}s');
     }
   }
 
-  Future<void> _togglePlayPause() async {
-    if (widget.controller.value.isPlaying) {
-      await widget.controller.pause();
+  /// Handles double-tap play/pause (center zone).
+  void _handleDoubleTapPlayPause() {
+    final isPlaying = widget.controller.value.isPlaying;
+
+    if (isPlaying) {
+      unawaited(widget.controller.pause());
       if (widget.showFeedback) {
         _showFeedback(Icons.pause, null);
       }
     } else {
-      await widget.controller.play();
+      unawaited(widget.controller.play());
       if (widget.showFeedback) {
         _showFeedback(Icons.play_arrow, null);
       }
     }
   }
 
+  /// Shows visual feedback for gestures.
   void _showFeedback(IconData icon, String? text) {
     setState(() {
       _feedbackIcon = icon;
       _feedbackText = text;
     });
     unawaited(_feedbackController.forward(from: 0));
-    Timer(const Duration(milliseconds: 500), () {
-      if (mounted) {
-        unawaited(_feedbackController.reverse());
-      }
-    });
-  }
-
-  /// Checks if brightness gestures are supported on this platform.
-  /// Brightness control is only available on mobile platforms (iOS/Android).
-  bool get _isBrightnessGestureSupported {
-    if (kIsWeb) return false;
-    return Platform.isIOS || Platform.isAndroid;
-  }
-
-  /// Checks if volume gestures are supported on this platform.
-  /// Volume control is available on all non-web platforms.
-  bool get _isVolumeGestureSupported {
-    if (kIsWeb) return false;
-    return true; // Available on all native platforms
-  }
-
-  /// Checks if a position is within the valid brightness gesture area (left edge, above bottom).
-  bool _isInBrightnessGestureArea(Offset position, RenderBox renderBox) {
-    final width = renderBox.size.width;
-    final height = renderBox.size.height;
-    final relativeX = position.dx / width;
-
-    // Must be on the left edge (within sideGestureAreaFraction)
-    if (relativeX >= widget.sideGestureAreaFraction) return false;
-
-    // Must be above the bottom exclusion zone
-    if (position.dy > height - widget.bottomExclusionHeight) return false;
-
-    return true;
-  }
-
-  /// Checks if a position is within the valid volume gesture area (right edge, above bottom).
-  bool _isInVolumeGestureArea(Offset position, RenderBox renderBox) {
-    final width = renderBox.size.width;
-    final height = renderBox.size.height;
-    final relativeX = position.dx / width;
-
-    // Must be on the right edge (within sideGestureAreaFraction from right)
-    if (relativeX < 1.0 - widget.sideGestureAreaFraction) return false;
-
-    // Must be above the bottom exclusion zone
-    if (position.dy > height - widget.bottomExclusionHeight) return false;
-
-    return true;
-  }
-
-  Future<void> _updateBrightness(double brightness) async {
-    // Use the platform brightness API
-    await widget.controller.setScreenBrightness(brightness);
-  }
-
-  /// Fetches the current screen brightness asynchronously when a brightness gesture starts.
-  void _fetchScreenBrightnessForGesture() {
-    // Use a sensible default while fetching
-    _dragStartBrightness = _currentBrightness ?? 0.5;
-    // Fetch actual screen brightness asynchronously
-    unawaited(
-      widget.controller.getScreenBrightness().then((brightness) {
-        if (mounted && _dragStartBrightness != null) {
-          _dragStartBrightness = brightness;
-        }
-      }),
-    );
-  }
-
-  void _handleScaleStart(ScaleStartDetails details) {
-    _scaleStartPosition = details.localFocalPoint;
-    _lastTapPosition = details.localFocalPoint;
-    _hadSignificantMovement = false;
-    _lockedGestureType = null;
-
-    if (_pointerCount == 2 && widget.enablePlaybackSpeedGesture) {
-      // Two-finger gesture for playback speed
-      // Only store start value; _currentPlaybackSpeed will be set during update
-      _dragStartPlaybackSpeed = widget.controller.value.playbackSpeed;
-    } else if (_pointerCount == 1) {
-      // Single-finger gesture - prepare for volume/brightness/seek
-      final renderBox = context.findRenderObject() as RenderBox?;
-      if (renderBox == null) return;
-
-      // Prepare for vertical drag (volume/brightness)
-      // Only store start values here; _currentVolume/_currentBrightness will be set
-      // after the threshold is exceeded to avoid showing feedback prematurely
-      // Gestures only work on the side edges and above the bottom toolbar area
-      if (_isInBrightnessGestureArea(details.localFocalPoint, renderBox) &&
-          widget.enableBrightnessGesture &&
-          _isBrightnessGestureSupported) {
-        // Fetch screen brightness asynchronously for gesture start
-        _fetchScreenBrightnessForGesture();
-      } else if (_isInVolumeGestureArea(details.localFocalPoint, renderBox) &&
-          widget.enableVolumeGesture &&
-          _isVolumeGestureSupported) {
-        // Fetch device volume asynchronously for gesture start
-        _fetchDeviceVolumeForGesture();
-      }
-
-      // Prepare for horizontal drag (seek)
-      if (widget.enableSeekGesture) {
-        _dragStartPlaybackPosition = widget.controller.value.position;
-      }
-    }
-  }
-
-  void _handleScaleUpdate(ScaleUpdateDetails details) {
-    if (_scaleStartPosition == null) return;
-
-    final renderBox = context.findRenderObject() as RenderBox?;
-    if (renderBox == null) return;
-
-    final deltaX = details.localFocalPoint.dx - _scaleStartPosition!.dx;
-    final deltaY = details.localFocalPoint.dy - _scaleStartPosition!.dy;
-    final absDeltaX = deltaX.abs();
-    final absDeltaY = deltaY.abs();
-
-    // Mark as significant movement if threshold exceeded - this is a swipe, not a tap.
-    // Using a small threshold (10 pixels) to distinguish from minor finger jitter.
-    if (absDeltaX > 10 || absDeltaY > 10) {
-      _hadSignificantMovement = true;
-    }
-
-    if (_pointerCount == 2 && widget.enablePlaybackSpeedGesture && _dragStartPlaybackSpeed != null) {
-      // Two-finger vertical gesture for playback speed
-      // Only activate after threshold is exceeded (use same threshold as vertical gestures)
-      if (absDeltaY >= widget.verticalGestureThreshold) {
-        _lockedGestureType = _GestureType.playbackSpeed;
-        // Cancel any pending double-tap timer since this is a gesture, not a tap
-        _doubleTapTimer?.cancel();
-        _doubleTapTimer = null;
-
-        final height = renderBox.size.height;
-        final relativeChange = -deltaY / height;
-
-        // Fine-grained speed control: continuous adjustment from 0.25x to 3.0x
-        // Round to 0.05 intervals for smoother control (0.25, 0.30, 0.35, etc.)
-        final newSpeed = (_dragStartPlaybackSpeed! + relativeChange * 2.75).clamp(0.25, 3.0);
-        final fineTunedSpeed = (newSpeed * 20).round() / 20;
-
-        setState(() {
-          _currentPlaybackSpeed = fineTunedSpeed;
-        });
-        unawaited(widget.controller.setPlaybackSpeed(fineTunedSpeed));
-      }
-    } else if (_pointerCount == 1) {
-      // Single-finger gesture - determine gesture type if not locked
-      if (_lockedGestureType == null) {
-        // Determine which gesture type to lock based on movement direction
-        // During double-tap window (300ms after first tap), require larger movement
-        // to activate seek gesture to prevent accidental activation from finger drift
-        final seekThreshold = _doubleTapTimer != null ? 30.0 : 10.0;
-
-        if (absDeltaX > absDeltaY && absDeltaX > seekThreshold && widget.enableSeekGesture) {
-          _lockedGestureType = _GestureType.seek;
-          // Cancel any pending double-tap timer since this is a gesture, not a tap
-          _doubleTapTimer?.cancel();
-          _doubleTapTimer = null;
-
-          // Pause video during seek if it's currently playing
-          _wasPlayingBeforeSeek = widget.controller.value.isPlaying;
-          if (_wasPlayingBeforeSeek) {
-            unawaited(widget.controller.pause());
-          }
-        } else if (absDeltaY > absDeltaX && absDeltaY >= widget.verticalGestureThreshold) {
-          // Lock to volume or brightness based on starting position
-          // Use the helper methods that check for valid gesture areas (side edges, above bottom)
-          if (_isInBrightnessGestureArea(_scaleStartPosition!, renderBox) &&
-              widget.enableBrightnessGesture &&
-              _isBrightnessGestureSupported) {
-            _lockedGestureType = _GestureType.brightness;
-          } else if (_isInVolumeGestureArea(_scaleStartPosition!, renderBox) &&
-              widget.enableVolumeGesture &&
-              _isVolumeGestureSupported) {
-            _lockedGestureType = _GestureType.volume;
-          }
-          // Cancel any pending double-tap timer since this is a gesture, not a tap
-          if (_lockedGestureType != null) {
-            _doubleTapTimer?.cancel();
-            _doubleTapTimer = null;
-          }
-        }
-      }
-
-      // Process only the locked gesture type
-      switch (_lockedGestureType) {
-        case _GestureType.seek:
-          if (_dragStartPlaybackPosition != null) {
-            _processSeekGesture(deltaX, renderBox);
-          }
-        case _GestureType.volume:
-          if (_dragStartVolume != null) {
-            _processVolumeGesture(deltaY, renderBox);
-          }
-        case _GestureType.brightness:
-          if (_dragStartBrightness != null) {
-            _processBrightnessGesture(deltaY, renderBox);
-          }
-        case _GestureType.playbackSpeed:
-        case null:
-          // Already handled above or no gesture locked yet
-          break;
-      }
-    }
-  }
-
-  void _processSeekGesture(double deltaX, RenderBox renderBox) {
-    // Horizontal drag - seek using physical distance (inches)
-    // 160 logical pixels ≈ 1 inch in Flutter's density-independent system
-    const pixelsPerInch = 160.0;
-    final seekSeconds = deltaX * widget.seekSecondsPerInch / pixelsPerInch;
-    final seekAmount = Duration(milliseconds: (seekSeconds * 1000).round());
-    final duration = widget.controller.value.duration;
-    final newPosition = _dragStartPlaybackPosition! + seekAmount;
-
-    Duration targetPosition;
-    if (newPosition < Duration.zero) {
-      targetPosition = Duration.zero;
-    } else if (newPosition > duration) {
-      targetPosition = duration;
-    } else {
-      targetPosition = newPosition;
-    }
-
-    setState(() {
-      _seekTargetPosition = targetPosition;
-    });
-    widget.onSeekGestureUpdate?.call(targetPosition);
-  }
-
-  /// Fetches the current device volume asynchronously when a volume gesture starts.
-  void _fetchDeviceVolumeForGesture() {
-    // Use a sensible default while fetching
-    _dragStartVolume = _currentVolume ?? 0.5;
-    // Fetch actual device volume asynchronously
-    unawaited(
-      widget.controller.getDeviceVolume().then((volume) {
-        if (mounted && _dragStartVolume != null) {
-          _dragStartVolume = volume;
-        }
-      }),
-    );
-  }
-
-  void _processVolumeGesture(double deltaY, RenderBox renderBox) {
-    final height = renderBox.size.height;
-    final relativeChange = -deltaY / height;
-
-    final newVolume = (_dragStartVolume! + relativeChange).clamp(0.0, 1.0);
-    setState(() {
-      _currentVolume = newVolume;
-    });
-    // Use device volume instead of player volume
-    unawaited(widget.controller.setDeviceVolume(newVolume));
-  }
-
-  void _processBrightnessGesture(double deltaY, RenderBox renderBox) {
-    final height = renderBox.size.height;
-    final relativeChange = -deltaY / height;
-
-    final newBrightness = (_dragStartBrightness! + relativeChange).clamp(0.0, 1.0);
-    setState(() {
-      _currentBrightness = newBrightness;
-    });
-    widget.onBrightnessChanged?.call(newBrightness);
-    unawaited(_updateBrightness(newBrightness));
-  }
-
-  void _handleScaleEnd(ScaleEndDetails details) {
-    // Handle seek completion
-    if (_seekTargetPosition != null) {
-      unawaited(widget.controller.seekTo(_seekTargetPosition!));
-
-      // Resume playback if it was playing before seek
-      if (_wasPlayingBeforeSeek) {
-        unawaited(widget.controller.play());
-      }
-    }
-
-    // Only treat as tap if:
-    // - No significant movement occurred (small touch without much drag)
-    // - No gesture was locked (user didn't start a swipe gesture)
-    // - Single finger was used (not multi-touch)
-    // - We have a valid tap position
-    final shouldTreatAsTap =
-        !_hadSignificantMovement && _lockedGestureType == null && _lastTapPosition != null && _pointerCount <= 1;
-
-    if (shouldTreatAsTap) {
-      _handleTapAtPosition(_lastTapPosition!);
-    }
-
-    // Clear all state
-    _scaleStartPosition = null;
-    _dragStartVolume = null;
-    _dragStartBrightness = null;
-    _dragStartPlaybackPosition = null;
-    _dragStartPlaybackSpeed = null;
-    _lastTapPosition = null;
-    _lockedGestureType = null;
-    _wasPlayingBeforeSeek = false;
-
-    setState(() {
-      _seekTargetPosition = null;
-      _currentVolume = null;
-      _currentBrightness = null;
-      _currentPlaybackSpeed = null;
-    });
-    widget.onSeekGestureUpdate?.call(null);
-  }
-
-  void _handleTapAtPosition(Offset position) {
-    if (_doubleTapTimer != null) {
-      // This is a double tap
-      _doubleTapTimer?.cancel();
-      _doubleTapTimer = null;
-      if (widget.enableDoubleTapSeek) {
-        _handleDoubleTap(position);
-      }
-    } else {
-      // Start timer for double tap detection
-      // Only toggle controls if no second tap comes within 300ms
-      _doubleTapTimer = Timer(const Duration(milliseconds: 300), () {
-        _doubleTapTimer = null;
-        // Single tap confirmed
-        if (!_controlsVisible) {
-          // Controls are hidden - show them
-          setState(() {
-            _controlsVisible = true;
-          });
-          widget.onControlsVisibilityChanged?.call(true);
-          _resetHideTimer();
-        } else {
-          // Controls are visible - toggle (hide) them
-          _toggleControlsVisibility();
-        }
-      });
-    }
   }
 
   @override
   Widget build(BuildContext context) => Stack(
     children: [
-      Listener(
-        onPointerDown: (event) {
-          setState(() => _pointerCount++);
-        },
-        onPointerUp: (event) {
-          setState(() => _pointerCount--);
-        },
-        onPointerCancel: (event) {
-          setState(() => _pointerCount--);
-        },
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onScaleStart: _handleScaleStart,
-          onScaleUpdate: _handleScaleUpdate,
-          onScaleEnd: _handleScaleEnd,
-          child: widget.child,
+      // Content layer (child)
+      widget.child,
+
+      // Gesture detection layer covering ONLY the video area (not bottom controls)
+      Positioned(
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: widget.bottomExclusionHeight,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // Get the actual rendered size of this gesture area
+            final gestureAreaSize = constraints.biggest;
+            // Calculate full screen size including the excluded bottom area
+            final fullScreenHeight = gestureAreaSize.height + widget.bottomExclusionHeight;
+            final fullScreenSize = Size(gestureAreaSize.width, fullScreenHeight);
+
+            return Listener(
+              onPointerDown: (event) => _gestureCoordinator.onPointerDown(),
+              onPointerUp: (event) => _gestureCoordinator.onPointerUp(),
+              onPointerCancel: (event) => _gestureCoordinator.onPointerUp(),
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onScaleStart: (details) {
+                  _gestureCoordinator.onGestureStart(details.localFocalPoint, fullScreenSize);
+                },
+                onScaleUpdate: (details) {
+                  _gestureCoordinator.onGestureUpdate(details.localFocalPoint, fullScreenSize);
+                },
+                onScaleEnd: (details) => _gestureCoordinator.onGestureEnd(),
+              ),
+            );
+          },
         ),
       ),
+      // Feedback overlay on top
       if (widget.showFeedback &&
           (_feedbackIcon != null ||
               _seekTargetPosition != null ||

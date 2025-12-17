@@ -1,57 +1,25 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:pro_video_player/pro_video_player.dart';
-import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
 import '../shared/test_constants.dart';
 import '../shared/test_helpers.dart';
 import '../shared/test_matchers.dart';
-
-class MockProVideoPlayerPlatform extends Mock with MockPlatformInterfaceMixin implements ProVideoPlayerPlatform {}
+import '../shared/test_setup.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  late MockProVideoPlayerPlatform mockPlatform;
-  late StreamController<VideoPlayerEvent> eventController;
+  late VideoPlayerTestFixture fixture;
 
-  setUpAll(() {
-    registerFallbackValue(const VideoSource.network('https://example.com'));
-    registerFallbackValue(const VideoPlayerOptions());
-    registerFallbackValue(Duration.zero);
-  });
+  setUpAll(registerVideoPlayerFallbackValues);
 
   setUp(() {
-    mockPlatform = MockProVideoPlayerPlatform();
-    eventController = StreamController<VideoPlayerEvent>.broadcast();
-    ProVideoPlayerPlatform.instance = mockPlatform;
-
-    when(
-      () => mockPlatform.create(
-        source: any(named: 'source'),
-        options: any(named: 'options'),
-      ),
-    ).thenAnswer((_) async => 1);
-
-    when(() => mockPlatform.events(any())).thenAnswer((_) => eventController.stream);
-    when(() => mockPlatform.dispose(any())).thenAnswer((_) async {});
-    when(() => mockPlatform.play(any())).thenAnswer((_) async {});
-    when(() => mockPlatform.pause(any())).thenAnswer((_) async {});
-    when(() => mockPlatform.seekTo(any(), any())).thenAnswer((_) async {});
-    when(() => mockPlatform.setVolume(any(), any())).thenAnswer((_) async {});
-    when(() => mockPlatform.setPlaybackSpeed(any(), any())).thenAnswer((_) async {});
-    when(() => mockPlatform.getDeviceVolume()).thenAnswer((_) async => 0.5);
-    when(() => mockPlatform.setDeviceVolume(any())).thenAnswer((_) async {});
+    fixture = VideoPlayerTestFixture()..setUp();
   });
 
-  tearDown(() async {
-    await eventController.close();
-    ProVideoPlayerPlatform.instance = MockProVideoPlayerPlatform();
-  });
+  tearDown(() => fixture.tearDown());
 
   /// Helper to build a gesture detector with a hit-testable child
   Widget buildGestureDetectorWidget({
@@ -111,16 +79,14 @@ void main() {
 
   group('VideoPlayerGestureDetector', () {
     testWidgets('renders with all configuration options', (tester) async {
-      final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
+      await fixture.initializeController();
 
-      await tester.pumpWidget(
-        buildTestWidget(
-          VideoPlayerGestureDetector(
-            controller: controller,
-            seekDuration: const Duration(seconds: 15),
-            child: const SizedBox(width: 400, height: 300),
-          ),
+      await fixture.renderWidget(
+        tester,
+        VideoPlayerGestureDetector(
+          controller: fixture.controller,
+          seekDuration: const Duration(seconds: 15),
+          child: const SizedBox(width: 400, height: 300),
         ),
       );
 
@@ -129,16 +95,54 @@ void main() {
       expect(find.byType(GestureDetector), findsOneWidget);
     });
 
+    testWidgets('has correct widget structure to prevent Android rendering issues', (tester) async {
+      // Regression test for: LayoutBuilder wrapping entire Stack broke ValueListenableBuilder updates on Android
+      // The child must be directly in the Stack, not wrapped in a LayoutBuilder at the top level
+      await fixture.initializeController();
+
+      const childKey = Key('test_child');
+      await fixture.renderWidget(
+        tester,
+        VideoPlayerGestureDetector(
+          controller: fixture.controller,
+          child: Container(key: childKey, width: 400, height: 300),
+        ),
+      );
+
+      // Find the Stack that contains the child and gesture layers
+      final stackFinder = find.descendant(of: find.byType(VideoPlayerGestureDetector), matching: find.byType(Stack));
+      expect(stackFinder, findsOneWidget);
+
+      // The child should be a direct descendant of the Stack, not wrapped in LayoutBuilder
+      final childInStack = find.descendant(of: stackFinder, matching: find.byKey(childKey));
+      expect(childInStack, findsOneWidget);
+
+      // Verify the LayoutBuilder is inside the Positioned widget, not wrapping the whole Stack
+      final layoutBuilderFinder = find.descendant(
+        of: find.byType(VideoPlayerGestureDetector),
+        matching: find.byType(LayoutBuilder),
+      );
+      expect(layoutBuilderFinder, findsOneWidget);
+
+      // The LayoutBuilder should be a descendant of Positioned, not Stack's direct parent
+      final positionedFinder = find.descendant(of: stackFinder, matching: find.byType(Positioned));
+      expect(positionedFinder, findsWidgets);
+
+      final layoutBuilderInPositioned = find.descendant(
+        of: positionedFinder.first,
+        matching: find.byType(LayoutBuilder),
+      );
+      expect(layoutBuilderInPositioned, findsOneWidget);
+    });
+
     testWidgets('single tap toggles controls visibility', (tester) async {
-      final controller = ProVideoPlayerController();
-      await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
+      await fixture.initializeController();
 
       final visibilityChanges = <bool>[];
 
-      await tester.pumpWidget(
-        buildTestWidget(
-          buildGestureDetectorWidget(controller: controller, onControlsVisibilityChanged: visibilityChanges.add),
-        ),
+      await fixture.renderWidget(
+        tester,
+        buildGestureDetectorWidget(controller: fixture.controller, onControlsVisibilityChanged: visibilityChanges.add),
       );
 
       // Find the hit-testable Container inside the gesture detector
@@ -169,7 +173,9 @@ void main() {
       final controller = ProVideoPlayerController();
       await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
-      await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller, showFeedback: false)));
+      await tester.pumpWidget(
+        fixture.buildTestWidget(buildGestureDetectorWidget(controller: controller, showFeedback: false)),
+      );
 
       // Find the hit-testable Container
       final container = find.byType(Container);
@@ -184,7 +190,7 @@ void main() {
       await tester.pump();
 
       // Controller starts paused, so double tap should play
-      verify(() => mockPlatform.play(1)).called(1);
+      verify(() => fixture.mockPlatform.play(1)).called(1);
 
       // Wait for auto-hide timer to complete
       await tester.pump(TestDelays.playbackManagerTimer);
@@ -199,7 +205,9 @@ void main() {
       final controller = ProVideoPlayerController();
       await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
-      await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller, showFeedback: false)));
+      await tester.pumpWidget(
+        fixture.buildTestWidget(buildGestureDetectorWidget(controller: controller, showFeedback: false)),
+      );
 
       // Widget builds and controller works
       expect(find.byType(VideoPlayerGestureDetector), findsOneWidget);
@@ -210,10 +218,12 @@ void main() {
       final controller = ProVideoPlayerController();
       await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
-      await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller, showFeedback: false)));
+      await tester.pumpWidget(
+        fixture.buildTestWidget(buildGestureDetectorWidget(controller: controller, showFeedback: false)),
+      );
 
       // Set initial position to 30 seconds and duration after widget is built
-      eventController
+      fixture.eventController
         ..add(const DurationChangedEvent(Duration(seconds: 100)))
         ..add(const PositionChangedEvent(Duration(seconds: 30)));
       await tester.pump();
@@ -230,7 +240,7 @@ void main() {
       await tester.pump();
 
       // Verify seekTo was called with position - 10 seconds (default seek duration)
-      verify(() => mockPlatform.seekTo(1, const Duration(seconds: 20))).called(1);
+      verify(() => fixture.mockPlatform.seekTo(1, const Duration(seconds: 20))).called(1);
     });
 
     testWidgets('double tap right seeks forward', (tester) async {
@@ -248,7 +258,7 @@ void main() {
       );
 
       // Set initial position and duration after widget is built
-      eventController
+      fixture.eventController
         ..add(const DurationChangedEvent(Duration(seconds: 100)))
         ..add(const PositionChangedEvent(Duration(seconds: 30)));
       await tester.pump();
@@ -265,17 +275,19 @@ void main() {
       await tester.pump();
 
       // Verify seekTo was called with position + 15 seconds
-      verify(() => mockPlatform.seekTo(1, const Duration(seconds: 45))).called(1);
+      verify(() => fixture.mockPlatform.seekTo(1, const Duration(seconds: 45))).called(1);
     });
 
     testWidgets('seek backward respects zero boundary', (tester) async {
       final controller = ProVideoPlayerController();
       await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
-      await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller, showFeedback: false)));
+      await tester.pumpWidget(
+        fixture.buildTestWidget(buildGestureDetectorWidget(controller: controller, showFeedback: false)),
+      );
 
       // Set initial position to 5 seconds (less than seek duration of 10 seconds)
-      eventController
+      fixture.eventController
         ..add(const DurationChangedEvent(Duration(seconds: 100)))
         ..add(const PositionChangedEvent(Duration(seconds: 5)));
       await tester.pump();
@@ -292,17 +304,19 @@ void main() {
       await tester.pump();
 
       // Should seek to 0, not negative
-      verify(() => mockPlatform.seekTo(1, Duration.zero)).called(1);
+      verify(() => fixture.mockPlatform.seekTo(1, Duration.zero)).called(1);
     });
 
     testWidgets('seek forward respects duration boundary', (tester) async {
       final controller = ProVideoPlayerController();
       await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
-      await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller, showFeedback: false)));
+      await tester.pumpWidget(
+        fixture.buildTestWidget(buildGestureDetectorWidget(controller: controller, showFeedback: false)),
+      );
 
       // Set duration to 60 seconds and position to 55 seconds
-      eventController
+      fixture.eventController
         ..add(const DurationChangedEvent(Duration(seconds: 60)))
         ..add(const PositionChangedEvent(Duration(seconds: 55)));
       await tester.pump();
@@ -319,7 +333,7 @@ void main() {
       await tester.pump();
 
       // Should seek to duration (60s), not beyond (55+10=65)
-      verify(() => mockPlatform.seekTo(1, const Duration(seconds: 60))).called(1);
+      verify(() => fixture.mockPlatform.seekTo(1, const Duration(seconds: 60))).called(1);
     });
 
     testWidgets('onBrightnessChanged callback can be provided', (tester) async {
@@ -347,10 +361,10 @@ void main() {
       final controller = ProVideoPlayerController();
       await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
-      await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
+      await tester.pumpWidget(fixture.buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
       // Set initial volume to 0.5 after widget is built
-      eventController.add(const VolumeChangedEvent(0.5));
+      fixture.eventController.add(const VolumeChangedEvent(0.5));
       await tester.pump();
 
       // Find the hit-testable Container
@@ -363,7 +377,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify setDeviceVolume was called with increased value
-      verify(() => mockPlatform.setDeviceVolume(any(that: greaterThan(0.5)))).called(greaterThan(0));
+      verify(() => fixture.mockPlatform.setDeviceVolume(any(that: greaterThan(0.5)))).called(greaterThan(0));
     });
 
     testWidgets('vertical swipe on left side triggers brightness callback on mobile', (tester) async {
@@ -408,7 +422,7 @@ void main() {
       );
 
       // Set duration to 100 seconds and position to 50 seconds after widget is built
-      eventController
+      fixture.eventController
         ..add(const DurationChangedEvent(Duration(seconds: 100)))
         ..add(const PositionChangedEvent(Duration(seconds: 50)));
       await tester.pump();
@@ -427,14 +441,14 @@ void main() {
       expect(seekTargets.where((d) => d != null).isNotEmpty, isTrue);
 
       // Verify seekTo was called on gesture end
-      verify(() => mockPlatform.seekTo(1, any(that: isA<Duration>()))).called(1);
+      verify(() => fixture.mockPlatform.seekTo(1, any(that: isA<Duration>()))).called(1);
     });
 
     testWidgets('respects enableVolumeGesture configuration', (tester) async {
       final controller = ProVideoPlayerController();
       await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
-      eventController.add(const VolumeChangedEvent(0.5));
+      fixture.eventController.add(const VolumeChangedEvent(0.5));
       await tester.pump();
 
       await tester.pumpWidget(
@@ -454,7 +468,7 @@ void main() {
       await tester.pump();
 
       // Should NOT have called setVolume since volume gestures are disabled
-      verifyNever(() => mockPlatform.setVolume(1, any()));
+      verifyNever(() => fixture.mockPlatform.setVolume(1, any()));
     });
 
     testWidgets('respects enableBrightnessGesture configuration', (tester) async {
@@ -493,7 +507,7 @@ void main() {
       final controller = ProVideoPlayerController();
       await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
-      eventController
+      fixture.eventController
         ..add(const DurationChangedEvent(Duration(seconds: 100)))
         ..add(const PositionChangedEvent(Duration(seconds: 50)));
       await tester.pump();
@@ -616,7 +630,7 @@ void main() {
       await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       // Set initial volume
-      eventController.add(const VolumeChangedEvent(0.5));
+      fixture.eventController.add(const VolumeChangedEvent(0.5));
       await tester.pump();
 
       await tester.pumpWidget(
@@ -652,7 +666,7 @@ void main() {
       final controller = ProVideoPlayerController();
       await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
-      eventController
+      fixture.eventController
         ..add(const DurationChangedEvent(Duration(seconds: 100)))
         ..add(const PositionChangedEvent(Duration(seconds: 50)));
       await tester.pump();
@@ -777,7 +791,7 @@ void main() {
       final controller = ProVideoPlayerController();
       await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
-      await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
+      await tester.pumpWidget(fixture.buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
       final container = find.byType(Container);
       final center = getWidgetCenter(tester, container);
@@ -805,7 +819,7 @@ void main() {
       );
 
       // Replace with empty widget to trigger dispose
-      await tester.pumpWidget(buildTestWidget(const SizedBox()));
+      await tester.pumpWidget(fixture.buildTestWidget(const SizedBox()));
 
       // No assertion needed - just verify no errors occur
       expect(find.byType(VideoPlayerGestureDetector), findsNothing);
@@ -855,13 +869,13 @@ void main() {
       );
 
       // Change playback state
-      eventController.add(const PlaybackStateChangedEvent(PlaybackState.playing));
+      fixture.eventController.add(const PlaybackStateChangedEvent(PlaybackState.playing));
       await tester.pump();
 
       expect(find.byType(VideoPlayerGestureDetector), findsOneWidget);
 
       // Change position
-      eventController.add(const PositionChangedEvent(Duration(seconds: 30)));
+      fixture.eventController.add(const PositionChangedEvent(Duration(seconds: 30)));
       await tester.pump();
 
       expect(find.byType(VideoPlayerGestureDetector), findsOneWidget);
@@ -909,7 +923,7 @@ void main() {
       );
 
       // Trigger a state change
-      eventController.add(const PlaybackStateChangedEvent(PlaybackState.playing));
+      fixture.eventController.add(const PlaybackStateChangedEvent(PlaybackState.playing));
       await tester.pump();
 
       expect(find.byType(VideoPlayerGestureDetector), findsOneWidget);
@@ -926,7 +940,7 @@ void main() {
       );
 
       // Trigger volume change
-      eventController.add(const VolumeChangedEvent(0.8));
+      fixture.eventController.add(const VolumeChangedEvent(0.8));
       await tester.pump();
 
       expect(controller, hasVolume(0.8));
@@ -937,7 +951,7 @@ void main() {
       await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
       // Set duration
-      eventController.add(const DurationChangedEvent(Duration(seconds: 100)));
+      fixture.eventController.add(const DurationChangedEvent(Duration(seconds: 100)));
       await tester.pump();
 
       await tester.pumpWidget(
@@ -947,7 +961,7 @@ void main() {
       );
 
       // Trigger position change
-      eventController.add(const PositionChangedEvent(Duration(seconds: 50)));
+      fixture.eventController.add(const PositionChangedEvent(Duration(seconds: 50)));
       await tester.pump();
 
       expect(controller.value.position, const Duration(seconds: 50));
@@ -978,7 +992,7 @@ void main() {
       );
 
       // Trigger playback speed change
-      eventController.add(const PlaybackSpeedChangedEvent(1.5));
+      fixture.eventController.add(const PlaybackSpeedChangedEvent(1.5));
       await tester.pump();
 
       expect(controller, hasSpeed(1.5));
@@ -1010,13 +1024,13 @@ void main() {
       );
 
       // Multiple state changes
-      eventController.add(const PlaybackStateChangedEvent(PlaybackState.playing));
+      fixture.eventController.add(const PlaybackStateChangedEvent(PlaybackState.playing));
       await tester.pump();
 
-      eventController.add(const VolumeChangedEvent(0.5));
+      fixture.eventController.add(const VolumeChangedEvent(0.5));
       await tester.pump();
 
-      eventController.add(const PositionChangedEvent(Duration(seconds: 10)));
+      fixture.eventController.add(const PositionChangedEvent(Duration(seconds: 10)));
       await tester.pump();
 
       expect(controller.value.isPlaying, true);
@@ -1082,7 +1096,7 @@ void main() {
       );
 
       // Trigger error state
-      eventController.add(ErrorEvent('Test error'));
+      fixture.eventController.add(ErrorEvent('Test error'));
       await tester.pump();
 
       expect(controller, hasError);
@@ -1123,10 +1137,10 @@ void main() {
       final controller = ProVideoPlayerController();
       await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
-      await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
+      await tester.pumpWidget(fixture.buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
       // Set initial playback speed after widget is built
-      eventController.add(const PlaybackSpeedChangedEvent(1));
+      fixture.eventController.add(const PlaybackSpeedChangedEvent(1));
       await tester.pump();
 
       // Find the hit-testable Container
@@ -1145,7 +1159,7 @@ void main() {
       await tester.pump();
 
       // Verify setPlaybackSpeed was called
-      verify(() => mockPlatform.setPlaybackSpeed(1, any(that: greaterThan(1.0)))).called(greaterThan(0));
+      verify(() => fixture.mockPlatform.setPlaybackSpeed(1, any(that: greaterThan(1.0)))).called(greaterThan(0));
 
       await gesture1.up();
       await gesture2.up();
@@ -1156,10 +1170,10 @@ void main() {
       final controller = ProVideoPlayerController();
       await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
-      await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
+      await tester.pumpWidget(fixture.buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
       // Set initial playback speed after widget is built
-      eventController.add(const PlaybackSpeedChangedEvent(1.5));
+      fixture.eventController.add(const PlaybackSpeedChangedEvent(1.5));
       await tester.pump();
 
       // Find the hit-testable Container
@@ -1178,7 +1192,7 @@ void main() {
       await tester.pump();
 
       // Verify setPlaybackSpeed was called with decreased value
-      verify(() => mockPlatform.setPlaybackSpeed(1, any(that: lessThan(1.5)))).called(greaterThan(0));
+      verify(() => fixture.mockPlatform.setPlaybackSpeed(1, any(that: lessThan(1.5)))).called(greaterThan(0));
 
       await gesture1.up();
       await gesture2.up();
@@ -1189,9 +1203,9 @@ void main() {
       final controller = ProVideoPlayerController();
       await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
-      await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
+      await tester.pumpWidget(fixture.buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
-      eventController.add(const VolumeChangedEvent(0.5));
+      fixture.eventController.add(const VolumeChangedEvent(0.5));
       await tester.pump();
 
       // Find the hit-testable Container
@@ -1221,9 +1235,9 @@ void main() {
       final controller = ProVideoPlayerController();
       await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
-      await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
+      await tester.pumpWidget(fixture.buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
-      eventController
+      fixture.eventController
         ..add(const DurationChangedEvent(Duration(seconds: 100)))
         ..add(const PositionChangedEvent(Duration(seconds: 50)));
       await tester.pump();
@@ -1255,9 +1269,9 @@ void main() {
       final controller = ProVideoPlayerController();
       await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
-      await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
+      await tester.pumpWidget(fixture.buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
-      eventController.add(const PlaybackSpeedChangedEvent(1));
+      fixture.eventController.add(const PlaybackSpeedChangedEvent(1));
       await tester.pump();
 
       // Find the hit-testable Container
@@ -1287,10 +1301,10 @@ void main() {
       final controller = ProVideoPlayerController();
       await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
-      await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
+      await tester.pumpWidget(fixture.buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
       // Start at max volume
-      eventController.add(const VolumeChangedEvent(1));
+      fixture.eventController.add(const VolumeChangedEvent(1));
       await tester.pump();
 
       // Find the hit-testable Container
@@ -1307,16 +1321,16 @@ void main() {
       await tester.pumpAndSettle();
 
       // Volume should be clamped to 1.0
-      verify(() => mockPlatform.setDeviceVolume(1)).called(greaterThan(0));
+      verify(() => fixture.mockPlatform.setDeviceVolume(1)).called(greaterThan(0));
     });
 
     testWidgets('swipe left seeks backward', (tester) async {
       final controller = ProVideoPlayerController();
       await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
-      await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
+      await tester.pumpWidget(fixture.buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
-      eventController
+      fixture.eventController
         ..add(const DurationChangedEvent(Duration(seconds: 100)))
         ..add(const PositionChangedEvent(Duration(seconds: 50)));
       await tester.pump();
@@ -1335,7 +1349,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify seekTo was called with position < 50 seconds
-      verify(() => mockPlatform.seekTo(1, any(that: isA<Duration>()))).called(1);
+      verify(() => fixture.mockPlatform.seekTo(1, any(that: isA<Duration>()))).called(1);
     });
 
     testWidgets('controls hide automatically after timeout when playing', (tester) async {
@@ -1351,7 +1365,7 @@ void main() {
       );
 
       // Set playing state after widget is built (auto-hide timer only triggers when playing)
-      eventController.add(const PlaybackStateChangedEvent(PlaybackState.playing));
+      fixture.eventController.add(const PlaybackStateChangedEvent(PlaybackState.playing));
       await tester.pump();
 
       // Find the hit-testable Container
@@ -1400,7 +1414,7 @@ void main() {
 
       // Start playing without user interaction (auto-play scenario)
       // Controls are visible, playback starts - timer should trigger
-      eventController.add(const PlaybackStateChangedEvent(PlaybackState.playing));
+      fixture.eventController.add(const PlaybackStateChangedEvent(PlaybackState.playing));
       await tester.pump();
 
       // Wait for auto-hide timer (default 2 seconds)
@@ -1423,7 +1437,7 @@ void main() {
       );
 
       // Set duration and position for seek gesture
-      eventController
+      fixture.eventController
         ..add(const DurationChangedEvent(Duration(seconds: 100)))
         ..add(const PositionChangedEvent(Duration(seconds: 50)));
       await tester.pump();
@@ -1457,7 +1471,7 @@ void main() {
           ),
         );
 
-        eventController
+        fixture.eventController
           ..add(const DurationChangedEvent(Duration(seconds: 100)))
           ..add(const PositionChangedEvent(Duration(seconds: 30)));
         await tester.pump();
@@ -1481,9 +1495,9 @@ void main() {
         final controller = ProVideoPlayerController();
         await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
-        await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
+        await tester.pumpWidget(fixture.buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
-        eventController
+        fixture.eventController
           ..add(const DurationChangedEvent(Duration(seconds: 100)))
           ..add(const PositionChangedEvent(Duration(seconds: 30)));
         await tester.pump();
@@ -1506,7 +1520,7 @@ void main() {
         final controller = ProVideoPlayerController();
         await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
-        await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
+        await tester.pumpWidget(fixture.buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
         final container = find.byType(Container);
         final center = getPositionInWidget(tester, container, 0.5, 0.5);
@@ -1529,10 +1543,10 @@ void main() {
         final controller = ProVideoPlayerController();
         await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
-        await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
+        await tester.pumpWidget(fixture.buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
         // Set to playing state
-        eventController.add(const PlaybackStateChangedEvent(PlaybackState.playing));
+        fixture.eventController.add(const PlaybackStateChangedEvent(PlaybackState.playing));
         await tester.pump();
 
         final container = find.byType(Container);
@@ -1562,7 +1576,7 @@ void main() {
         );
 
         // Set duration and position
-        eventController
+        fixture.eventController
           ..add(const DurationChangedEvent(Duration(seconds: 100)))
           ..add(const PositionChangedEvent(Duration(seconds: 50)))
           ..add(const VolumeChangedEvent(0.5));
@@ -1580,8 +1594,8 @@ void main() {
         await tester.pump();
 
         // Verify volume was set (gesture generates multiple calls)
-        verify(() => mockPlatform.setDeviceVolume(any())).called(greaterThan(0));
-        clearInteractions(mockPlatform);
+        verify(() => fixture.mockPlatform.setDeviceVolume(any())).called(greaterThan(0));
+        clearInteractions(fixture.mockPlatform);
 
         // Now try to move horizontally - should NOT trigger seek since we're locked to volume
         await gesture.moveBy(const Offset(100, 0));
@@ -1596,7 +1610,7 @@ void main() {
         await tester.pump();
 
         // Seek should NOT have been called
-        verifyNever(() => mockPlatform.seekTo(1, any()));
+        verifyNever(() => fixture.mockPlatform.seekTo(1, any()));
       });
 
       testWidgets('seek gesture locks and ignores vertical movement', (tester) async {
@@ -1610,7 +1624,7 @@ void main() {
         );
 
         // Set duration and position
-        eventController
+        fixture.eventController
           ..add(const DurationChangedEvent(Duration(seconds: 100)))
           ..add(const PositionChangedEvent(Duration(seconds: 50)))
           ..add(const VolumeChangedEvent(0.5));
@@ -1635,23 +1649,23 @@ void main() {
         await tester.pump();
 
         // Volume should NOT have been changed since we're locked to seek
-        verifyNever(() => mockPlatform.setVolume(1, any()));
+        verifyNever(() => fixture.mockPlatform.setVolume(1, any()));
 
         await gesture.up();
         await tester.pump();
 
         // Seek SHOULD have been called on gesture end
-        verify(() => mockPlatform.seekTo(1, any())).called(1);
+        verify(() => fixture.mockPlatform.seekTo(1, any())).called(1);
       });
 
       testWidgets('gesture resets lock on new touch', (tester) async {
         final controller = ProVideoPlayerController();
         await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
-        await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
+        await tester.pumpWidget(fixture.buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
         // Set duration, position, and volume
-        eventController
+        fixture.eventController
           ..add(const DurationChangedEvent(Duration(seconds: 100)))
           ..add(const PositionChangedEvent(Duration(seconds: 50)))
           ..add(const VolumeChangedEvent(0.5));
@@ -1666,10 +1680,10 @@ void main() {
         var gesture = await tester.startGesture(rightPosition);
         await gesture.moveBy(const Offset(0, -50));
         await tester.pump();
-        verify(() => mockPlatform.setDeviceVolume(any())).called(greaterThan(0));
+        verify(() => fixture.mockPlatform.setDeviceVolume(any())).called(greaterThan(0));
         await gesture.up();
         await tester.pump();
-        clearInteractions(mockPlatform);
+        clearInteractions(fixture.mockPlatform);
 
         // Second gesture: seek (should work, lock should be reset)
         gesture = await tester.startGesture(centerPosition);
@@ -1679,7 +1693,7 @@ void main() {
         await tester.pump();
 
         // Seek should have been called (gesture lock was reset)
-        verify(() => mockPlatform.seekTo(1, any())).called(1);
+        verify(() => fixture.mockPlatform.seekTo(1, any())).called(1);
       });
 
       testWidgets('diagonal movement locks to dominant direction', (tester) async {
@@ -1693,7 +1707,7 @@ void main() {
         );
 
         // Set duration and position
-        eventController
+        fixture.eventController
           ..add(const DurationChangedEvent(Duration(seconds: 100)))
           ..add(const PositionChangedEvent(Duration(seconds: 50)))
           ..add(const VolumeChangedEvent(0.5));
@@ -1712,7 +1726,7 @@ void main() {
 
         // Should have locked to seek (horizontal dominant)
         expect(seekTargets.where((d) => d != null), isNotEmpty);
-        verifyNever(() => mockPlatform.setVolume(1, any()));
+        verifyNever(() => fixture.mockPlatform.setVolume(1, any()));
 
         await gesture.up();
         await tester.pump();
@@ -1724,9 +1738,9 @@ void main() {
         final controller = ProVideoPlayerController();
         await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
-        await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
+        await tester.pumpWidget(fixture.buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
-        eventController.add(const VolumeChangedEvent(0.5));
+        fixture.eventController.add(const VolumeChangedEvent(0.5));
         await tester.pump();
 
         final container = find.byType(Container);
@@ -1744,7 +1758,7 @@ void main() {
         expect(find.byIcon(Icons.volume_off), findsNothing);
 
         // Volume should NOT have been changed
-        verifyNever(() => mockPlatform.setVolume(1, any()));
+        verifyNever(() => fixture.mockPlatform.setVolume(1, any()));
 
         await gesture.up();
         await tester.pump();
@@ -1792,7 +1806,7 @@ void main() {
           buildTestWidget(buildGestureDetectorWidget(controller: controller, onSeekGestureUpdate: seekTargets.add)),
         );
 
-        eventController
+        fixture.eventController
           ..add(const DurationChangedEvent(Duration(seconds: 100)))
           ..add(const PositionChangedEvent(Duration(seconds: 50)));
         await tester.pump();
@@ -1813,16 +1827,16 @@ void main() {
         await tester.pump();
 
         // Seek should NOT have been called
-        verifyNever(() => mockPlatform.seekTo(1, any()));
+        verifyNever(() => fixture.mockPlatform.seekTo(1, any()));
       });
 
       testWidgets('playback speed overlay not shown for small two-finger vertical movement', (tester) async {
         final controller = ProVideoPlayerController();
         await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
-        await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
+        await tester.pumpWidget(fixture.buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
-        eventController.add(const PlaybackSpeedChangedEvent(1));
+        fixture.eventController.add(const PlaybackSpeedChangedEvent(1));
         await tester.pump();
 
         final container = find.byType(Container);
@@ -1842,7 +1856,7 @@ void main() {
         expect(find.byIcon(Icons.speed), findsNothing);
 
         // Playback speed should NOT have been changed
-        verifyNever(() => mockPlatform.setPlaybackSpeed(1, any()));
+        verifyNever(() => fixture.mockPlatform.setPlaybackSpeed(1, any()));
 
         await gesture1.up();
         await gesture2.up();
@@ -1853,9 +1867,9 @@ void main() {
         final controller = ProVideoPlayerController();
         await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
-        await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
+        await tester.pumpWidget(fixture.buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
-        eventController.add(const VolumeChangedEvent(0.5));
+        fixture.eventController.add(const VolumeChangedEvent(0.5));
         await tester.pump();
 
         final container = find.byType(Container);
@@ -1881,9 +1895,9 @@ void main() {
         final controller = ProVideoPlayerController();
         await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
-        await tester.pumpWidget(buildTestWidget(buildGestureDetectorWidget(controller: controller)));
+        await tester.pumpWidget(fixture.buildTestWidget(buildGestureDetectorWidget(controller: controller)));
 
-        eventController.add(const VolumeChangedEvent(0.5));
+        fixture.eventController.add(const VolumeChangedEvent(0.5));
         await tester.pump();
 
         final container = find.byType(Container);
@@ -1931,7 +1945,7 @@ void main() {
           ),
         );
 
-        eventController.add(const VolumeChangedEvent(0.5));
+        fixture.eventController.add(const VolumeChangedEvent(0.5));
         await tester.pump();
 
         final container = find.byType(Container);
@@ -1975,7 +1989,7 @@ void main() {
           ),
         );
 
-        eventController
+        fixture.eventController
           ..add(const DurationChangedEvent(Duration(seconds: 100)))
           ..add(const PositionChangedEvent(Duration(seconds: 50)));
         await tester.pump();
@@ -2019,7 +2033,7 @@ void main() {
           ),
         );
 
-        eventController.add(const PlaybackSpeedChangedEvent(1));
+        fixture.eventController.add(const PlaybackSpeedChangedEvent(1));
         await tester.pump();
 
         final container = find.byType(Container);

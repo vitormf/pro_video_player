@@ -34,12 +34,6 @@ class VideoUrls {
   static const shakaAngelOneWithSubsHls = 'https://storage.googleapis.com/shaka-demo-assets/angel-one-hls/hls.m3u8';
   static const shakaAngelOneWithSubsDash = 'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd';
 
-  // Multi-video playlist file (M3U with multiple distinct videos)
-  // Note: This is now a local asset. Use PlaylistAssets.sampleMultiVideo for asset path.
-  // For testing remote playlist loading, you can host the playlist file on a CDN.
-  @Deprecated('Use PlaylistAssets.sampleMultiVideo for local asset path')
-  static const multiVideoPlaylistM3u = 'assets/playlists/sample_multi_video.m3u';
-
   // Invalid URLs for error testing
   static const invalidUrl = 'https://invalid.example.com/video.mp4';
   static const invalidTestUrl = 'https://invalid-url-that-does-not-exist.com/video.mp4';

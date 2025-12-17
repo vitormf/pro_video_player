@@ -23,7 +23,7 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 
 class ProVideoPlayerPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Application.ActivityLifecycleCallbacks, EventChannel.StreamHandler {
-    private lateinit var channel: MethodChannel
+    // Note: MethodCallHandler interface kept for test compatibility, but onMethodCall() is a no-op
     private lateinit var context: Context
     private var activity: Activity? = null
     private lateinit var flutterPluginBinding: FlutterPlugin.FlutterPluginBinding
@@ -66,8 +66,6 @@ class ProVideoPlayerPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, App
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         flutterPluginBinding = binding
         context = binding.applicationContext
-        channel = MethodChannel(binding.binaryMessenger, "dev.pro_video_player.android/methods")
-        channel.setMethodCallHandler(this)
 
         // Set up battery event channel
         batteryEventChannel = EventChannel(binding.binaryMessenger, "dev.pro_video_player.android/batteryUpdates")
@@ -86,63 +84,17 @@ class ProVideoPlayerPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, App
             MediaRouteButtonViewFactory(binding.binaryMessenger)
         )
 
-        // Register Pigeon API
+        // Register Pigeon API for all method calls
         pigeonHandler = PigeonHostApiHandler(this, context)
         ProVideoPlayerHostApi.setUp(binding.binaryMessenger, pigeonHandler)
     }
 
+    // Note: This onMethodCall() method is no longer used since we migrated to Pigeon.
+    // It's kept only because tests might still reference it.
+    // All method calls now go through PigeonHostApiHandler instead.
     override fun onMethodCall(call: MethodCall, result: Result) {
-        verboseLog("Method called: ${call.method}")
-
-        when (call.method) {
-            "create" -> handleCreate(call, result)
-            "dispose" -> handleDispose(call, result)
-            "play" -> handlePlay(call, result)
-            "pause" -> handlePause(call, result)
-            "stop" -> handleStop(call, result)
-            "seekTo" -> handleSeekTo(call, result)
-            "setPlaybackSpeed" -> handleSetPlaybackSpeed(call, result)
-            "setVolume" -> handleSetVolume(call, result)
-            "getDeviceVolume" -> handleGetDeviceVolume(result)
-            "setDeviceVolume" -> handleSetDeviceVolume(call, result)
-            "getScreenBrightness" -> handleGetScreenBrightness(result)
-            "setScreenBrightness" -> handleSetScreenBrightness(call, result)
-            "getBatteryInfo" -> handleGetBatteryInfo(result)
-            "setLooping" -> handleSetLooping(call, result)
-            "setScalingMode" -> handleSetScalingMode(call, result)
-            "setSubtitleRenderMode" -> handleSetSubtitleRenderMode(call, result)
-            "setSubtitleTrack" -> handleSetSubtitleTrack(call, result)
-            "setAudioTrack" -> handleSetAudioTrack(call, result)
-            "addExternalSubtitle" -> handleAddExternalSubtitle(call, result)
-            "removeExternalSubtitle" -> handleRemoveExternalSubtitle(call, result)
-            "getExternalSubtitles" -> handleGetExternalSubtitles(call, result)
-            "getPosition" -> handleGetPosition(call, result)
-            "getDuration" -> handleGetDuration(call, result)
-            "enterPip" -> handleEnterPip(call, result)
-            "exitPip" -> handleExitPip(call, result)
-            "isPipSupported" -> handleIsPipSupported(result)
-            "setPipActions" -> handleSetPipActions(call, result)
-            "enterFullscreen" -> handleEnterFullscreen(call, result)
-            "exitFullscreen" -> handleExitFullscreen(call, result)
-            "setVerboseLogging" -> handleSetVerboseLogging(call, result)
-            "setMediaMetadata" -> handleSetMediaMetadata(call, result)
-            "getVideoQualities" -> handleGetVideoQualities(call, result)
-            "setVideoQuality" -> handleSetVideoQuality(call, result)
-            "getCurrentVideoQuality" -> handleGetCurrentVideoQuality(call, result)
-            "isQualitySelectionSupported" -> handleIsQualitySelectionSupported(call, result)
-            "setBackgroundPlayback" -> handleSetBackgroundPlayback(call, result)
-            "isBackgroundPlaybackSupported" -> handleIsBackgroundPlaybackSupported(result)
-            "getVideoMetadata" -> handleGetVideoMetadata(call, result)
-            "isCastingSupported" -> handleIsCastingSupported(result)
-            "getAvailableCastDevices" -> handleGetAvailableCastDevices(call, result)
-            "startCasting" -> handleStartCasting(call, result)
-            "stopCasting" -> handleStopCasting(call, result)
-            "getCastState" -> handleGetCastState(call, result)
-            "getCurrentCastDevice" -> handleGetCurrentCastDevice(call, result)
-            "setControlsMode" -> handleSetControlsMode(call, result)
-            "getPlatformCapabilities" -> handleGetPlatformCapabilities(result)
-            else -> result.notImplemented()
-        }
+        // No-op: All calls should go through Pigeon API now
+        result.notImplemented()
     }
 
     private fun handleGetPlatformCapabilities(result: Result) {
@@ -941,7 +893,6 @@ class ProVideoPlayerPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, App
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
-        channel.setMethodCallHandler(null)
         players.values.forEach { it.dispose() }
         players.clear()
 

@@ -7,16 +7,7 @@ import '../../shared/test_helpers.dart';
 import '../../shared/test_setup.dart';
 
 // Mock for VideoControlsState
-class MockVideoControlsState {
-  // ignore: unreachable_from_main
-  bool showRemainingTime = false;
-  // ignore: unreachable_from_main
-  bool get isBackgroundPlaybackSupported => false;
-  // ignore: unreachable_from_main
-  bool get isPipAvailable => true;
-  // ignore: unreachable_from_main
-  bool get isCastingSupported => false;
-}
+class MockVideoControlsState {}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

@@ -132,7 +132,7 @@ abstract class PigeonMethodChannelBase extends ProVideoPlayerPlatform {
   Future<BatteryInfo?> getBatteryInfo() async {
     final message = await _hostApi.getBatteryInfo();
     if (message == null) return null;
-    return BatteryInfo(percentage: (message.level * 100).round(), isCharging: message.isCharging);
+    return BatteryInfo(percentage: message.percentage, isCharging: message.isCharging);
   }
 
   @override
@@ -189,7 +189,7 @@ abstract class PigeonMethodChannelBase extends ProVideoPlayerPlatform {
   @override
   Future<ExternalSubtitleTrack?> addExternalSubtitle(int playerId, SubtitleSource source) async {
     final message = SubtitleSourceMessage(
-      sourceType: source.runtimeType.toString(),
+      type: _getSubtitleSourceType(source),
       path: _getSubtitlePath(source),
       format: source.format != null ? _convertSubtitleFormat(source.format!) : SubtitleFormatEnum.srt,
       label: source.label,
@@ -257,7 +257,11 @@ abstract class PigeonMethodChannelBase extends ProVideoPlayerPlatform {
   Future<void> exitPip(int playerId) async => _hostApi.exitPip(playerId);
 
   @override
-  Future<bool> isPipSupported() async => _hostApi.isPipSupported();
+  Future<bool> isPipSupported() async {
+    final result = await _hostApi.isPipSupported();
+    ProVideoPlayerLogger.log('isPipSupported returned: $result', tag: 'PigeonMethodChannelBase');
+    return result;
+  }
 
   @override
   Future<void> setPipActions(int playerId, List<PipAction>? actions) async {
@@ -309,12 +313,11 @@ abstract class PigeonMethodChannelBase extends ProVideoPlayerPlatform {
         .map(
           (msg) => VideoQualityTrack(
             id: msg.id,
-            bitrate: msg.bitrate,
-            width: msg.width,
-            height: msg.height,
-            frameRate: msg.frameRate,
-            label: msg.label,
-            isDefault: msg.isDefault,
+            bitrate: msg.bitrate ?? 0,
+            width: msg.width ?? 0,
+            height: msg.height ?? 0,
+            label: msg.label ?? '',
+            isDefault: msg.isDefault ?? false,
           ),
         )
         .toList();
@@ -327,8 +330,8 @@ abstract class PigeonMethodChannelBase extends ProVideoPlayerPlatform {
       bitrate: track.bitrate,
       width: track.width,
       height: track.height,
-      frameRate: track.frameRate,
-      label: track.label,
+      // frameRate field removed from Pigeon schema
+      label: track.label.isEmpty ? null : track.label,
       isDefault: track.isDefault,
     );
     return _hostApi.setVideoQuality(playerId, message);
@@ -339,12 +342,11 @@ abstract class PigeonMethodChannelBase extends ProVideoPlayerPlatform {
     final message = await _hostApi.getCurrentVideoQuality(playerId);
     return VideoQualityTrack(
       id: message.id,
-      bitrate: message.bitrate,
-      width: message.width,
-      height: message.height,
-      frameRate: message.frameRate,
-      label: message.label,
-      isDefault: message.isDefault,
+      bitrate: message.bitrate ?? 0,
+      width: message.width ?? 0,
+      height: message.height ?? 0,
+      label: message.label ?? '',
+      isDefault: message.isDefault ?? false,
     );
   }
 
@@ -360,7 +362,7 @@ abstract class PigeonMethodChannelBase extends ProVideoPlayerPlatform {
     return VideoMetadata(
       width: message.width,
       height: message.height,
-      duration: message.durationMs != null ? Duration(milliseconds: message.durationMs!) : null,
+      duration: message.duration != null ? Duration(milliseconds: message.duration!) : null,
       videoCodec: message.videoCodec,
       audioCodec: message.audioCodec,
       videoBitrate: message.bitrate,
@@ -482,7 +484,7 @@ abstract class PigeonMethodChannelBase extends ProVideoPlayerPlatform {
 
   /// Converts a Pigeon [PlatformCapabilitiesMessage] to [PlatformCapabilities].
   PlatformCapabilities _convertPlatformCapabilities(PlatformCapabilitiesMessage message) => PlatformCapabilities(
-    supportsPictureInPicture: message.supportsPip,
+    supportsPictureInPicture: message.supportsPictureInPicture,
     supportsFullscreen: true,
     supportsBackgroundPlayback: message.supportsBackgroundPlayback,
     supportsCasting: message.supportsCasting,
@@ -504,6 +506,12 @@ abstract class PigeonMethodChannelBase extends ProVideoPlayerPlatform {
     supportsDeviceVolumeControl: true,
     supportsScreenBrightnessControl: true,
   );
+
+  VideoSourceType _getSubtitleSourceType(SubtitleSource source) => switch (source) {
+    NetworkSubtitleSource() => VideoSourceType.network,
+    FileSubtitleSource() => VideoSourceType.file,
+    AssetSubtitleSource() => VideoSourceType.asset,
+  };
 
   String _getSubtitlePath(SubtitleSource source) => switch (source) {
     NetworkSubtitleSource(:final url) => url,

@@ -2413,7 +2413,7 @@ void ProVideoPlayerHostApi::SetUp(
   const std::string& message_channel_suffix) {
   const std::string prepended_suffix = message_channel_suffix.length() > 0 ? std::string(".") + message_channel_suffix : "";
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.create" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.create" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -2448,7 +2448,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.dispose" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.dispose" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -2477,7 +2477,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.play" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.play" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -2506,7 +2506,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.pause" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.pause" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -2535,7 +2535,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.stop" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.stop" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -2564,7 +2564,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.seekTo" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.seekTo" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -2599,7 +2599,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setPlaybackSpeed" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setPlaybackSpeed" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -2634,7 +2634,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setVolume" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setVolume" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -2669,7 +2669,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getPosition" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getPosition" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -2698,7 +2698,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getDuration" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getDuration" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -2727,7 +2727,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getPlatformCapabilities" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getPlatformCapabilities" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -2749,7 +2749,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setVerboseLogging" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setVerboseLogging" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -2778,7 +2778,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getDeviceVolume" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getDeviceVolume" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -2800,7 +2800,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setDeviceVolume" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setDeviceVolume" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -2829,7 +2829,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getScreenBrightness" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getScreenBrightness" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -2851,7 +2851,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setScreenBrightness" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setScreenBrightness" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -2880,7 +2880,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getBatteryInfo" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getBatteryInfo" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -2907,7 +2907,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setLooping" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setLooping" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -2942,7 +2942,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setScalingMode" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setScalingMode" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -2977,7 +2977,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setControlsMode" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setControlsMode" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -3012,7 +3012,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setSubtitleTrack" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setSubtitleTrack" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -3043,7 +3043,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setSubtitleRenderMode" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setSubtitleRenderMode" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -3078,7 +3078,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.addExternalSubtitle" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.addExternalSubtitle" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -3118,7 +3118,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.removeExternalSubtitle" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.removeExternalSubtitle" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -3153,7 +3153,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getExternalSubtitles" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getExternalSubtitles" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -3182,7 +3182,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setAudioTrack" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setAudioTrack" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -3213,7 +3213,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.enterPip" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.enterPip" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -3248,7 +3248,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.exitPip" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.exitPip" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -3277,7 +3277,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.isPipSupported" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.isPipSupported" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -3299,7 +3299,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setPipActions" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setPipActions" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -3334,7 +3334,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.enterFullscreen" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.enterFullscreen" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -3363,7 +3363,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.exitFullscreen" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.exitFullscreen" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -3392,7 +3392,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setWindowFullscreen" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setWindowFullscreen" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -3421,7 +3421,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setBackgroundPlayback" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setBackgroundPlayback" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -3456,7 +3456,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.isBackgroundPlaybackSupported" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.isBackgroundPlaybackSupported" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -3478,7 +3478,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getVideoQualities" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getVideoQualities" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -3507,7 +3507,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setVideoQuality" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setVideoQuality" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -3542,7 +3542,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getCurrentVideoQuality" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getCurrentVideoQuality" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -3571,7 +3571,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.isQualitySelectionSupported" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.isQualitySelectionSupported" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -3600,7 +3600,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getVideoMetadata" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getVideoMetadata" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -3634,7 +3634,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setMediaMetadata" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setMediaMetadata" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -3669,7 +3669,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.isCastingSupported" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.isCastingSupported" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -3691,7 +3691,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getAvailableCastDevices" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getAvailableCastDevices" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -3720,7 +3720,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.startCasting" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.startCasting" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -3751,7 +3751,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.stopCasting" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.stopCasting" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -3780,7 +3780,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getCastState" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getCastState" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -3809,7 +3809,7 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getCurrentCastDevice" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getCurrentCastDevice" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
@@ -3880,7 +3880,7 @@ void ProVideoPlayerFlutterApi::OnEvent(
   const VideoPlayerEventMessage& event_arg,
   std::function<void(void)>&& on_success,
   std::function<void(const FlutterError&)>&& on_error) {
-  const std::string channel_name = "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerFlutterApi.onEvent" + message_channel_suffix_;
+  const std::string channel_name = "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onEvent" + message_channel_suffix_;
   BasicMessageChannel<> channel(binary_messenger_, channel_name, &GetCodec());
   EncodableValue encoded_api_arguments = EncodableValue(EncodableList{
     EncodableValue(player_id_arg),

@@ -237,7 +237,8 @@ while true; do
 							fi
 							task=$(printf "%s\n" \
 								"← Back" \
-								"test-e2e | 📱 Run E2E tests (auto-detect)" \
+								"test-e2e | 🚀 E2E tests on ALL platforms (PARALLEL)" \
+								"test-e2e-sequential | ⏭️  E2E tests on ALL platforms (Sequential)" \
 								"test-e2e-ios | 🍏 E2E tests on iOS" \
 								"test-e2e-android | 🤖 E2E tests on Android" \
 								"test-e2e-macos | 💻 E2E tests on macOS" \

@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use_from_same_package
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
@@ -23,8 +21,8 @@ void main() {
   });
 
   group('ProVideoPlayerPlatform', () {
-    test('default instance is MethodChannelBase', () {
-      expect(ProVideoPlayerPlatform.instance, isA<MethodChannelBase>());
+    test('default instance is PigeonMethodChannelBase', () {
+      expect(ProVideoPlayerPlatform.instance, isA<PigeonMethodChannelBase>());
     });
 
     test('can set custom instance', () {

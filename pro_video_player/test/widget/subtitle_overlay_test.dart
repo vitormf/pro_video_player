@@ -252,6 +252,7 @@ void main() {
       final valueNotifier = ValueNotifier<VideoPlayerValue>(
         const VideoPlayerValue(selectedSubtitleTrack: externalTrack, position: Duration(seconds: 3)),
       );
+      addTearDown(valueNotifier.dispose);
 
       when(() => mockController.value).thenAnswer((_) => valueNotifier.value);
       when(() => mockController.addListener(any())).thenAnswer((invocation) {

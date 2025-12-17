@@ -220,6 +220,14 @@ class VideoPlayerOptionsMessage {
     required this.looping,
     required this.volume,
     required this.playbackSpeed,
+    this.startPosition,
+    this.enablePip,
+    this.enableBackgroundPlayback,
+    this.preferredAudioLanguage,
+    this.preferredSubtitleLanguage,
+    this.maxBitrate,
+    this.minBitrate,
+    this.preferredAudioRendition,
     required this.allowBackgroundPlayback,
     required this.mixWithOthers,
     required this.allowPip,
@@ -238,13 +246,37 @@ class VideoPlayerOptionsMessage {
   /// Initial playback speed.
   double playbackSpeed;
 
-  /// Whether to allow background playback.
+  /// Start position in milliseconds.
+  int? startPosition;
+
+  /// Whether to enable Picture-in-Picture mode.
+  bool? enablePip;
+
+  /// Whether to enable background playback.
+  bool? enableBackgroundPlayback;
+
+  /// Preferred audio language code.
+  String? preferredAudioLanguage;
+
+  /// Preferred subtitle language code.
+  String? preferredSubtitleLanguage;
+
+  /// Maximum bitrate in bits per second.
+  int? maxBitrate;
+
+  /// Minimum bitrate in bits per second.
+  int? minBitrate;
+
+  /// Preferred audio rendition name.
+  String? preferredAudioRendition;
+
+  /// Whether to allow background playback (deprecated, use enableBackgroundPlayback).
   bool allowBackgroundPlayback;
 
   /// Whether to mix audio with other apps.
   bool mixWithOthers;
 
-  /// Whether to allow Picture-in-Picture mode.
+  /// Whether to allow Picture-in-Picture mode (deprecated, use enablePip).
   bool allowPip;
 
   /// Whether to auto-enter PiP when app goes to background.
@@ -256,6 +288,14 @@ class VideoPlayerOptionsMessage {
       looping,
       volume,
       playbackSpeed,
+      startPosition,
+      enablePip,
+      enableBackgroundPlayback,
+      preferredAudioLanguage,
+      preferredSubtitleLanguage,
+      maxBitrate,
+      minBitrate,
+      preferredAudioRendition,
       allowBackgroundPlayback,
       mixWithOthers,
       allowPip,
@@ -270,10 +310,18 @@ class VideoPlayerOptionsMessage {
       looping: result[1]! as bool,
       volume: result[2]! as double,
       playbackSpeed: result[3]! as double,
-      allowBackgroundPlayback: result[4]! as bool,
-      mixWithOthers: result[5]! as bool,
-      allowPip: result[6]! as bool,
-      autoEnterPipOnBackground: result[7]! as bool,
+      startPosition: result[4] as int?,
+      enablePip: result[5] as bool?,
+      enableBackgroundPlayback: result[6] as bool?,
+      preferredAudioLanguage: result[7] as String?,
+      preferredSubtitleLanguage: result[8] as String?,
+      maxBitrate: result[9] as int?,
+      minBitrate: result[10] as int?,
+      preferredAudioRendition: result[11] as String?,
+      allowBackgroundPlayback: result[12]! as bool,
+      mixWithOthers: result[13]! as bool,
+      allowPip: result[14]! as bool,
+      autoEnterPipOnBackground: result[15]! as bool,
     );
   }
 }
@@ -281,13 +329,37 @@ class VideoPlayerOptionsMessage {
 /// Platform capabilities returned by the platform.
 class PlatformCapabilitiesMessage {
   PlatformCapabilitiesMessage({
-    required this.supportsPip,
+    required this.supportsPictureInPicture,
+    required this.supportsFullscreen,
     required this.supportsBackgroundPlayback,
     required this.supportsCasting,
+    required this.supportsAirPlay,
+    required this.supportsChromecast,
+    required this.supportsRemotePlayback,
+    required this.supportsQualitySelection,
+    required this.supportsPlaybackSpeedControl,
+    required this.supportsSubtitles,
+    required this.supportsExternalSubtitles,
+    required this.supportsAudioTrackSelection,
+    required this.supportsChapters,
+    required this.supportsVideoMetadataExtraction,
+    required this.supportsNetworkMonitoring,
+    required this.supportsBandwidthEstimation,
+    required this.supportsAdaptiveBitrate,
+    required this.supportsHLS,
+    required this.supportsDASH,
+    required this.supportsDeviceVolumeControl,
+    required this.supportsScreenBrightnessControl,
+    required this.platformName,
+    required this.nativePlayerType,
+    this.additionalInfo,
   });
 
   /// Whether Picture-in-Picture is supported.
-  bool supportsPip;
+  bool supportsPictureInPicture;
+
+  /// Whether fullscreen is supported.
+  bool supportsFullscreen;
 
   /// Whether background playback is supported.
   bool supportsBackgroundPlayback;
@@ -295,98 +367,212 @@ class PlatformCapabilitiesMessage {
   /// Whether casting is supported.
   bool supportsCasting;
 
+  /// Whether AirPlay is supported.
+  bool supportsAirPlay;
+
+  /// Whether Chromecast is supported.
+  bool supportsChromecast;
+
+  /// Whether Remote Playback API is supported.
+  bool supportsRemotePlayback;
+
+  /// Whether quality selection is supported.
+  bool supportsQualitySelection;
+
+  /// Whether playback speed control is supported.
+  bool supportsPlaybackSpeedControl;
+
+  /// Whether subtitles are supported.
+  bool supportsSubtitles;
+
+  /// Whether external subtitles are supported.
+  bool supportsExternalSubtitles;
+
+  /// Whether audio track selection is supported.
+  bool supportsAudioTrackSelection;
+
+  /// Whether chapters are supported.
+  bool supportsChapters;
+
+  /// Whether video metadata extraction is supported.
+  bool supportsVideoMetadataExtraction;
+
+  /// Whether network monitoring is supported.
+  bool supportsNetworkMonitoring;
+
+  /// Whether bandwidth estimation is supported.
+  bool supportsBandwidthEstimation;
+
+  /// Whether adaptive bitrate streaming is supported.
+  bool supportsAdaptiveBitrate;
+
+  /// Whether HLS is supported.
+  bool supportsHLS;
+
+  /// Whether DASH is supported.
+  bool supportsDASH;
+
+  /// Whether device volume control is supported.
+  bool supportsDeviceVolumeControl;
+
+  /// Whether screen brightness control is supported.
+  bool supportsScreenBrightnessControl;
+
+  /// Platform name.
+  String platformName;
+
+  /// Native player type.
+  String nativePlayerType;
+
+  /// Additional platform-specific info.
+  Map<String?, Object?>? additionalInfo;
+
   Object encode() {
-    return <Object?>[supportsPip, supportsBackgroundPlayback, supportsCasting];
+    return <Object?>[
+      supportsPictureInPicture,
+      supportsFullscreen,
+      supportsBackgroundPlayback,
+      supportsCasting,
+      supportsAirPlay,
+      supportsChromecast,
+      supportsRemotePlayback,
+      supportsQualitySelection,
+      supportsPlaybackSpeedControl,
+      supportsSubtitles,
+      supportsExternalSubtitles,
+      supportsAudioTrackSelection,
+      supportsChapters,
+      supportsVideoMetadataExtraction,
+      supportsNetworkMonitoring,
+      supportsBandwidthEstimation,
+      supportsAdaptiveBitrate,
+      supportsHLS,
+      supportsDASH,
+      supportsDeviceVolumeControl,
+      supportsScreenBrightnessControl,
+      platformName,
+      nativePlayerType,
+      additionalInfo,
+    ];
   }
 
   static PlatformCapabilitiesMessage decode(Object result) {
     result as List<Object?>;
     return PlatformCapabilitiesMessage(
-      supportsPip: result[0]! as bool,
-      supportsBackgroundPlayback: result[1]! as bool,
-      supportsCasting: result[2]! as bool,
+      supportsPictureInPicture: result[0]! as bool,
+      supportsFullscreen: result[1]! as bool,
+      supportsBackgroundPlayback: result[2]! as bool,
+      supportsCasting: result[3]! as bool,
+      supportsAirPlay: result[4]! as bool,
+      supportsChromecast: result[5]! as bool,
+      supportsRemotePlayback: result[6]! as bool,
+      supportsQualitySelection: result[7]! as bool,
+      supportsPlaybackSpeedControl: result[8]! as bool,
+      supportsSubtitles: result[9]! as bool,
+      supportsExternalSubtitles: result[10]! as bool,
+      supportsAudioTrackSelection: result[11]! as bool,
+      supportsChapters: result[12]! as bool,
+      supportsVideoMetadataExtraction: result[13]! as bool,
+      supportsNetworkMonitoring: result[14]! as bool,
+      supportsBandwidthEstimation: result[15]! as bool,
+      supportsAdaptiveBitrate: result[16]! as bool,
+      supportsHLS: result[17]! as bool,
+      supportsDASH: result[18]! as bool,
+      supportsDeviceVolumeControl: result[19]! as bool,
+      supportsScreenBrightnessControl: result[20]! as bool,
+      platformName: result[21]! as String,
+      nativePlayerType: result[22]! as String,
+      additionalInfo: (result[23] as Map<Object?, Object?>?)?.cast<String?, Object?>(),
     );
   }
 }
 
 /// Battery information.
 class BatteryInfoMessage {
-  BatteryInfoMessage({required this.level, required this.isCharging});
+  BatteryInfoMessage({required this.percentage, required this.isCharging});
 
-  /// Battery level (0.0 to 1.0).
-  double level;
+  /// Battery percentage (0-100).
+  int percentage;
 
   /// Whether the device is charging.
   bool isCharging;
 
   Object encode() {
-    return <Object?>[level, isCharging];
+    return <Object?>[percentage, isCharging];
   }
 
   static BatteryInfoMessage decode(Object result) {
     result as List<Object?>;
-    return BatteryInfoMessage(level: result[0]! as double, isCharging: result[1]! as bool);
+    return BatteryInfoMessage(percentage: result[0]! as int, isCharging: result[1]! as bool);
   }
 }
 
 /// Subtitle track information.
 class SubtitleTrackMessage {
-  SubtitleTrackMessage({required this.id, required this.label, this.language, required this.isDefault});
+  SubtitleTrackMessage({required this.id, this.label, this.language, this.format, this.isDefault});
 
   /// Track ID.
   String id;
 
   /// Track label.
-  String label;
+  String? label;
 
   /// Track language code.
   String? language;
 
+  /// Subtitle format.
+  SubtitleFormatEnum? format;
+
   /// Whether this is the default track.
-  bool isDefault;
+  bool? isDefault;
 
   Object encode() {
-    return <Object?>[id, label, language, isDefault];
+    return <Object?>[id, label, language, format, isDefault];
   }
 
   static SubtitleTrackMessage decode(Object result) {
     result as List<Object?>;
     return SubtitleTrackMessage(
       id: result[0]! as String,
-      label: result[1]! as String,
+      label: result[1] as String?,
       language: result[2] as String?,
-      isDefault: result[3]! as bool,
+      format: result[3] as SubtitleFormatEnum?,
+      isDefault: result[4] as bool?,
     );
   }
 }
 
 /// Audio track information.
 class AudioTrackMessage {
-  AudioTrackMessage({required this.id, required this.label, this.language, required this.isDefault});
+  AudioTrackMessage({required this.id, this.label, this.language, this.channelCount, this.isDefault});
 
   /// Track ID.
   String id;
 
   /// Track label.
-  String label;
+  String? label;
 
   /// Track language code.
   String? language;
 
+  /// Number of audio channels.
+  int? channelCount;
+
   /// Whether this is the default track.
-  bool isDefault;
+  bool? isDefault;
 
   Object encode() {
-    return <Object?>[id, label, language, isDefault];
+    return <Object?>[id, label, language, channelCount, isDefault];
   }
 
   static AudioTrackMessage decode(Object result) {
     result as List<Object?>;
     return AudioTrackMessage(
       id: result[0]! as String,
-      label: result[1]! as String,
+      label: result[1] as String?,
       language: result[2] as String?,
-      isDefault: result[3]! as bool,
+      channelCount: result[3] as int?,
+      isDefault: result[4] as bool?,
     );
   }
 }
@@ -395,49 +581,49 @@ class AudioTrackMessage {
 class VideoQualityTrackMessage {
   VideoQualityTrackMessage({
     required this.id,
-    required this.bitrate,
-    required this.width,
-    required this.height,
-    this.frameRate,
-    required this.label,
-    required this.isDefault,
+    this.label,
+    this.bitrate,
+    this.width,
+    this.height,
+    this.codec,
+    this.isDefault,
   });
 
   /// Track ID.
   String id;
 
+  /// Track label.
+  String? label;
+
   /// Bitrate in bits per second.
-  int bitrate;
+  int? bitrate;
 
   /// Video width in pixels.
-  int width;
+  int? width;
 
   /// Video height in pixels.
-  int height;
+  int? height;
 
-  /// Frame rate (optional).
-  double? frameRate;
-
-  /// Track label.
-  String label;
+  /// Video codec.
+  String? codec;
 
   /// Whether this is the default track.
-  bool isDefault;
+  bool? isDefault;
 
   Object encode() {
-    return <Object?>[id, bitrate, width, height, frameRate, label, isDefault];
+    return <Object?>[id, label, bitrate, width, height, codec, isDefault];
   }
 
   static VideoQualityTrackMessage decode(Object result) {
     result as List<Object?>;
     return VideoQualityTrackMessage(
       id: result[0]! as String,
-      bitrate: result[1]! as int,
-      width: result[2]! as int,
-      height: result[3]! as int,
-      frameRate: result[4] as double?,
-      label: result[5]! as String,
-      isDefault: result[6]! as bool,
+      label: result[1] as String?,
+      bitrate: result[2] as int?,
+      width: result[3] as int?,
+      height: result[4] as int?,
+      codec: result[5] as String?,
+      isDefault: result[6] as bool?,
     );
   }
 }
@@ -464,21 +650,32 @@ class PipOptionsMessage {
 
 /// Picture-in-picture action.
 class PipActionMessage {
-  PipActionMessage({required this.type, this.skipIntervalMs});
+  PipActionMessage({required this.type, this.title, this.iconName, this.skipIntervalMs});
 
   /// Action type.
   PipActionTypeEnum type;
+
+  /// Action title.
+  String? title;
+
+  /// Icon name.
+  String? iconName;
 
   /// Optional skip interval in milliseconds.
   int? skipIntervalMs;
 
   Object encode() {
-    return <Object?>[type, skipIntervalMs];
+    return <Object?>[type, title, iconName, skipIntervalMs];
   }
 
   static PipActionMessage decode(Object result) {
     result as List<Object?>;
-    return PipActionMessage(type: result[0]! as PipActionTypeEnum, skipIntervalMs: result[1] as int?);
+    return PipActionMessage(
+      type: result[0]! as PipActionTypeEnum,
+      title: result[1] as String?,
+      iconName: result[2] as String?,
+      skipIntervalMs: result[3] as int?,
+    );
   }
 }
 
@@ -512,23 +709,23 @@ class CastDeviceMessage {
 /// Video metadata.
 class VideoMetadataMessage {
   VideoMetadataMessage({
+    this.duration,
     this.width,
     this.height,
-    this.durationMs,
     this.videoCodec,
     this.audioCodec,
     this.bitrate,
     this.frameRate,
   });
 
+  /// Duration in milliseconds.
+  int? duration;
+
   /// Video width in pixels.
   int? width;
 
   /// Video height in pixels.
   int? height;
-
-  /// Duration in milliseconds.
-  int? durationMs;
 
   /// Video codec.
   String? videoCodec;
@@ -543,15 +740,15 @@ class VideoMetadataMessage {
   double? frameRate;
 
   Object encode() {
-    return <Object?>[width, height, durationMs, videoCodec, audioCodec, bitrate, frameRate];
+    return <Object?>[duration, width, height, videoCodec, audioCodec, bitrate, frameRate];
   }
 
   static VideoMetadataMessage decode(Object result) {
     result as List<Object?>;
     return VideoMetadataMessage(
-      width: result[0] as int?,
-      height: result[1] as int?,
-      durationMs: result[2] as int?,
+      duration: result[0] as int?,
+      width: result[1] as int?,
+      height: result[2] as int?,
       videoCodec: result[3] as String?,
       audioCodec: result[4] as String?,
       bitrate: result[5] as int?,
@@ -562,7 +759,7 @@ class VideoMetadataMessage {
 
 /// Media metadata for platform controls.
 class MediaMetadataMessage {
-  MediaMetadataMessage({this.title, this.artist, this.album, this.artworkUrl});
+  MediaMetadataMessage({this.title, this.artist, this.album, this.artworkUrl, this.duration});
 
   /// Media title.
   String? title;
@@ -576,8 +773,11 @@ class MediaMetadataMessage {
   /// Artwork URL.
   String? artworkUrl;
 
+  /// Duration in milliseconds.
+  int? duration;
+
   Object encode() {
-    return <Object?>[title, artist, album, artworkUrl];
+    return <Object?>[title, artist, album, artworkUrl, duration];
   }
 
   static MediaMetadataMessage decode(Object result) {
@@ -587,6 +787,7 @@ class MediaMetadataMessage {
       artist: result[1] as String?,
       album: result[2] as String?,
       artworkUrl: result[3] as String?,
+      duration: result[4] as int?,
     );
   }
 }
@@ -594,22 +795,23 @@ class MediaMetadataMessage {
 /// Subtitle source information.
 class SubtitleSourceMessage {
   SubtitleSourceMessage({
-    required this.sourceType,
+    required this.type,
     required this.path,
-    required this.format,
+    this.format,
     this.label,
     this.language,
     required this.isDefault,
+    this.webvttContent,
   });
 
   /// Source type (network, file, asset).
-  String sourceType;
+  VideoSourceType type;
 
   /// Path or URL.
   String path;
 
   /// Subtitle format.
-  SubtitleFormatEnum format;
+  SubtitleFormatEnum? format;
 
   /// Track label.
   String? label;
@@ -620,19 +822,23 @@ class SubtitleSourceMessage {
   /// Whether this is the default subtitle.
   bool isDefault;
 
+  /// WebVTT content (for in-memory subtitles).
+  String? webvttContent;
+
   Object encode() {
-    return <Object?>[sourceType, path, format, label, language, isDefault];
+    return <Object?>[type, path, format, label, language, isDefault, webvttContent];
   }
 
   static SubtitleSourceMessage decode(Object result) {
     result as List<Object?>;
     return SubtitleSourceMessage(
-      sourceType: result[0]! as String,
+      type: result[0]! as VideoSourceType,
       path: result[1]! as String,
-      format: result[2]! as SubtitleFormatEnum,
+      format: result[2] as SubtitleFormatEnum?,
       label: result[3] as String?,
       language: result[4] as String?,
       isDefault: result[5]! as bool,
+      webvttContent: result[6] as String?,
     );
   }
 }

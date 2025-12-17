@@ -1296,7 +1296,7 @@ interface ProVideoPlayerHostApi {
     fun setUp(binaryMessenger: BinaryMessenger, api: ProVideoPlayerHostApi?, messageChannelSuffix: String = "") {
       val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.create$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.create$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -1317,7 +1317,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.dispose$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.dispose$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -1336,7 +1336,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.play$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.play$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -1355,7 +1355,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.pause$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.pause$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -1374,7 +1374,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.stop$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.stop$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -1393,7 +1393,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.seekTo$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.seekTo$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -1413,7 +1413,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setPlaybackSpeed$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setPlaybackSpeed$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -1433,7 +1433,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setVolume$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setVolume$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -1453,7 +1453,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getPosition$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getPosition$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -1473,7 +1473,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getDuration$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getDuration$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -1493,7 +1493,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getPlatformCapabilities$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getPlatformCapabilities$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { _, reply ->
             api.getPlatformCapabilities{ result: Result<PlatformCapabilitiesMessage> ->
@@ -1511,7 +1511,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setVerboseLogging$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setVerboseLogging$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -1530,7 +1530,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getDeviceVolume$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getDeviceVolume$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { _, reply ->
             api.getDeviceVolume{ result: Result<Double> ->
@@ -1548,7 +1548,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setDeviceVolume$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setDeviceVolume$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -1567,7 +1567,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getScreenBrightness$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getScreenBrightness$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { _, reply ->
             api.getScreenBrightness{ result: Result<Double> ->
@@ -1585,7 +1585,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setScreenBrightness$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setScreenBrightness$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -1604,7 +1604,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getBatteryInfo$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getBatteryInfo$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { _, reply ->
             api.getBatteryInfo{ result: Result<BatteryInfoMessage?> ->
@@ -1622,7 +1622,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setLooping$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setLooping$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -1642,7 +1642,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setScalingMode$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setScalingMode$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -1662,7 +1662,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setControlsMode$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setControlsMode$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -1682,7 +1682,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setSubtitleTrack$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setSubtitleTrack$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -1702,7 +1702,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setSubtitleRenderMode$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setSubtitleRenderMode$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -1722,7 +1722,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.addExternalSubtitle$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.addExternalSubtitle$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -1743,7 +1743,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.removeExternalSubtitle$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.removeExternalSubtitle$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -1764,7 +1764,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getExternalSubtitles$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getExternalSubtitles$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -1784,7 +1784,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setAudioTrack$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setAudioTrack$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -1804,7 +1804,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.enterPip$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.enterPip$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -1825,7 +1825,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.exitPip$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.exitPip$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -1844,7 +1844,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.isPipSupported$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.isPipSupported$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { _, reply ->
             api.isPipSupported{ result: Result<Boolean> ->
@@ -1862,7 +1862,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setPipActions$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setPipActions$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -1882,7 +1882,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.enterFullscreen$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.enterFullscreen$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -1902,7 +1902,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.exitFullscreen$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.exitFullscreen$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -1921,7 +1921,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setWindowFullscreen$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setWindowFullscreen$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -1940,7 +1940,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setBackgroundPlayback$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setBackgroundPlayback$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -1961,7 +1961,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.isBackgroundPlaybackSupported$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.isBackgroundPlaybackSupported$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { _, reply ->
             api.isBackgroundPlaybackSupported{ result: Result<Boolean> ->
@@ -1979,7 +1979,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getVideoQualities$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getVideoQualities$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -1999,7 +1999,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setVideoQuality$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setVideoQuality$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -2020,7 +2020,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getCurrentVideoQuality$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getCurrentVideoQuality$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -2040,7 +2040,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.isQualitySelectionSupported$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.isQualitySelectionSupported$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -2060,7 +2060,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getVideoMetadata$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getVideoMetadata$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -2080,7 +2080,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setMediaMetadata$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setMediaMetadata$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -2100,7 +2100,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.isCastingSupported$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.isCastingSupported$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { _, reply ->
             api.isCastingSupported{ result: Result<Boolean> ->
@@ -2118,7 +2118,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getAvailableCastDevices$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getAvailableCastDevices$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -2138,7 +2138,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.startCasting$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.startCasting$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -2159,7 +2159,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.stopCasting$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.stopCasting$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -2179,7 +2179,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getCastState$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getCastState$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -2199,7 +2199,7 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getCurrentCastDevice$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getCurrentCastDevice$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -2240,7 +2240,7 @@ class ProVideoPlayerFlutterApi(private val binaryMessenger: BinaryMessenger, pri
   fun onEvent(playerIdArg: Long, eventArg: VideoPlayerEventMessage, callback: (Result<Unit>) -> Unit)
 {
     val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
-    val channelName = "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerFlutterApi.onEvent$separatedMessageChannelSuffix"
+    val channelName = "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onEvent$separatedMessageChannelSuffix"
     val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
     channel.send(listOf(playerIdArg, eventArg)) {
       if (it is List<*>) {

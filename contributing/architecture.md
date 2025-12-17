@@ -26,6 +26,50 @@ Comprehensive architecture patterns and guidelines for Pro Video Player.
 - ✅ Dart: Playlist logic, subtitle parsing, state management
 - ❌ Native: AVPlayer/ExoPlayer control, PiP, background playback
 
+### Type Safety Requirements
+
+**No dynamic types allowed.** All code must use explicit static types. Dynamic types compromise type safety, IDE support, and maintainability.
+
+**Forbidden:**
+- `dynamic` type annotations
+- Untyped collections (`List`, `Map` without type parameters)
+- `var` without clear type inference
+- Implicit `dynamic` from missing type annotations
+
+**Required:**
+- Explicit return types on all functions/methods
+- Typed parameters on all functions/methods
+- Typed collections (`List<String>`, `Map<String, int>`)
+- Explicit type annotations where inference is unclear
+
+```dart
+// ❌ BAD: Dynamic types
+dynamic processData(data) {
+  List items = [];
+  Map config = {};
+  return items;
+}
+
+// ✅ GOOD: Explicit types
+VideoPlayerValue processData(VideoPlayerValue data) {
+  List<VideoTrack> items = [];
+  Map<String, dynamic> config = {};  // Acceptable only for JSON parsing
+  return data.copyWith(tracks: items);
+}
+```
+
+**Exception:** `Map<String, dynamic>` is acceptable ONLY for JSON serialization/deserialization. Even then, convert to strongly-typed DTOs as soon as possible.
+
+**Web Platform Exception:** JS interop with external libraries (HLS.js, DASH.js, browser APIs) that lack Dart type definitions may require `// ignore: avoid_dynamic_calls` with clear justification in comments explaining why the dynamic call is necessary.
+
+**Enforcement:** Static analysis with strict type checking enabled (`strict-casts`, `strict-inference`, `strict-raw-types`). The following rules are enforced as **errors** (blocking compilation):
+- `avoid_dynamic_calls` - Method/property access on dynamic targets
+- `avoid_annotating_with_dynamic` - Explicit dynamic type annotations
+- `always_declare_return_types` - Missing return type declarations
+- `library_private_types_in_public_api` - Private types exposed in public API
+
+Code with `dynamic` types will not pass `make quick-check`.
+
 ---
 
 ## Code Sharing (MethodChannelBase)

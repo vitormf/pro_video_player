@@ -444,7 +444,6 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   }
 
   /// Sets whether the video should loop.
-  // ignore: avoid_positional_boolean_parameters
   Future<void> setLooping(bool looping) async {
     _ensureInitialized();
     return _configurationManager.setLooping(looping);

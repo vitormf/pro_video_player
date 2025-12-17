@@ -1,5 +1,4 @@
 // ignore_for_file: avoid_classes_with_only_static_members - Necessary: utility class providing namespace for static helper methods
-// ignore_for_file: avoid_slow_async_io - Necessary: subtitle discovery requires filesystem scanning to find matching subtitle files
 
 import 'dart:io';
 
@@ -13,9 +12,15 @@ import '../types/subtitle_source.dart';
 /// and in common subdirectories, using configurable matching modes.
 abstract final class SubtitleDiscovery {
   /// Supported subtitle file extensions.
+  ///
+  /// Includes SRT, WebVTT, ASS, SSA, and TTML formats. Extensions include the
+  /// leading dot for easier matching against file paths.
   static const supportedExtensions = ['.srt', '.vtt', '.ass', '.ssa', '.ttml'];
 
   /// Subdirectories to search for subtitles (case-insensitive matching).
+  ///
+  /// Common subtitle folder names in both capitalized and lowercase variants.
+  /// Discovery scans these subdirectories relative to the video file's location.
   static const subdirectories = ['Subs', 'Subtitles', 'subs', 'subtitles'];
 
   /// Common separators used in filenames for tokenization.
@@ -37,26 +42,26 @@ abstract final class SubtitleDiscovery {
     String videoPath, {
     SubtitleDiscoveryMode mode = SubtitleDiscoveryMode.prefix,
   }) async {
-    final videoFile = File(videoPath);
-    if (!await videoFile.exists()) {
-      return [];
-    }
+    try {
+      final videoFile = File(videoPath);
+      final videoDir = videoFile.parent;
+      final videoBaseName = _getBaseName(videoFile.path);
 
-    final videoDir = videoFile.parent;
-    final videoBaseName = _getBaseName(videoFile.path);
+      // Search in the video's directory
+      final discovered = <SubtitleSource>[...await _searchDirectory(videoDir, videoBaseName, mode)];
 
-    // Search in the video's directory
-    final discovered = <SubtitleSource>[...await _searchDirectory(videoDir, videoBaseName, mode)];
-
-    // Search in common subdirectories
-    for (final subdir in subdirectories) {
-      final subdirPath = Directory('${videoDir.path}/$subdir');
-      if (await subdirPath.exists()) {
+      // Search in common subdirectories
+      // No need to check if subdirectories exist - _searchDirectory handles errors gracefully
+      for (final subdir in subdirectories) {
+        final subdirPath = Directory('${videoDir.path}/$subdir');
         discovered.addAll(await _searchDirectory(subdirPath, videoBaseName, mode));
       }
-    }
 
-    return discovered;
+      return discovered;
+    } catch (e) {
+      // Invalid path or inaccessible directory - return empty list
+      return [];
+    }
   }
 
   /// Searches a directory for matching subtitle files.

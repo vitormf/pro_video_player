@@ -1,9 +1,7 @@
-// ignore_for_file: deprecated_member_use_from_same_package
-
 import 'package:flutter/widgets.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
-import 'method_channel_base.dart';
+import 'pigeon_method_channel_base.dart';
 import 'types/types.dart';
 
 /// The interface that implementations of pro_video_player must implement.
@@ -23,7 +21,7 @@ abstract class ProVideoPlayerPlatform extends PlatformInterface {
 
   /// The default instance of [ProVideoPlayerPlatform] to use.
   ///
-  /// Defaults to a basic [MethodChannelBase] implementation. Platform-specific
+  /// Defaults to a basic [PigeonMethodChannelBase] implementation. Platform-specific
   /// packages (iOS, Android, Web, macOS, etc.) register their own implementations.
   static ProVideoPlayerPlatform get instance => _instance;
 
@@ -170,7 +168,6 @@ abstract class ProVideoPlayerPlatform extends PlatformInterface {
   }
 
   /// Sets whether the video should loop.
-  // ignore: avoid_positional_boolean_parameters
   Future<void> setLooping(int playerId, bool looping) {
     throw UnimplementedError('setLooping() has not been implemented.');
   }
@@ -755,12 +752,12 @@ abstract class ProVideoPlayerPlatform extends PlatformInterface {
   }
 }
 
-/// Private default implementation using [MethodChannelBase].
+/// Private default implementation using [PigeonMethodChannelBase].
 ///
 /// This is used as a fallback when no platform-specific implementation is registered.
 /// In practice, this should never be used in production as platform packages
 /// (iOS, Android, Web, macOS, etc.) register their own implementations.
-class _DefaultMethodChannelProVideoPlayer extends MethodChannelBase {
+class _DefaultMethodChannelProVideoPlayer extends PigeonMethodChannelBase {
   _DefaultMethodChannelProVideoPlayer() : super('dev.pro_video_player/methods');
 
   @override

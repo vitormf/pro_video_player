@@ -187,54 +187,23 @@ class VideoControlsState extends ChangeNotifier {
 
   // ========== Playback State Tracking ==========
 
-  bool? _lastIsPlaying;
-  bool? _lastIsFullscreen;
-  bool? _lastIsPipActive;
-
   /// The last known playing state, used to detect play/pause changes.
   ///
   /// This is used internally to track state changes and doesn't trigger
   /// listener notifications when updated.
-  // ignore: unnecessary_getters_setters
-  bool? get lastIsPlaying => _lastIsPlaying;
-
-  /// Sets the last known playing state without notifying listeners.
-  ///
-  /// This is for internal state tracking only.
-  set lastIsPlaying(bool? isPlaying) {
-    _lastIsPlaying = isPlaying;
-    // Intentionally doesn't notify - this is just state tracking
-  }
+  bool? lastIsPlaying;
 
   /// The last known fullscreen state, used to detect fullscreen changes.
   ///
   /// This is used internally to track state changes and doesn't trigger
   /// listener notifications when updated.
-  // ignore: unnecessary_getters_setters
-  bool? get lastIsFullscreen => _lastIsFullscreen;
-
-  /// Sets the last known fullscreen state without notifying listeners.
-  ///
-  /// This is for internal state tracking only.
-  set lastIsFullscreen(bool? isFullscreen) {
-    _lastIsFullscreen = isFullscreen;
-    // Intentionally doesn't notify - this is just state tracking
-  }
+  bool? lastIsFullscreen;
 
   /// The last known PiP active state, used to detect PiP changes.
   ///
   /// This is used internally to track state changes and doesn't trigger
   /// listener notifications when updated.
-  // ignore: unnecessary_getters_setters
-  bool? get lastIsPipActive => _lastIsPipActive;
-
-  /// Sets the last known PiP active state without notifying listeners.
-  ///
-  /// This is for internal state tracking only.
-  set lastIsPipActive(bool? isPipActive) {
-    _lastIsPipActive = isPipActive;
-    // Intentionally doesn't notify - this is just state tracking
-  }
+  bool? lastIsPipActive;
 
   // ========== Mouse Hover ==========
 
@@ -253,25 +222,15 @@ class VideoControlsState extends ChangeNotifier {
 
   // ========== Context Menu Position ==========
 
-  Offset? _lastContextMenuPosition;
-
   /// The last position where a context menu was opened.
   ///
-  /// Used on desktop platforms for submenu positioning.
-  // ignore: unnecessary_getters_setters
-  Offset? get lastContextMenuPosition => _lastContextMenuPosition;
-
-  /// Sets the last context menu position without notifying listeners.
-  ///
-  /// Position tracking doesn't require UI rebuilds.
-  set lastContextMenuPosition(Offset? position) {
-    _lastContextMenuPosition = position;
-    // Intentionally doesn't notify - position tracking only
-  }
+  /// Used on desktop platforms for submenu positioning. Does not trigger
+  /// listener notifications when updated as position tracking doesn't require UI rebuilds.
+  Offset? lastContextMenuPosition;
 
   /// Clears the stored context menu position.
   void clearLastContextMenuPosition() {
-    _lastContextMenuPosition = null;
+    lastContextMenuPosition = null;
   }
 
   // ========== Keyboard Overlay ==========

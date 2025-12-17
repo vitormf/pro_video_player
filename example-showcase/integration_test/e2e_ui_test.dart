@@ -1,45 +1,14 @@
-import 'dart:io' show Platform;
-
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:pro_video_player_example/main.dart';
 import 'package:pro_video_player_example/test_keys.dart';
 
-/// Returns true if running on macOS.
-/// Uses dart:io Platform on native, falls back to defaultTargetPlatform on web.
-bool get isMacOSPlatform => !kIsWeb && Platform.isMacOS;
-bool get isIOSPlatform => !kIsWeb && Platform.isIOS;
-
-/// Extension to provide cross-platform settle functionality.
-///
-/// On web, `pumpAndSettle()` hangs indefinitely because video players cause
-/// continuous frame updates. This extension provides a `settle()` method that
-/// uses `pump()` with explicit duration on web, and `pumpAndSettle()` elsewhere.
-extension WebCompatibleTester on WidgetTester {
-  /// Settles the widget tree in a cross-platform way.
-  ///
-  /// On web/macOS: Pumps multiple frames to allow widgets to build (video player causes pumpAndSettle to hang)
-  /// On other platforms: Uses `pumpAndSettle()` with [timeout]
-  Future<void> settle({int webFrames = 10, Duration timeout = const Duration(seconds: 10)}) async {
-    final usePump = kIsWeb || isMacOSPlatform;
-    if (usePump) {
-      // On web/macOS, pump multiple frames to allow widgets to render
-      // pumpAndSettle hangs because video player causes continuous frame updates
-      for (var i = 0; i < webFrames; i++) {
-        await pump(const Duration(milliseconds: 100));
-      }
-    } else {
-      await pumpAndSettle(timeout);
-    }
-  }
-
-  /// Settles with more frames, useful after navigation or video loading.
-  Future<void> settleLong() async {
-    await settle(webFrames: 30);
-  }
-}
+import 'helpers/e2e_helpers.dart';
+import 'helpers/e2e_navigation.dart' as nav;
+import 'helpers/e2e_platform.dart';
+import 'shared/e2e_constants.dart';
+import 'shared/e2e_test_fixture.dart';
 
 /// End-to-end UI tests for the Pro Video Player example app.
 ///
@@ -51,230 +20,29 @@ extension WebCompatibleTester on WidgetTester {
 /// comprehensive test that flows through all scenarios with proper navigation.
 ///
 /// Web Compatibility:
-/// - Uses `settle()` extension instead of `pumpAndSettle()` to avoid hangs
+/// - Uses cross-platform settle() extension to avoid pumpAndSettle() hangs
 /// - Skips playback verification due to browser autoplay restrictions
 /// - Some UI tests may behave differently on web
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  // Suppress overflow errors in tests - they don't affect functionality
-  // and can occur in landscape mode on some devices
-  final originalOnError = FlutterError.onError;
-  FlutterError.onError = (details) {
-    final isOverflowError = details.toString().contains('overflowed');
-    if (!isOverflowError) {
-      originalOnError?.call(details);
-    }
-  };
-
-  // Timing helper
-  Stopwatch? sectionStopwatch;
-  final totalStopwatch = Stopwatch();
-
-  void startSection(String name) {
-    sectionStopwatch = Stopwatch()..start();
-    debugPrint('\n>>> START: $name');
-  }
-
-  void endSection(String name) {
-    sectionStopwatch?.stop();
-    final elapsed = sectionStopwatch?.elapsedMilliseconds ?? 0;
-    final totalElapsed = totalStopwatch.elapsedMilliseconds;
-    debugPrint(
-      '<<< END: $name (${elapsed}ms / ${(elapsed / 1000).toStringAsFixed(1)}s) [Total: ${(totalElapsed / 1000).toStringAsFixed(1)}s]',
-    );
-  }
-
-  /// Helper to navigate to a demo screen from home.
-  ///
-  /// Handles both single-pane (tapping navigates directly) and master-detail
-  /// (tapping shows detail, then tap "Open Demo" to navigate) layouts.
-  /// On web, setSurfaceSize doesn't control browser window size, so master-detail
-  /// layout may be active even when a small viewport is requested.
-  Future<void> navigateToDemo(WidgetTester tester, Key cardKey, String screenTitle) async {
-    final card = find.byKey(cardKey);
-
-    // On macOS, skip scrollUntilVisible (uses pumpAndSettle which hangs)
-    // Instead, use drag gestures to scroll and pump frames manually
-    if (isMacOSPlatform) {
-      // First, pump a few frames to let widgets build
-      for (var i = 0; i < 10; i++) {
-        await tester.pump(const Duration(milliseconds: 100));
-      }
-
-      // Helper to check if card is actually tappable (visible and hittable)
-      bool isCardTappable() {
-        if (card.evaluate().isEmpty) return false;
-        try {
-          final box = tester.getRect(card.first);
-          // Check if the card center is within a reasonable screen area
-          // Cards should be in the master pane (left side for master-detail, or full screen)
-          return box.center.dy > 50 && box.center.dy < 750;
-        } catch (_) {
-          return false;
-        }
-      }
-
-      // Always try to scroll to ensure card is visible and tappable
-      // In master-detail layout, cards may exist in tree but be scrolled out of view
-      final scrollable = find.byType(Scrollable);
-      if (scrollable.evaluate().isNotEmpty && !isCardTappable()) {
-        // First scroll to top to reset position
-        for (var i = 0; i < 15; i++) {
-          await tester.drag(scrollable.first, const Offset(0, 600));
-          await tester.pump(const Duration(milliseconds: 80));
-        }
-        await tester.pump(const Duration(milliseconds: 200));
-
-        // Now scroll down to find the card
-        for (var scrollAttempt = 0; scrollAttempt < 35; scrollAttempt++) {
-          if (isCardTappable()) {
-            // Scroll a bit more to ensure card is fully visible
-            await tester.drag(scrollable.first, const Offset(0, -80));
-            await tester.pump(const Duration(milliseconds: 200));
-            break;
-          }
-          await tester.drag(scrollable.first, const Offset(0, -120));
-          await tester.pump(const Duration(milliseconds: 120));
-        }
-      }
-    } else {
-      // If card not immediately visible, try scrolling the home list to find it
-      if (card.evaluate().isEmpty) {
-        debugPrint('Card not visible, attempting to scroll to find it...');
-        // Try to scroll in the main scrollable area
-        final scrollable = find.byType(Scrollable);
-        if (scrollable.evaluate().isNotEmpty) {
-          // Scroll to the top first (cards might be at the beginning)
-          try {
-            await tester.scrollUntilVisible(card, -200, scrollable: scrollable.first, maxScrolls: 20);
-          } catch (_) {
-            // If scrolling up didn't work, try scrolling down
-            try {
-              await tester.scrollUntilVisible(card, 200, scrollable: scrollable.first, maxScrolls: 20);
-            } catch (_) {
-              debugPrint('Could not scroll to find card');
-            }
-          }
-          await tester.settle();
-        }
-      }
-
-      // Try to ensure visibility if found
-      if (card.evaluate().isNotEmpty) {
-        await tester.ensureVisible(card.first);
-        await tester.settle();
-      }
-    }
-
-    expect(card, findsWidgets); // At least one should exist
-
-    await tester.tap(card.first);
-    await tester.settle();
-
-    // Handle master-detail layout (only on web/macOS where viewport is 1200x800)
-    // On iOS/Android, viewport is 393x852 which uses single-pane layout (no "Open Demo" button)
-    // We check platform rather than viewport because fullscreen mode can temporarily
-    // affect constraints and leave lingering widgets, causing false detections.
-    if (kIsWeb || isMacOSPlatform) {
-      final openDemoButton = find.text('Open Demo');
-      if (openDemoButton.evaluate().isNotEmpty) {
-        debugPrint('Master-detail layout detected, clicking Open Demo button');
-        // On macOS, skip ensureVisible (uses pumpAndSettle)
-        if (!isMacOSPlatform) {
-          await tester.ensureVisible(openDemoButton);
-        }
-        await tester.settle();
-        await tester.tap(openDemoButton, warnIfMissed: false);
-        await tester.settle();
-      }
-    }
-
-    // On macOS, wait for screen title to appear (may take a few pumps)
-    if (isMacOSPlatform) {
-      var screenTitleFound = find.text(screenTitle).evaluate().isNotEmpty;
-      if (!screenTitleFound) {
-        for (var i = 0; i < 10; i++) {
-          await tester.pump(const Duration(milliseconds: 200));
-          if (find.text(screenTitle).evaluate().isNotEmpty) {
-            screenTitleFound = true;
-            break;
-          }
-        }
-      }
-      // On macOS master-detail, skip the title check if not found
-      // (the screen is still navigated to, title might be in app bar which is off-screen)
-      if (!screenTitleFound) {
-        debugPrint('Note: Screen title "$screenTitle" not found on macOS (continuing anyway)');
-        return;
-      }
-    }
-
-    expect(find.text(screenTitle), findsWidgets);
-  }
-
-  /// Helper to navigate back to home screen
-  Future<void> goHome(WidgetTester tester) async {
-    // Navigate back until we see the home screen
-    for (var i = 0; i < 5; i++) {
-      // Check if we're now on the home screen (any player features card visible)
-      if (find.byKey(TestKeys.homeScreenPlayerFeaturesCard).evaluate().isNotEmpty) {
-        break;
-      }
-
-      // Try to find back button by tooltip
-      final backByTooltip = find.byTooltip('Back');
-      if (backByTooltip.evaluate().isNotEmpty) {
-        await tester.tap(backByTooltip.first);
-        await tester.settle();
-        continue;
-      }
-
-      // Try to find material back button (arrow_back icon)
-      final materialBack = find.byIcon(Icons.arrow_back);
-      if (materialBack.evaluate().isNotEmpty) {
-        await tester.tap(materialBack.first);
-        await tester.settle();
-        continue;
-      }
-
-      // Break if no back button found
-      break;
-    }
-
-    // Just settle to ensure we're fully on home screen - no scrolling needed
-    // In master-detail mode, home cards are always visible in master pane
-    // In single-pane mode, the card should already be visible after navigation
-    await tester.settle();
-  }
-
   testWidgets('E2E UI Tests - Complete flow', (tester) async {
-    totalStopwatch.start();
+    // Set up test fixture with automatic viewport, error suppression, and timing
+    final fixture = E2ETestFixtureWithHelpers(enableDetailedLogging: true);
 
-    // Set viewport size based on platform:
-    // - Web/macOS: Use larger size to test master-detail layout (1200x800)
-    // - Mobile (iOS, Android): Use phone portrait size (393x852)
-    final isMacOS = isMacOSPlatform;
-    final viewportSize = (kIsWeb || isMacOS) ? const Size(1200, 800) : const Size(393, 852);
-    await tester.binding.setSurfaceSize(viewportSize);
-    debugPrint('Viewport size: $viewportSize (kIsWeb: $kIsWeb, isMacOS: $isMacOS)');
-
-    // Start the app fresh
-    debugPrint('DEBUG: About to call pumpWidget');
+    // Start the app
     await tester.pumpWidget(const ExampleApp());
-    debugPrint('DEBUG: pumpWidget completed, calling settleLong');
-    // Use longer settle for initial app load on web
-    await tester.settleLong();
-    debugPrint('DEBUG: settleLong completed');
+    await fixture.setUp(tester); // Sets viewport, starts timing, logs platform info
+    await tester.settleLong(); // Extra settling for initial app load
 
     // =========================================================================
     // PLAYER FEATURES TESTS
     // =========================================================================
-    startSection('Player Features');
+    fixture.startSection('Player Features');
 
     // Test: Navigate to Player Features
     debugPrint('Test: Navigate to Player Features screen');
-    await navigateToDemo(tester, TestKeys.homeScreenPlayerFeaturesCard, 'Player Features');
+    await nav.navigateToDemo(tester, TestKeys.homeScreenPlayerFeaturesCard, 'Player Features');
 
     // Wait for video to initialize
     await tester.settleLong();
@@ -283,41 +51,28 @@ void main() {
     // PLAYBACK VERIFICATION - Verify video actually plays
     // =========================================================================
 
-    // Helper to parse position string "MM:SS" to total seconds
-    int parsePosition(String pos) {
-      final parts = pos.split(':');
-      if (parts.length != 2) return 0;
-      final minutes = int.tryParse(parts[0]) ?? 0;
-      final seconds = int.tryParse(parts[1]) ?? 0;
-      return minutes * 60 + seconds;
-    }
-
     // Test: Duration is non-zero (video loaded successfully)
     // Wait for video to fully load (poll until duration is non-zero or timeout)
     debugPrint('Test: Video duration is non-zero');
     final durationText = find.byKey(TestKeys.playerFeaturesDurationText);
 
-    // Wait for the duration text widget to appear (player initialization)
-    var widgetFound = false;
-    for (var i = 0; i < 15; i++) {
-      await tester.pump(const Duration(milliseconds: 500));
-      if (durationText.evaluate().isNotEmpty) {
-        widgetFound = true;
-        break;
-      }
-      debugPrint('Waiting for player to initialize... attempt ${i + 1}/15');
-    }
+    // Wait for the duration text widget to appear and video to load
+    final widgetFound = await waitForWidget(
+      tester,
+      durationText,
+      timeout: const Duration(seconds: 7), // 15 * 500ms ≈ 7.5s
+    );
 
     if (!widgetFound) {
       debugPrint('⚠️ WARNING: Duration text widget not found - player may not have initialized');
       // Skip remaining player feature tests if widget not found
-      if (kIsWeb || isMacOSPlatform) {
+      if (E2EPlatform.isWeb || E2EPlatform.isMacOS) {
         debugPrint('   Skipping player features tests on macOS/web due to initialization issues');
         // Navigate back for next tests - use BackButton widget type since macOS doesn't use Cupertino
         final backButton = find.byType(BackButton);
         if (backButton.evaluate().isNotEmpty) {
           await tester.tap(backButton);
-          await tester.pump(const Duration(seconds: 1));
+          await tester.pump(E2EDelays.navigation);
         }
         // Continue to next section
       } else {
@@ -329,19 +84,14 @@ void main() {
     var durationValue = '00:00';
     if (widgetFound) {
       expect(durationText, findsOneWidget);
-      for (var i = 0; i < 10; i++) {
-        durationValue = tester.widget<Text>(durationText).data ?? '00:00';
-        durationSeconds = parsePosition(durationValue);
-        if (durationSeconds > 0) break;
-        debugPrint('Waiting for video to load... attempt ${i + 1}/10');
-        await tester.pump(const Duration(seconds: 1));
-      }
+      durationValue = await waitForVideoInitialization(tester, durationText) ?? '00:00';
+      durationSeconds = parseTimeString(durationValue);
     }
     debugPrint('Video duration: $durationValue ($durationSeconds seconds)');
 
     // On macOS/web, video loading can be unreliable in integration tests
     // Log a warning but don't fail the test - the UI tests are still valuable
-    final isMacOSOrWeb = kIsWeb || isMacOSPlatform;
+    final isMacOSOrWeb = E2EPlatform.isWeb || E2EPlatform.isMacOS;
     final skipPlayerFeatureTests = !widgetFound || (isMacOSOrWeb && durationSeconds == 0);
 
     if (skipPlayerFeatureTests) {
@@ -361,14 +111,14 @@ void main() {
 
     // On web, browsers have autoplay restrictions that prevent videos from playing
     // in automated tests without real user gestures. Skip playback verification on web.
-    final skipPlaybackVerification = skipPlayerFeatureTests || kIsWeb || isMacOSPlatform;
+    final skipPlaybackVerification = skipPlayerFeatureTests || E2EPlatform.isWeb || E2EPlatform.isMacOS;
 
     if (durationSeconds > 0 && !skipPlaybackVerification) {
       debugPrint('Test: Playback position advances');
 
       // Get initial position
       final positionBefore = tester.widget<Text>(positionText).data ?? '00:00';
-      final positionSecondsBefore = parsePosition(positionBefore);
+      final positionSecondsBefore = parseTimeString(positionBefore);
       debugPrint('Position before play: $positionBefore ($positionSecondsBefore seconds)');
 
       // Start playing
@@ -377,7 +127,7 @@ void main() {
 
       // Get position after playing
       final positionAfter = tester.widget<Text>(positionText).data ?? '00:00';
-      final positionSecondsAfter = parsePosition(positionAfter);
+      final positionSecondsAfter = parseTimeString(positionAfter);
       debugPrint('Position after play: $positionAfter ($positionSecondsAfter seconds)');
 
       // Verify position advanced
@@ -403,11 +153,11 @@ void main() {
 
     // On web/macOS, skip detailed playback control tests due to autoplay restrictions
     // and pumpAndSettle hanging issues with continuous video frame updates
-    final skipDetailedPlaybackTests = skipPlayerFeatureTests || kIsWeb || isMacOSPlatform;
+    final skipDetailedPlaybackTests = skipPlayerFeatureTests || E2EPlatform.isWeb || E2EPlatform.isMacOS;
     if (skipDetailedPlaybackTests) {
       if (skipPlayerFeatureTests) {
         debugPrint('Skipping playback control tests (player not initialized)');
-      } else if (kIsWeb) {
+      } else if (E2EPlatform.isWeb) {
         debugPrint('Skipping playback control tests on web (autoplay restrictions)');
       } else {
         debugPrint('Skipping playback control tests on macOS (pumpAndSettle hanging issues)');
@@ -520,7 +270,7 @@ void main() {
       // First get the duration
       final loopDurationText = find.byKey(TestKeys.playerFeaturesDurationText);
       final loopDurationStr = tester.widget<Text>(loopDurationText).data ?? '00:00';
-      final loopDurationSecs = parsePosition(loopDurationStr);
+      final loopDurationSecs = parseTimeString(loopDurationStr);
       debugPrint('Video duration for loop test: $loopDurationStr ($loopDurationSecs seconds)');
 
       if (loopDurationSecs > 10) {
@@ -538,7 +288,7 @@ void main() {
         await tester.pump(const Duration(seconds: 1));
 
         final posAfterSeekToEnd = tester.widget<Text>(positionText).data ?? '00:00';
-        final posSecsAfterSeekToEnd = parsePosition(posAfterSeekToEnd);
+        final posSecsAfterSeekToEnd = parseTimeString(posAfterSeekToEnd);
         debugPrint('Position after seek to near end: $posAfterSeekToEnd ($posSecsAfterSeekToEnd seconds)');
 
         // Step 3: Start playing and wait for loop to occur
@@ -553,7 +303,7 @@ void main() {
         for (var i = 0; i < 15; i++) {
           await tester.pump(const Duration(seconds: 1));
           final currPosStr = tester.widget<Text>(positionText).data ?? '00:00';
-          final currPos = parsePosition(currPosStr);
+          final currPos = parseTimeString(currPosStr);
 
           debugPrint('Loop check ${i + 1}/15: position = $currPosStr ($currPos seconds)');
 
@@ -615,20 +365,20 @@ void main() {
       expect(find.text('Enter PiP'), findsOneWidget);
     } // end of non-web playback control tests
 
-    endSection('Player Features');
+    fixture.endSection('Player Features');
 
     // =========================================================================
     // VIDEO SOURCES TESTS
     // =========================================================================
-    startSection('Video Sources');
+    fixture.startSection('Video Sources');
 
     // Navigate back to home
     debugPrint('Navigating back to home for Video Sources tests...');
-    await goHome(tester);
+    await nav.goHome(tester);
 
     // Navigate to Video Sources
     debugPrint('Test: Navigate to Video Sources screen');
-    await navigateToDemo(tester, TestKeys.homeScreenVideoSourcesCard, 'Video Sources');
+    await nav.navigateToDemo(tester, TestKeys.homeScreenVideoSourcesCard, 'Video Sources');
 
     // Wait for video to load
     await tester.settleLong();
@@ -643,29 +393,13 @@ void main() {
     // Test: Video player visible - wait for it to appear
     debugPrint('Test: Video player visible');
     final videoSourcesPlayer = find.byKey(TestKeys.videoSourcesVideoPlayer);
-    final videoSourcesLoading = find.byKey(TestKeys.videoSourcesLoadingIndicator);
-    final videoSourcesError = find.byKey(TestKeys.videoSourcesErrorDisplay);
     var videoSourcesWidgetFound = videoSourcesPlayer.evaluate().isNotEmpty;
 
     // Wait for the player to initialize (may take time after navigation, especially after fullscreen)
-    // Wait up to 15 seconds (30 attempts * 500ms)
     if (!videoSourcesWidgetFound) {
-      for (var i = 0; i < 30; i++) {
-        await tester.pump(const Duration(milliseconds: 500));
-        if (videoSourcesPlayer.evaluate().isNotEmpty) {
-          videoSourcesWidgetFound = true;
-          debugPrint('Video player found after ${(i + 1) * 500}ms');
-          break;
-        }
-        // Show current state for debugging
-        final isLoading = videoSourcesLoading.evaluate().isNotEmpty;
-        final hasError = videoSourcesError.evaluate().isNotEmpty;
-        debugPrint('Waiting for video sources player... attempt ${i + 1}/30 (loading: $isLoading, error: $hasError)');
-        // If error is shown, stop waiting
-        if (hasError) {
-          debugPrint('⚠️ Error display found - video failed to load');
-          break;
-        }
+      videoSourcesWidgetFound = await waitForWidget(tester, videoSourcesPlayer, timeout: E2EDelays.videoLoading);
+      if (videoSourcesWidgetFound) {
+        debugPrint('Video player appeared');
       }
     }
 
@@ -673,11 +407,11 @@ void main() {
       // On macOS and iOS, platform view issues after fullscreen transitions can cause
       // the video player to not appear. This is a known platform limitation.
       // Skip gracefully rather than failing the test.
-      if (isMacOSPlatform || isIOSPlatform) {
+      if (E2EPlatform.isMacOS || E2EPlatform.isIOS) {
         debugPrint('⚠️ WARNING: Video player not found in Video Sources screen');
         debugPrint('   This can happen after fullscreen transitions on iOS/macOS');
         debugPrint('   Skipping video sources tests');
-        endSection('Video Sources');
+        fixture.endSection('Video Sources');
       } else {
         expect(videoSourcesPlayer, findsOneWidget);
       }
@@ -690,7 +424,7 @@ void main() {
         debugPrint('Test: Video play button');
         await tester.tap(playButton);
         await tester.pump(const Duration(seconds: 1));
-        if (!kIsWeb) {
+        if (!E2EPlatform.isWeb) {
           expect(find.byKey(TestKeys.videoSourcesPlayButton), findsNothing);
         } else {
           debugPrint('Skipping play button verification on web (autoplay restrictions)');
@@ -700,18 +434,12 @@ void main() {
       // Test: Video metadata extraction
       debugPrint('Test: Video metadata extraction');
       // Wait for metadata to be extracted (may take a moment after video loads)
-      var metadataCardFound = false;
-      for (var i = 0; i < 20; i++) {
-        await tester.pump(const Duration(milliseconds: 250));
-        final metadataCard = find.byKey(TestKeys.videoMetadataCard);
-        if (metadataCard.evaluate().isNotEmpty) {
-          metadataCardFound = true;
-          debugPrint('✅ Video metadata card found after ${(i + 1) * 250}ms');
-          expect(metadataCard, findsOneWidget);
-          break;
-        }
-      }
-      if (!metadataCardFound) {
+      final metadataCard = find.byKey(TestKeys.videoMetadataCard);
+      final metadataCardFound = await waitForWidget(tester, metadataCard, timeout: const Duration(seconds: 5));
+      if (metadataCardFound) {
+        debugPrint('✅ Video metadata card found');
+        expect(metadataCard, findsOneWidget);
+      } else {
         debugPrint('⚠️ WARNING: Video metadata card not found within 5 seconds');
         // Don't fail the test - metadata extraction may not work on all platforms/CI
       }
@@ -726,21 +454,21 @@ void main() {
       await tester.pump(const Duration(seconds: 3));
       expect(find.byKey(TestKeys.videoSourcesVideoPlayer), findsOneWidget);
 
-      endSection('Video Sources');
+      fixture.endSection('Video Sources');
     }
 
     // =========================================================================
     // ADVANCED FEATURES TESTS
     // =========================================================================
-    startSection('Advanced Features');
+    fixture.startSection('Advanced Features');
 
     // Navigate back to home
     debugPrint('Navigating back to home for Advanced Features tests...');
-    await goHome(tester);
+    await nav.goHome(tester);
 
     // Navigate to Advanced Features
     debugPrint('Test: Navigate to Advanced Features screen');
-    await navigateToDemo(tester, TestKeys.homeScreenAdvancedFeaturesCard, 'Advanced Features');
+    await nav.navigateToDemo(tester, TestKeys.homeScreenAdvancedFeaturesCard, 'Advanced Features');
 
     // Wait for screen to load
     await tester.settle();
@@ -751,28 +479,25 @@ void main() {
 
     // On iOS, platform views become unreliable after fullscreen transitions
     // Skip Advanced Features tests entirely to avoid false failures
-    if (isIOSPlatform) {
+    if (E2EPlatform.isIOS) {
       debugPrint('Skipping Advanced Features tests on iOS (platform view issues after fullscreen)');
-      endSection('Advanced Features');
+      fixture.endSection('Advanced Features');
     } else {
       // On macOS, check if widgets are available (can also have issues after fullscreen)
       var advancedFeaturesWidgetFound = errorHandlingButton.evaluate().isNotEmpty;
-      if (!advancedFeaturesWidgetFound && isMacOSPlatform) {
-        for (var i = 0; i < 5; i++) {
-          await tester.pump(const Duration(milliseconds: 500));
-          if (errorHandlingButton.evaluate().isNotEmpty) {
-            advancedFeaturesWidgetFound = true;
-            break;
-          }
-          debugPrint('Waiting for advanced features to load... attempt ${i + 1}/5');
-        }
+      if (!advancedFeaturesWidgetFound && E2EPlatform.isMacOS) {
+        advancedFeaturesWidgetFound = await waitForWidget(
+          tester,
+          errorHandlingButton,
+          timeout: const Duration(milliseconds: 2500),
+        );
       }
 
-      if (!advancedFeaturesWidgetFound && isMacOSPlatform) {
+      if (!advancedFeaturesWidgetFound && E2EPlatform.isMacOS) {
         debugPrint('⚠️ WARNING: Advanced features widgets not found');
         debugPrint('   This can happen after fullscreen transitions on macOS');
         debugPrint('   Skipping advanced features tests');
-        endSection('Advanced Features');
+        fixture.endSection('Advanced Features');
       } else {
         expect(find.byKey(TestKeys.errorHandlingInvalidUrlButton), findsOneWidget);
         expect(find.byKey(TestKeys.errorHandlingInvalidFormatButton), findsOneWidget);
@@ -789,7 +514,7 @@ void main() {
 
         // Test: Multi-Player tab
         // Skip multi-player tests on macOS - pumpAndSettle hangs with multiple videos playing
-        if (isMacOSPlatform) {
+        if (E2EPlatform.isMacOS) {
           debugPrint('Skipping Multi-Player tab tests on macOS (pumpAndSettle hanging issues)');
         } else {
           debugPrint('Test: Multi-Player tab');
@@ -844,7 +569,7 @@ void main() {
 
         // Test: Error handling tab
         // Skip on macOS - pumpAndSettle hangs while video is playing
-        if (isMacOSPlatform) {
+        if (E2EPlatform.isMacOS) {
           debugPrint('Skipping Error handling tab tests on macOS (pumpAndSettle hanging issues)');
         } else {
           debugPrint('Test: Error handling tab');
@@ -875,22 +600,22 @@ void main() {
           }
         }
 
-        endSection('Advanced Features');
+        fixture.endSection('Advanced Features');
       }
     }
 
     // =========================================================================
     // EVENTS LOG TESTS
     // =========================================================================
-    startSection('Events Log');
+    fixture.startSection('Events Log');
 
     // Navigate back to home
     debugPrint('Navigating back to home for Events Log tests...');
-    await goHome(tester);
+    await nav.goHome(tester);
 
     // Navigate to Events Log
     debugPrint('Test: Navigate to Events Log screen');
-    await navigateToDemo(tester, TestKeys.homeScreenEventsLogCard, 'Events Log');
+    await nav.navigateToDemo(tester, TestKeys.homeScreenEventsLogCard, 'Events Log');
 
     // Wait for video to initialize
     await tester.settleLong();
@@ -901,25 +626,18 @@ void main() {
 
     // On iOS/macOS, check if the widget is available (platform view issues after fullscreen)
     var eventsLogWidgetFound = eventsLogPlayer.evaluate().isNotEmpty;
-    if (!eventsLogWidgetFound && (isMacOSPlatform || isIOSPlatform)) {
-      for (var i = 0; i < 5; i++) {
-        await tester.pump(const Duration(milliseconds: 500));
-        if (eventsLogPlayer.evaluate().isNotEmpty) {
-          eventsLogWidgetFound = true;
-          break;
-        }
-        debugPrint('Waiting for events log player to load... attempt ${i + 1}/5');
-      }
+    if (!eventsLogWidgetFound && (E2EPlatform.isMacOS || E2EPlatform.isIOS)) {
+      eventsLogWidgetFound = await waitForWidget(tester, eventsLogPlayer, timeout: const Duration(milliseconds: 2500));
     }
 
     // Track if we should skip remaining sections (video player issues on iOS/macOS)
     var skipRemainingSections = false;
 
-    if (!eventsLogWidgetFound && (isMacOSPlatform || isIOSPlatform)) {
-      final platform = isMacOSPlatform ? 'macOS' : 'iOS';
+    if (!eventsLogWidgetFound && (E2EPlatform.isMacOS || E2EPlatform.isIOS)) {
+      final platform = E2EPlatform.isMacOS ? 'macOS' : 'iOS';
       debugPrint('⚠️ WARNING: Events log video player not found on $platform');
       debugPrint('   Skipping remaining tests (events log, layout modes, fullscreen)');
-      endSection('Events Log');
+      fixture.endSection('Events Log');
       skipRemainingSections = true;
     } else {
       expect(eventsLogPlayer, findsOneWidget);
@@ -933,7 +651,7 @@ void main() {
       expect(eventList.evaluate().isNotEmpty || emptyState.evaluate().isNotEmpty, isTrue);
 
       // Skip interactive tests on macOS - video events stream causes test framework issues
-      if (isMacOSPlatform) {
+      if (E2EPlatform.isMacOS) {
         debugPrint('Skipping Events Log interactive tests on macOS (event stream issues)');
       } else {
         // Test: Play/Pause triggers events
@@ -983,23 +701,23 @@ void main() {
       }
 
       // Navigate back to home
-      await goHome(tester);
+      await nav.goHome(tester);
 
-      endSection('Events Log');
+      fixture.endSection('Events Log');
     }
 
     // =========================================================================
     // LAYOUT MODES TESTS (including Compact Mode)
     // =========================================================================
-    startSection('Layout Modes');
+    fixture.startSection('Layout Modes');
 
     if (skipRemainingSections) {
       debugPrint('⚠️ Skipping Layout Modes tests (video player not working on macOS)');
-      endSection('Layout Modes');
+      fixture.endSection('Layout Modes');
     } else {
       // Navigate to Layout Modes
       debugPrint('Test: Navigate to Layout Modes screen');
-      await navigateToDemo(tester, TestKeys.homeScreenLayoutModesCard, 'Layout Modes');
+      await nav.navigateToDemo(tester, TestKeys.homeScreenLayoutModesCard, 'Layout Modes');
 
       // Wait for video to initialize
       await tester.settleLong();
@@ -1012,28 +730,25 @@ void main() {
 
       // On macOS, check if the widget is available
       var layoutModesWidgetFound = flutterOption.evaluate().isNotEmpty;
-      if (!layoutModesWidgetFound && isMacOSPlatform) {
-        for (var i = 0; i < 5; i++) {
-          await tester.pump(const Duration(milliseconds: 500));
-          if (flutterOption.evaluate().isNotEmpty) {
-            layoutModesWidgetFound = true;
-            break;
-          }
-          debugPrint('Waiting for layout modes to load... attempt ${i + 1}/5');
-        }
+      if (!layoutModesWidgetFound && E2EPlatform.isMacOS) {
+        layoutModesWidgetFound = await waitForWidget(
+          tester,
+          flutterOption,
+          timeout: const Duration(milliseconds: 2500),
+        );
       }
 
-      if (!layoutModesWidgetFound && isMacOSPlatform) {
+      if (!layoutModesWidgetFound && E2EPlatform.isMacOS) {
         debugPrint('⚠️ WARNING: Layout modes widgets not found on macOS');
         debugPrint('   Skipping layout modes tests');
-        await goHome(tester);
-        endSection('Layout Modes');
+        await nav.goHome(tester);
+        fixture.endSection('Layout Modes');
       } else {
         expect(flutterOption, findsOneWidget);
         // Flutter controls should show speed button (1.0x or similar)
         // On macOS, the controls might be hidden until user interaction
         final speedIndicator = find.textContaining('1.0x');
-        if (speedIndicator.evaluate().isEmpty && (isMacOSPlatform || kIsWeb)) {
+        if (speedIndicator.evaluate().isEmpty && (E2EPlatform.isMacOS || E2EPlatform.isWeb)) {
           debugPrint('Note: Speed indicator not visible on macOS/web (controls may be hidden)');
         } else {
           expect(speedIndicator, findsWidgets);
@@ -1054,7 +769,7 @@ void main() {
         // On macOS/web, the external controls may not be visible due to layout differences
         debugPrint('Test: Video Only mode shows external controls');
         final externalPlayPause = find.byKey(TestKeys.layoutModesExternalPlayPause);
-        if (externalPlayPause.evaluate().isEmpty && (isMacOSPlatform || kIsWeb)) {
+        if (externalPlayPause.evaluate().isEmpty && (E2EPlatform.isMacOS || E2EPlatform.isWeb)) {
           debugPrint('Note: External controls not visible on macOS/web (layout differences)');
         } else {
           expect(externalPlayPause, findsOneWidget);
@@ -1097,7 +812,7 @@ void main() {
 
         // External controls should be visible again
         final externalPlayPauseAfterSwitch = find.byKey(TestKeys.layoutModesExternalPlayPause);
-        if (externalPlayPauseAfterSwitch.evaluate().isEmpty && (isMacOSPlatform || kIsWeb)) {
+        if (externalPlayPauseAfterSwitch.evaluate().isEmpty && (E2EPlatform.isMacOS || E2EPlatform.isWeb)) {
           debugPrint('Note: External controls not visible on macOS/web after mode switch');
         } else {
           expect(externalPlayPauseAfterSwitch, findsOneWidget);
@@ -1108,7 +823,7 @@ void main() {
         // Test: Compact Controls mode
         // -------------------------------------------------------------------------
         // Skip detailed compact controls tests on macOS due to layout differences
-        if (isMacOSPlatform) {
+        if (E2EPlatform.isMacOS) {
           debugPrint('Note: Skipping detailed compact controls tests on macOS');
         } else {
           debugPrint('Test: Select Compact Controls mode');
@@ -1173,32 +888,32 @@ void main() {
         }
 
         // Navigate back to home
-        await goHome(tester);
+        await nav.goHome(tester);
 
-        endSection('Layout Modes');
+        fixture.endSection('Layout Modes');
       }
     } // end skipRemainingSections else
 
     // =========================================================================
     // FULLSCREEN CONTROL MODE TESTS
     // =========================================================================
-    startSection('Fullscreen Control Mode');
+    fixture.startSection('Fullscreen Control Mode');
 
     if (skipRemainingSections) {
       debugPrint('⚠️ Skipping Fullscreen tests (video player not working on macOS)');
       // Navigate back to home for subsequent tests
-      await goHome(tester);
-      endSection('Fullscreen Control Mode');
+      await nav.goHome(tester);
+      fixture.endSection('Fullscreen Control Mode');
     } else {
       // Skip fullscreen tests on web and macOS (fullscreen API may not work in integration tests)
       // Check this BEFORE navigating to avoid settleLong() hanging while video plays
-      if (kIsWeb || isMacOSPlatform) {
+      if (E2EPlatform.isWeb || E2EPlatform.isMacOS) {
         debugPrint('Skipping fullscreen control mode tests on web/macOS');
-        endSection('Fullscreen Control Mode');
+        fixture.endSection('Fullscreen Control Mode');
       } else {
         // Navigate to Player Features for fullscreen tests
         debugPrint('Test: Navigate to Player Features for fullscreen tests');
-        await navigateToDemo(tester, TestKeys.homeScreenPlayerFeaturesCard, 'Player Features');
+        await nav.navigateToDemo(tester, TestKeys.homeScreenPlayerFeaturesCard, 'Player Features');
         await tester.settleLong();
         // Find fullscreen tile and enter fullscreen
         debugPrint('Test: Enter fullscreen mode');
@@ -1239,20 +954,20 @@ void main() {
         }
 
         // Navigate back to home
-        await goHome(tester);
+        await nav.goHome(tester);
 
-        endSection('Fullscreen Control Mode');
+        fixture.endSection('Fullscreen Control Mode');
       } // end non-web/macOS else
     } // end skipRemainingSections else
 
     // =========================================================================
     // PLATFORM DEMO TESTS
     // =========================================================================
-    startSection('Platform Demo');
+    fixture.startSection('Platform Demo');
 
     // Navigate to Platform Demo
     debugPrint('Test: Navigate to Platform Demo screen');
-    await navigateToDemo(tester, TestKeys.homeScreenPlatformDemoCard, 'Platform Demo');
+    await nav.navigateToDemo(tester, TestKeys.homeScreenPlatformDemoCard, 'Platform Demo');
     await tester.settleLong();
 
     // Test: Screen loaded (check for platform-specific content)
@@ -1264,21 +979,20 @@ void main() {
       debugPrint('✓ Platform Demo shows feature availability information');
     }
 
-    await goHome(tester);
-    endSection('Platform Demo');
+    await nav.goHome(tester);
+    fixture.endSection('Platform Demo');
 
     // On macOS/iOS, skip remaining sections to avoid issues:
     // - macOS: Stream accumulation crash ("Cannot close sink while adding stream")
     // - iOS: Platform view issues after fullscreen transitions
     // We've verified core functionality above.
-    if (isMacOSPlatform || isIOSPlatform) {
-      final platform = isMacOSPlatform ? 'macOS' : 'iOS';
+    if (E2EPlatform.isMacOS || E2EPlatform.isIOS) {
+      final platform = E2EPlatform.isMacOS ? 'macOS' : 'iOS';
       debugPrint('\nSkipping remaining sections on $platform (platform-specific limitations)');
       debugPrint('✓ Verified 7 core sections on $platform successfully');
-      totalStopwatch.stop();
       debugPrint('\n========================================');
       debugPrint('All $platform E2E UI tests passed!');
-      debugPrint('Total time: ${(totalStopwatch.elapsedMilliseconds / 1000).toStringAsFixed(1)}s');
+      debugPrint('Total time: ${(fixture.totalElapsed.inMilliseconds / 1000).toStringAsFixed(1)}s');
       debugPrint('========================================\n');
       return;
     }
@@ -1286,26 +1000,26 @@ void main() {
     // =========================================================================
     // STREAM SELECTION TESTS
     // =========================================================================
-    startSection('Stream Selection');
+    fixture.startSection('Stream Selection');
 
     debugPrint('Test: Navigate to Stream Selection screen');
-    await navigateToDemo(tester, TestKeys.homeScreenStreamSelectionCard, 'Stream Selection');
+    await nav.navigateToDemo(tester, TestKeys.homeScreenStreamSelectionCard, 'Stream Selection');
     await tester.settleLong();
 
     // Test: Screen loaded
     debugPrint('Test: Stream Selection screen visible');
     expect(find.text('Stream Selection'), findsWidgets);
 
-    await goHome(tester);
-    endSection('Stream Selection');
+    await nav.goHome(tester);
+    fixture.endSection('Stream Selection');
 
     // =========================================================================
     // PLAYLIST TESTS
     // =========================================================================
-    startSection('Playlist');
+    fixture.startSection('Playlist');
 
     debugPrint('Test: Navigate to Playlist screen');
-    await navigateToDemo(tester, TestKeys.homeScreenPlaylistCard, 'Playlist');
+    await nav.navigateToDemo(tester, TestKeys.homeScreenPlaylistCard, 'Playlist');
     await tester.settleLong();
 
     // Test: Screen loaded
@@ -1318,32 +1032,32 @@ void main() {
       debugPrint('✓ Playlist shows navigation controls');
     }
 
-    await goHome(tester);
-    endSection('Playlist');
+    await nav.goHome(tester);
+    fixture.endSection('Playlist');
 
     // =========================================================================
     // QUALITY SELECTION TESTS
     // =========================================================================
-    startSection('Quality Selection');
+    fixture.startSection('Quality Selection');
 
     debugPrint('Test: Navigate to Quality Selection screen');
-    await navigateToDemo(tester, TestKeys.homeScreenQualitySelectionCard, 'Quality Selection');
+    await nav.navigateToDemo(tester, TestKeys.homeScreenQualitySelectionCard, 'Quality Selection');
     await tester.settleLong();
 
     // Test: Screen loaded
     debugPrint('Test: Quality Selection screen visible');
     expect(find.text('Quality Selection'), findsWidgets);
 
-    await goHome(tester);
-    endSection('Quality Selection');
+    await nav.goHome(tester);
+    fixture.endSection('Quality Selection');
 
     // =========================================================================
     // SUBTITLE CONFIG TESTS
     // =========================================================================
-    startSection('Subtitle Config');
+    fixture.startSection('Subtitle Config');
 
     debugPrint('Test: Navigate to Subtitle Config screen');
-    await navigateToDemo(tester, TestKeys.homeScreenSubtitleConfigCard, 'Subtitle Configuration');
+    await nav.navigateToDemo(tester, TestKeys.homeScreenSubtitleConfigCard, 'Subtitle Configuration');
     await tester.settleLong();
 
     // Test: Screen loaded
@@ -1353,20 +1067,16 @@ void main() {
     // Wait for video player to load (poll until video player widget is visible)
     debugPrint('Test: Wait for video player to load');
     final subtitlePlayer = find.byKey(TestKeys.subtitleConfigVideoPlayer);
-    final maxWaitAttempts = (kIsWeb || isMacOSPlatform) ? 15 : 45;
-    for (var i = 0; i < maxWaitAttempts; i++) {
-      if (subtitlePlayer.evaluate().isNotEmpty) {
-        debugPrint('✓ Video player loaded after ${i + 1} attempts');
-        break;
-      }
-      await tester.pump(const Duration(seconds: 1));
+    final playerAppeared = await waitForWidget(tester, subtitlePlayer, timeout: E2EDelays.videoLoading);
+    if (playerAppeared) {
+      debugPrint('✓ Video player loaded');
     }
 
     // Test: Font size slider interaction
     debugPrint('Test: Font size slider interaction');
     final fontSizeSlider = find.byKey(TestKeys.subtitleConfigFontSizeSlider);
     // Scroll to make slider visible if needed
-    if (fontSizeSlider.evaluate().isEmpty && !isMacOSPlatform) {
+    if (fontSizeSlider.evaluate().isEmpty && !E2EPlatform.isMacOS) {
       final scrollable = find.byType(Scrollable);
       if (scrollable.evaluate().isNotEmpty) {
         try {
@@ -1388,7 +1098,7 @@ void main() {
     // Test: Position selector interaction
     debugPrint('Test: Position selector interaction');
     final positionSelector = find.byKey(const Key('subtitle_config_position_selector'));
-    if (positionSelector.evaluate().isEmpty && !isMacOSPlatform) {
+    if (positionSelector.evaluate().isEmpty && !E2EPlatform.isMacOS) {
       final scrollable = find.byType(Scrollable);
       if (scrollable.evaluate().isNotEmpty) {
         try {
@@ -1420,7 +1130,7 @@ void main() {
     // Test: Subtitle tracks section exists
     debugPrint('Test: Subtitle tracks section exists');
     final tracksSection = find.text('Available Subtitle Tracks');
-    if (tracksSection.evaluate().isEmpty && !isMacOSPlatform) {
+    if (tracksSection.evaluate().isEmpty && !E2EPlatform.isMacOS) {
       final scrollable = find.byType(Scrollable);
       if (scrollable.evaluate().isNotEmpty) {
         try {
@@ -1436,21 +1146,21 @@ void main() {
       debugPrint('Note: Subtitle tracks section not found (may be scrolled out of view)');
     }
 
-    await goHome(tester);
-    endSection('Subtitle Config');
+    await nav.goHome(tester);
+    fixture.endSection('Subtitle Config');
 
     // =========================================================================
     // THEMES & GESTURES TESTS
     // =========================================================================
-    startSection('Themes & Gestures');
+    fixture.startSection('Themes & Gestures');
 
     debugPrint('Test: Navigate to Themes & Gestures screen');
-    await navigateToDemo(tester, TestKeys.homeScreenThemesGesturesCard, 'Themes & Gestures');
+    await nav.navigateToDemo(tester, TestKeys.homeScreenThemesGesturesCard, 'Themes & Gestures');
     await tester.settleLong();
 
     // Test: Screen loaded (skip strict check on macOS - navigateToDemo already validates)
     debugPrint('Test: Themes & Gestures screen visible');
-    if (!isMacOSPlatform) {
+    if (!E2EPlatform.isMacOS) {
       expect(find.text('Themes & Gestures'), findsWidgets);
     }
 
@@ -1461,57 +1171,57 @@ void main() {
       debugPrint('✓ Themes & Gestures shows theme options');
     }
 
-    await goHome(tester);
-    endSection('Themes & Gestures');
+    await nav.goHome(tester);
+    fixture.endSection('Themes & Gestures');
 
     // =========================================================================
     // CUSTOM THEMES TESTS
     // =========================================================================
-    startSection('Custom Themes');
+    fixture.startSection('Custom Themes');
 
     debugPrint('Test: Navigate to Custom Themes screen');
-    await navigateToDemo(tester, TestKeys.homeScreenCustomThemesCard, 'Custom Themes');
+    await nav.navigateToDemo(tester, TestKeys.homeScreenCustomThemesCard, 'Custom Themes');
     await tester.settleLong();
 
     // Test: Screen loaded (skip strict check on macOS)
     debugPrint('Test: Custom Themes screen visible');
-    if (!isMacOSPlatform) {
+    if (!E2EPlatform.isMacOS) {
       expect(find.text('Custom Themes'), findsWidgets);
     }
 
-    await goHome(tester);
-    endSection('Custom Themes');
+    await nav.goHome(tester);
+    fixture.endSection('Custom Themes');
 
     // =========================================================================
     // BACKGROUND PLAYBACK TESTS
     // =========================================================================
-    startSection('Background Playback');
+    fixture.startSection('Background Playback');
 
     debugPrint('Test: Navigate to Background Playback screen');
-    await navigateToDemo(tester, TestKeys.homeScreenBackgroundPlaybackCard, 'Background Playback');
+    await nav.navigateToDemo(tester, TestKeys.homeScreenBackgroundPlaybackCard, 'Background Playback');
     await tester.settleLong();
 
     // Test: Screen loaded
     debugPrint('Test: Background Playback screen visible');
-    if (!isMacOSPlatform) {
+    if (!E2EPlatform.isMacOS) {
       expect(find.text('Background Playback'), findsWidgets);
     }
 
-    await goHome(tester);
-    endSection('Background Playback');
+    await nav.goHome(tester);
+    fixture.endSection('Background Playback');
 
     // =========================================================================
     // SCALING MODES TESTS
     // =========================================================================
-    startSection('Scaling Modes');
+    fixture.startSection('Scaling Modes');
 
     debugPrint('Test: Navigate to Scaling Modes screen');
-    await navigateToDemo(tester, TestKeys.homeScreenScalingModesCard, 'Scaling Modes');
+    await nav.navigateToDemo(tester, TestKeys.homeScreenScalingModesCard, 'Scaling Modes');
     await tester.settleLong();
 
     // Test: Screen loaded
     debugPrint('Test: Scaling Modes screen visible');
-    if (!isMacOSPlatform) {
+    if (!E2EPlatform.isMacOS) {
       expect(find.text('Scaling Modes'), findsWidgets);
     }
 
@@ -1522,70 +1232,70 @@ void main() {
       debugPrint('✓ Scaling Modes shows scaling options');
     }
 
-    await goHome(tester);
-    endSection('Scaling Modes');
+    await nav.goHome(tester);
+    fixture.endSection('Scaling Modes');
 
     // =========================================================================
     // MEDIA CONTROLS TESTS
     // =========================================================================
-    startSection('Media Controls');
+    fixture.startSection('Media Controls');
 
     debugPrint('Test: Navigate to Media Controls screen');
-    await navigateToDemo(tester, TestKeys.homeScreenMediaControlsCard, 'Media Controls');
+    await nav.navigateToDemo(tester, TestKeys.homeScreenMediaControlsCard, 'Media Controls');
     await tester.settleLong();
 
     // Test: Screen loaded
     debugPrint('Test: Media Controls screen visible');
-    if (!isMacOSPlatform) {
+    if (!E2EPlatform.isMacOS) {
       expect(find.text('Media Controls'), findsWidgets);
     }
 
-    await goHome(tester);
-    endSection('Media Controls');
+    await nav.goHome(tester);
+    fixture.endSection('Media Controls');
 
     // =========================================================================
     // PIP ACTIONS TESTS
     // =========================================================================
-    startSection('PiP Actions');
+    fixture.startSection('PiP Actions');
 
     debugPrint('Test: Navigate to PiP Actions screen');
-    await navigateToDemo(tester, TestKeys.homeScreenPipActionsCard, 'PiP Actions');
+    await nav.navigateToDemo(tester, TestKeys.homeScreenPipActionsCard, 'PiP Actions');
     await tester.settleLong();
 
     // Test: Screen loaded
     debugPrint('Test: PiP Actions screen visible');
-    if (!isMacOSPlatform) {
+    if (!E2EPlatform.isMacOS) {
       expect(find.text('PiP Actions'), findsWidgets);
     }
 
-    await goHome(tester);
-    endSection('PiP Actions');
+    await nav.goHome(tester);
+    fixture.endSection('PiP Actions');
 
     // =========================================================================
     // NETWORK RESILIENCE TESTS
     // =========================================================================
-    startSection('Network Resilience');
+    fixture.startSection('Network Resilience');
 
     debugPrint('Test: Navigate to Network Resilience screen');
-    await navigateToDemo(tester, TestKeys.homeScreenNetworkResilienceCard, 'Network Resilience');
+    await nav.navigateToDemo(tester, TestKeys.homeScreenNetworkResilienceCard, 'Network Resilience');
     await tester.settleLong();
 
     // Test: Screen loaded
     debugPrint('Test: Network Resilience screen visible');
-    if (!isMacOSPlatform) {
+    if (!E2EPlatform.isMacOS) {
       expect(find.text('Network Resilience'), findsWidgets);
     }
 
-    await goHome(tester);
-    endSection('Network Resilience');
+    await nav.goHome(tester);
+    fixture.endSection('Network Resilience');
 
     // =========================================================================
     // PLAYER TOOLBAR CONFIG TESTS
     // =========================================================================
-    startSection('Player Toolbar Config');
+    fixture.startSection('Player Toolbar Config');
 
     debugPrint('Test: Navigate to Player Toolbar Config screen');
-    await navigateToDemo(tester, TestKeys.homeScreenPlayerToolbarConfigCard, 'Player Toolbar Configuration');
+    await nav.navigateToDemo(tester, TestKeys.homeScreenPlayerToolbarConfigCard, 'Player Toolbar Configuration');
     await tester.settleLong();
 
     // Test: Screen loaded - verify video player area visible
@@ -1595,15 +1305,11 @@ void main() {
 
     // Wait for player to initialize
     if (!playerToolbarWidgetFound) {
-      for (var i = 0; i < 10; i++) {
-        await tester.pump(const Duration(milliseconds: 500));
-        if (playerToolbarVideoPlayer.evaluate().isNotEmpty) {
-          playerToolbarWidgetFound = true;
-          debugPrint('Player toolbar video player found after ${(i + 1) * 500}ms');
-          break;
-        }
-        debugPrint('Waiting for player toolbar screen to load... attempt ${i + 1}/10');
-      }
+      playerToolbarWidgetFound = await waitForWidget(
+        tester,
+        playerToolbarVideoPlayer,
+        timeout: const Duration(seconds: 5),
+      );
     }
 
     if (playerToolbarWidgetFound) {
@@ -1646,16 +1352,16 @@ void main() {
       debugPrint('⚠️ WARNING: Player Toolbar Config widgets not found - skipping tests');
     }
 
-    await goHome(tester);
-    endSection('Player Toolbar Config');
+    await nav.goHome(tester);
+    fixture.endSection('Player Toolbar Config');
 
     // =========================================================================
     // VIDEO METADATA TESTS
     // =========================================================================
-    startSection('Video Metadata');
+    fixture.startSection('Video Metadata');
 
     debugPrint('Test: Navigate to Video Metadata screen');
-    await navigateToDemo(tester, TestKeys.homeScreenVideoMetadataCard, 'Video Metadata');
+    await nav.navigateToDemo(tester, TestKeys.homeScreenVideoMetadataCard, 'Video Metadata');
     await tester.settleLong();
 
     // Test: Screen loaded
@@ -1669,15 +1375,7 @@ void main() {
 
     // Wait for player to initialize
     if (!videoMetadataPlayerFound) {
-      for (var i = 0; i < 10; i++) {
-        await tester.pump(const Duration(milliseconds: 500));
-        if (videoMetadataPlayer.evaluate().isNotEmpty) {
-          videoMetadataPlayerFound = true;
-          debugPrint('Video metadata player found after ${(i + 1) * 500}ms');
-          break;
-        }
-        debugPrint('Waiting for video metadata player to load... attempt ${i + 1}/10');
-      }
+      videoMetadataPlayerFound = await waitForWidget(tester, videoMetadataPlayer, timeout: const Duration(seconds: 5));
     }
 
     if (videoMetadataPlayerFound) {
@@ -1690,15 +1388,13 @@ void main() {
 
       // Test: Wait for metadata to load (check for codec labels)
       debugPrint('Test: Waiting for metadata to load');
-      var metadataLoaded = false;
-      for (var i = 0; i < 20; i++) {
-        await tester.pump(const Duration(milliseconds: 500));
-        // Check if any metadata labels are visible
-        if (find.text('Video Codec').evaluate().isNotEmpty) {
-          metadataLoaded = true;
-          debugPrint('✓ Metadata loaded after ${(i + 1) * 500}ms');
-          break;
-        }
+      final metadataLoaded = await waitForWidget(
+        tester,
+        find.text('Video Codec'),
+        timeout: const Duration(seconds: 10),
+      );
+      if (metadataLoaded) {
+        debugPrint('✓ Metadata loaded');
       }
 
       if (metadataLoaded) {
@@ -1713,16 +1409,16 @@ void main() {
       debugPrint('⚠️ WARNING: Video Metadata player not found - skipping tests');
     }
 
-    await goHome(tester);
-    endSection('Video Metadata');
+    await nav.goHome(tester);
+    fixture.endSection('Video Metadata');
 
     // =========================================================================
     // CASTING TESTS
     // =========================================================================
-    startSection('Casting');
+    fixture.startSection('Casting');
 
     debugPrint('Test: Navigate to Casting screen');
-    await navigateToDemo(tester, TestKeys.homeScreenCastingCard, 'Casting');
+    await nav.navigateToDemo(tester, TestKeys.homeScreenCastingCard, 'Casting');
     await tester.settleLong();
 
     // Test: Screen loaded
@@ -1736,15 +1432,7 @@ void main() {
 
     // Wait for player to initialize
     if (!castingPlayerFound) {
-      for (var i = 0; i < 10; i++) {
-        await tester.pump(const Duration(milliseconds: 500));
-        if (castingPlayer.evaluate().isNotEmpty) {
-          castingPlayerFound = true;
-          debugPrint('Casting player found after ${(i + 1) * 500}ms');
-          break;
-        }
-        debugPrint('Waiting for casting player to load... attempt ${i + 1}/10');
-      }
+      castingPlayerFound = await waitForWidget(tester, castingPlayer, timeout: const Duration(seconds: 5));
     }
 
     if (castingPlayerFound) {
@@ -1785,14 +1473,16 @@ void main() {
       debugPrint('⚠️ WARNING: Casting player not found - skipping tests');
     }
 
-    await goHome(tester);
-    endSection('Casting');
+    await nav.goHome(tester);
+    fixture.endSection('Casting');
 
     // Print summary
-    totalStopwatch.stop();
     debugPrint('\n========================================');
     debugPrint('All E2E UI tests passed!');
-    debugPrint('Total time: ${(totalStopwatch.elapsedMilliseconds / 1000).toStringAsFixed(1)}s');
+    debugPrint('Total time: ${(fixture.totalElapsed.inMilliseconds / 1000).toStringAsFixed(1)}s');
     debugPrint('========================================\n');
+
+    // Clean up fixture
+    fixture.tearDown();
   });
 }

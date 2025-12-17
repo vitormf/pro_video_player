@@ -19,7 +19,7 @@ mixin TestLogger {
   /// Logs a message if verbose output is enabled.
   static void log(String message) {
     if (isEnabled) {
-      // ignore: avoid_print
+      // ignore: avoid_print - Necessary: test diagnostic utility requires print() for console output
       print(message);
     }
   }

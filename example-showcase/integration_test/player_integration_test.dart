@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:pro_video_player/pro_video_player.dart';
-import 'package:pro_video_player_example/constants/video_constants.dart';
+
+import 'helpers/e2e_platform.dart';
+import 'shared/e2e_constants.dart';
+import 'shared/e2e_test_media.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -11,7 +14,7 @@ void main() {
     late ProVideoPlayerController controller;
 
     // Use a test video URL that's reliable and small
-    const testVideoUrl = VideoUrls.bigBuckBunny;
+    const testVideoUrl = E2ETestMedia.bigBuckBunny;
 
     setUp(() {
       controller = ProVideoPlayerController();
@@ -39,14 +42,14 @@ void main() {
 
       // When - Play
       await controller.play();
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      await tester.settle();
 
       // Then
       expect(controller.value.isPlaying, isTrue);
 
       // When - Pause
       await controller.pause();
-      await tester.pumpAndSettle();
+      await tester.settle();
 
       // Then
       expect(controller.value.isPlaying, isFalse);
@@ -57,11 +60,11 @@ void main() {
       const source = VideoSource.network(testVideoUrl);
       await controller.initialize(source: source);
       await controller.play();
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      await tester.settle();
 
       // When
       await controller.stop();
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      await tester.settle();
 
       // Then
       expect(controller.value.isPlaying, isFalse);
@@ -74,11 +77,11 @@ void main() {
       const source = VideoSource.network(testVideoUrl);
       await controller.initialize(source: source);
       await controller.play();
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      await tester.settle();
 
       // When
       await controller.seekTo(const Duration(seconds: 5));
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      await tester.settle();
 
       // Then
       expect(controller.value.position.inSeconds, greaterThanOrEqualTo(4));
@@ -92,7 +95,7 @@ void main() {
 
       // When
       await controller.setPlaybackSpeed(1.5);
-      await tester.pumpAndSettle();
+      await tester.settle();
 
       // Then
       expect(controller.value.playbackSpeed, equals(1.5));
@@ -105,7 +108,7 @@ void main() {
 
       // When
       await controller.setVolume(0.5);
-      await tester.pumpAndSettle();
+      await tester.settle();
 
       // Then
       expect(controller.value.volume, equals(0.5));
@@ -118,14 +121,14 @@ void main() {
 
       // When
       await controller.setLooping(true);
-      await tester.pumpAndSettle();
+      await tester.settle();
 
       // Then
       expect(controller.value.isLooping, isTrue);
 
       // When
       await controller.setLooping(false);
-      await tester.pumpAndSettle();
+      await tester.settle();
 
       // Then
       expect(controller.value.isLooping, isFalse);
@@ -137,7 +140,7 @@ void main() {
       await controller.initialize(source: source);
 
       // Wait for metadata to load
-      await tester.pumpAndSettle(const Duration(seconds: 2));
+      await tester.settle();
 
       // Then
       expect(controller.value.duration.inSeconds, greaterThan(0));
@@ -147,14 +150,14 @@ void main() {
       // Given
       const source = VideoSource.network(testVideoUrl);
       await controller.initialize(source: source);
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      await tester.settle();
       await controller.play();
 
       // When
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      await tester.settle();
       final position1 = controller.value.position;
 
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      await tester.settle();
       final position2 = controller.value.position;
 
       // Then
@@ -172,13 +175,13 @@ void main() {
 
       // When
       await controller.initialize(source: source);
-      await tester.pumpAndSettle(const Duration(milliseconds: 500));
+      await tester.settle();
 
       await controller.play();
-      await tester.pumpAndSettle(const Duration(milliseconds: 500));
+      await tester.settle();
 
       await controller.pause();
-      await tester.pumpAndSettle(const Duration(milliseconds: 500));
+      await tester.settle();
 
       // Then
       expect(states, contains(PlaybackState.ready));
@@ -197,9 +200,9 @@ void main() {
 
       // When
       await controller.initialize(source: source);
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      await tester.settle();
       await controller.play();
-      await tester.pumpAndSettle(const Duration(seconds: 3));
+      await tester.pump(E2EDelays.playbackPositionCheck);
 
       // Then
       expect(positions.length, greaterThan(0));
@@ -236,7 +239,7 @@ void main() {
       const source = VideoSource.network(testVideoUrl);
       await controller.initialize(source: source);
       await controller.play();
-      await tester.pumpAndSettle(const Duration(milliseconds: 500));
+      await tester.settle();
 
       // When
       await controller.dispose();
@@ -253,7 +256,7 @@ void main() {
 
       // When
       await controller.initialize(source: source, options: options);
-      await tester.pumpAndSettle(const Duration(milliseconds: 500));
+      await tester.settle();
 
       // Then
       expect(controller.isInitialized, isTrue);
@@ -264,7 +267,7 @@ void main() {
 
     testWidgets('Error handling - invalid URL', (tester) async {
       // Given
-      const source = VideoSource.network(VideoUrls.invalidTestUrl);
+      const source = VideoSource.network(E2ETestMedia.invalidUrl);
       var errorReceived = false;
 
       controller.addListener(() {
@@ -279,7 +282,7 @@ void main() {
       } catch (e) {
         // Expected to throw
       }
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      await tester.settle();
 
       // Then
       // Note: Error handling behavior may vary by platform
@@ -293,7 +296,7 @@ void main() {
     late ProVideoPlayerController controller1;
     late ProVideoPlayerController controller2;
 
-    const testVideoUrl = VideoUrls.bigBuckBunny;
+    const testVideoUrl = E2ETestMedia.bigBuckBunny;
 
     setUp(() {
       controller1 = ProVideoPlayerController();
@@ -326,7 +329,7 @@ void main() {
 
       // When - Play only first player
       await controller1.play();
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      await tester.settle();
 
       // Then
       expect(controller1.value.isPlaying, isTrue);
@@ -334,7 +337,7 @@ void main() {
 
       // When - Play second player
       await controller2.play();
-      await tester.pumpAndSettle(const Duration(milliseconds: 500));
+      await tester.settle();
 
       // Then
       expect(controller1.value.isPlaying, isTrue);
@@ -342,7 +345,7 @@ void main() {
 
       // When - Pause first player
       await controller1.pause();
-      await tester.pumpAndSettle();
+      await tester.settle();
 
       // Then
       expect(controller1.value.isPlaying, isFalse);
@@ -364,7 +367,7 @@ void main() {
       );
 
       // Wait for auto-play to start
-      await tester.pumpAndSettle(const Duration(seconds: 2));
+      await tester.settle();
 
       // Then - Controller should be playing
       expect(controller.value.isPlaying, isTrue, reason: 'Controller should be playing after auto-play');
@@ -380,7 +383,7 @@ void main() {
 
       // When - Tap the pause button
       await tester.tap(pauseIcon.first);
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      await tester.settle();
 
       // Then - Controller should be paused
       expect(controller.value.isPlaying, isFalse, reason: 'Controller should be paused after tapping pause');
@@ -414,7 +417,7 @@ void main() {
       );
 
       // Wait for auto-play to start
-      await tester.pumpAndSettle(const Duration(seconds: 2));
+      await tester.settle();
 
       // Then - Controller should be playing first track
       expect(controller.value.isPlaying, isTrue, reason: 'Controller should be playing after auto-play');
@@ -436,7 +439,7 @@ void main() {
 
       // When - Skip to next track
       await tester.tap(find.byIcon(Icons.skip_next));
-      await tester.pumpAndSettle(const Duration(seconds: 2));
+      await tester.settle();
 
       // Then - Should be playing second track
       expect(controller.value.isPlaying, isTrue, reason: 'Should continue playing after track change');
@@ -478,7 +481,7 @@ void main() {
       }
 
       // Wait for track discovery
-      await tester.pumpAndSettle(const Duration(seconds: 5));
+      await tester.pump(E2EDelays.videoLoading);
 
       // Then - Verify track ID format for subtitle tracks
       final subtitleTracks = controller.value.subtitleTracks;
@@ -524,7 +527,7 @@ void main() {
       }
 
       // Wait for track discovery
-      await tester.pumpAndSettle(const Duration(seconds: 5));
+      await tester.pump(E2EDelays.videoLoading);
 
       // Then - Verify labels are properly generated
       // Labels should not be empty (Dart generates from language code)
@@ -559,7 +562,7 @@ void main() {
       }
 
       // Wait for track discovery
-      await tester.pumpAndSettle(const Duration(seconds: 5));
+      await tester.pump(E2EDelays.videoLoading);
 
       final subtitleTracks = controller.value.subtitleTracks;
 
@@ -573,7 +576,7 @@ void main() {
       expect(firstTrack.id.contains(':'), isTrue, reason: 'Track ID should use new format');
 
       await controller.setSubtitleTrack(firstTrack);
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      await tester.settle();
 
       // Then - Track should be selected
       expect(
@@ -589,7 +592,7 @@ void main() {
 
       // When - Disable subtitles
       await controller.setSubtitleTrack(null);
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      await tester.settle();
 
       // Then - No track should be selected
       expect(controller.value.selectedSubtitleTrack, isNull, reason: 'Subtitle track should be null after disabling');
@@ -603,7 +606,7 @@ void main() {
     // - Opening Scene (0:00 - 0:05)
     // - The Meadow (0:05 - 0:10)
     // - Butterflies (0:10 - 0:15)
-    const chapteredVideoAsset = VideoAssets.sampleWithChapters;
+    const chapteredVideoAsset = E2ETestMedia.assetWithChapters;
 
     setUp(() {
       controller = ProVideoPlayerController();
@@ -618,7 +621,7 @@ void main() {
       await controller.initialize(source: const VideoSource.asset(chapteredVideoAsset));
 
       // Wait for chapters to be extracted
-      await tester.pumpAndSettle(const Duration(seconds: 3));
+      await tester.pump(E2EDelays.videoInitialization);
 
       // Then - Chapters should be available
       expect(controller.value.hasChapters, isTrue, reason: 'Video should have chapters');
@@ -639,14 +642,14 @@ void main() {
     testWidgets('seekToChapter seeks to chapter start time', (tester) async {
       // Given - Initialize with chaptered video
       await controller.initialize(source: const VideoSource.asset(chapteredVideoAsset));
-      await tester.pumpAndSettle(const Duration(seconds: 3));
+      await tester.pump(E2EDelays.videoInitialization);
 
       expect(controller.value.hasChapters, isTrue);
 
       // When - Seek to second chapter (The Meadow at 5s)
       final secondChapter = controller.value.chapters[1];
       await controller.seekToChapter(secondChapter);
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      await tester.settle();
 
       // Then - Position should be at or near chapter start
       final position = controller.value.position.inSeconds;
@@ -657,13 +660,13 @@ void main() {
     testWidgets('seekToNextChapter advances to next chapter', (tester) async {
       // Given - Initialize at start (chapter 1)
       await controller.initialize(source: const VideoSource.asset(chapteredVideoAsset));
-      await tester.pumpAndSettle(const Duration(seconds: 3));
+      await tester.pump(E2EDelays.videoInitialization);
 
       expect(controller.value.hasChapters, isTrue);
 
       // When - Seek to next chapter
       await controller.seekToNextChapter();
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      await tester.settle();
 
       // Then - Position should be at second chapter (5s)
       final position = controller.value.position.inSeconds;
@@ -674,17 +677,17 @@ void main() {
     testWidgets('seekToPreviousChapter goes to previous chapter', (tester) async {
       // Given - Initialize and seek to last chapter
       await controller.initialize(source: const VideoSource.asset(chapteredVideoAsset));
-      await tester.pumpAndSettle(const Duration(seconds: 3));
+      await tester.pump(E2EDelays.videoInitialization);
 
       expect(controller.value.hasChapters, isTrue);
 
       // Move to last chapter
       await controller.seekTo(const Duration(seconds: 12));
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      await tester.settle();
 
       // When - Seek to previous chapter
       await controller.seekToPreviousChapter();
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      await tester.settle();
 
       // Then - Position should be at previous chapter (The Meadow at 5s or Butterflies at 10s depending on timing)
       final position = controller.value.position.inSeconds;
@@ -698,7 +701,7 @@ void main() {
         source: const VideoSource.asset(chapteredVideoAsset),
         options: const VideoPlayerOptions(autoPlay: true),
       );
-      await tester.pumpAndSettle(const Duration(seconds: 3));
+      await tester.pump(E2EDelays.videoInitialization);
 
       expect(controller.value.hasChapters, isTrue);
 
@@ -711,7 +714,7 @@ void main() {
 
       // When - Seek to middle of second chapter
       await controller.seekTo(const Duration(seconds: 7));
-      await tester.pumpAndSettle(const Duration(seconds: 1));
+      await tester.settle();
 
       // Then - Current chapter should be "The Meadow"
       expect(controller.value.currentChapter?.title, equals('The Meadow'));
@@ -719,13 +722,55 @@ void main() {
 
     testWidgets('chapters getter returns empty list for video without chapters', (tester) async {
       // Given - Initialize with video without chapters
-      await controller.initialize(source: const VideoSource.network(VideoUrls.bigBuckBunny));
-      await tester.pumpAndSettle(const Duration(seconds: 3));
+      await controller.initialize(source: const VideoSource.network(E2ETestMedia.bigBuckBunny));
+      await tester.pump(E2EDelays.videoInitialization);
 
       // Then - Chapters should be empty
       expect(controller.value.hasChapters, isFalse);
       expect(controller.value.chapters, isEmpty);
       expect(controller.value.currentChapter, isNull);
+    });
+
+    testWidgets('progress bar updates during playback (Android regression test)', (tester) async {
+      // Regression test for: LayoutBuilder wrapping Stack broke ValueListenableBuilder on Android
+      // This test verifies that duration and position updates are received on Android
+
+      // Given - Initialize and start playing
+      await controller.initialize(source: const VideoSource.network(E2ETestMedia.bigBuckBunny));
+      await tester.pump(E2EDelays.videoInitialization);
+
+      // Then - Duration should be loaded (not 0)
+      expect(
+        controller.value.duration.inMilliseconds,
+        greaterThan(0),
+        reason: 'Duration should be loaded from video metadata',
+      );
+
+      // When - Play video
+      await controller.play();
+      await tester.pump(E2EDelays.singleFrame);
+
+      // Capture initial position
+      final initialPosition = controller.value.position;
+
+      // Wait for video to play
+      await tester.pump(const Duration(seconds: 2));
+
+      // Then - Position should have increased
+      final currentPosition = controller.value.position;
+      expect(
+        currentPosition.inMilliseconds,
+        greaterThan(initialPosition.inMilliseconds),
+        reason: 'Video position should increase during playback',
+      );
+
+      // Verify position is reasonable (not jumped ahead randomly)
+      final elapsed = currentPosition.inMilliseconds - initialPosition.inMilliseconds;
+      expect(
+        elapsed,
+        lessThan(5000), // Should be ~2 seconds, max 5 seconds
+        reason: 'Position should increase naturally, not jump',
+      );
     });
   });
 }

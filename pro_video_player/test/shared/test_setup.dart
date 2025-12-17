@@ -27,6 +27,7 @@ void registerVideoPlayerFallbackValues() {
   registerFallbackValue(const VideoPlayerOptions());
   registerFallbackValue(const PipOptions());
   registerFallbackValue(Duration.zero);
+  registerFallbackValue(Offset.zero);
 
   // Tracks and subtitles
   registerFallbackValue(const SubtitleTrack(id: 'test', label: 'Test'));

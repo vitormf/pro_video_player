@@ -185,11 +185,17 @@ class VideoControlsController extends ChangeNotifier {
   /// Focus node for keyboard shortcuts.
   FocusNode get focusNode => _focusNode;
 
-  /// Current drag start position.
+  /// Current drag start position notifier.
   ValueNotifier<Duration?> get dragStartPosition => _dragStartPosition;
 
-  /// Current gesture seek position.
+  /// Current drag start position value.
+  Duration? get dragStartPositionValue => _dragStartPosition.value;
+
+  /// Current gesture seek position notifier.
   ValueNotifier<Duration?> get gestureSeekPosition => _gestureSeekPosition;
+
+  /// Current gesture seek position value.
+  Duration? get gestureSeekPositionValue => _gestureSeekPosition.value;
 
   /// Whether the current platform is desktop (macOS, Windows, Linux, or web).
   bool get isDesktopPlatform {
@@ -392,13 +398,11 @@ class VideoControlsController extends ChangeNotifier {
   }
 
   /// Sets gesture seek position.
-  // ignore: avoid_setters_without_getters - Setter-only property for internal state management
   set gestureSeekPositionValue(Duration? position) {
     _gestureSeekPosition.value = position;
   }
 
   /// Sets drag start position.
-  // ignore: avoid_setters_without_getters - Setter-only property for internal state management
   set dragStartPositionValue(Duration? position) {
     _dragStartPosition.value = position;
   }

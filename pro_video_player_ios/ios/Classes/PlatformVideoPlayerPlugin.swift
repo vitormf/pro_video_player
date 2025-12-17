@@ -34,27 +34,25 @@ public class ProVideoPlayerPlugin: NSObject, FlutterPlugin, PlatformPluginBehavi
             config: .ios
         )
 
-        // Register traditional MethodChannel (for backward compatibility during migration)
-        let channel = FlutterMethodChannel(
-            name: PlatformConfig.ios.channelName,
-            binaryMessenger: registrar.messenger()
-        )
-        registrar.addMethodCallDelegate(instance, channel: channel)
-
-        // Register Pigeon API
+        // Register Pigeon API for all method calls
         instance.pigeonHandler = PigeonHostApiHandler(sharedBase: instance.sharedBase, platformBehavior: instance)
         ProVideoPlayerHostApiSetup.setUp(binaryMessenger: registrar.messenger(), api: instance.pigeonHandler)
 
+        // Register platform views
         let factory = VideoPlayerViewFactory(plugin: instance.sharedBase)
         registrar.register(factory, withId: PlatformConfig.ios.viewTypeId)
 
         // Register AirPlay route picker view factory
         let airPlayFactory = AirPlayRoutePickerViewFactory(messenger: registrar.messenger())
-        registrar.register(airPlayFactory, withId: "dev.pro_video_player_ios/airplay_picker")
+        registrar.register(airPlayFactory, withId: "dev.pro_video_player.ios/airplay_picker")
     }
 
+    // Note: This handle() method is no longer used since we migrated to Pigeon.
+    // It's kept only because tests might still reference it.
+    // All method calls now go through PigeonHostApiHandler instead.
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-        sharedBase.handle(call, result: result)
+        // No-op: All calls should go through Pigeon API now
+        result(FlutterMethodNotImplemented)
     }
 
     /// Gets a player by ID (for testing purposes)

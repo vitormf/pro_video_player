@@ -90,7 +90,7 @@ Future<void Function()?> setupBatteryListeners(
 
     // Create event handler that reads battery properties
     final batteryObj = battery as web.EventTarget;
-    final handler = ((_) {
+    final handler = ((JSAny? event) {
       // Use eval to read battery properties as an array
       const code = '''
         (function() {

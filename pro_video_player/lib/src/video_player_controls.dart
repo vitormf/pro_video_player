@@ -631,7 +631,6 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
               } else {
                 unawaited(widget.controller.exitFullscreen());
               }
-              // ignore: use_build_context_synchronously
               unawaited(Navigator.of(context).maybePop());
             },
           ),

@@ -16,6 +16,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  leak_tracker_flutter_testing: any
   mocktail: ^1.0.4
   pigeon: ^22.7.4
 

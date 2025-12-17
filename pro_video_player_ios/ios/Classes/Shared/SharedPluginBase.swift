@@ -1018,13 +1018,13 @@ open class SharedPluginBase: NSObject, FlutterStreamHandler {
         #if os(iOS)
             let messenger = (registrar as! FlutterPluginRegistrar).messenger()
             batteryEventChannel = FlutterEventChannel(
-                name: "dev.pro_video_player.ios/batteryUpdates",
+                name: "dev.pro_video_player.pro_video_player_ios/batteryUpdates",
                 binaryMessenger: messenger
             )
         #elseif os(macOS)
             let messenger = (registrar as! FlutterPluginRegistrar).messenger
             batteryEventChannel = FlutterEventChannel(
-                name: "dev.pro_video_player.macos/batteryUpdates",
+                name: "dev.pro_video_player.pro_video_player_macos/batteryUpdates",
                 binaryMessenger: messenger
             )
         #endif

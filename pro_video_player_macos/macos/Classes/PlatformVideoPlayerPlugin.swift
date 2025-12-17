@@ -34,27 +34,25 @@ public class ProVideoPlayerPlugin: NSObject, FlutterPlugin, PlatformPluginBehavi
             config: .macOS
         )
 
-        // Register traditional MethodChannel (for backward compatibility during migration)
-        let channel = FlutterMethodChannel(
-            name: PlatformConfig.macOS.channelName,
-            binaryMessenger: registrar.messenger
-        )
-        registrar.addMethodCallDelegate(instance, channel: channel)
-
-        // Register Pigeon API
+        // Register Pigeon API for all method calls
         instance.pigeonHandler = PigeonHostApiHandler(sharedBase: instance.sharedBase, platformBehavior: instance)
         ProVideoPlayerHostApiSetup.setUp(binaryMessenger: registrar.messenger, api: instance.pigeonHandler)
 
+        // Register platform views
         let factory = VideoPlayerViewFactory(plugin: instance.sharedBase)
         registrar.register(factory, withId: PlatformConfig.macOS.viewTypeId)
 
         // Register AirPlay route picker view factory
         let airPlayFactory = AirPlayRoutePickerViewFactory(messenger: registrar.messenger)
-        registrar.register(airPlayFactory, withId: "dev.pro_video_player_macos/airplay_picker")
+        registrar.register(airPlayFactory, withId: "dev.pro_video_player.macos/airplay_picker")
     }
 
+    // Note: This handle() method is no longer used since we migrated to Pigeon.
+    // It's kept only because tests might still reference it.
+    // All method calls now go through PigeonHostApiHandler instead.
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-        sharedBase.handle(call, result: result)
+        // No-op: All calls should go through Pigeon API now
+        result(FlutterMethodNotImplemented)
     }
 
     /// Gets a player by ID (for testing purposes)
@@ -63,10 +61,18 @@ public class ProVideoPlayerPlugin: NSObject, FlutterPlugin, PlatformPluginBehavi
     }
 
     public func isPipSupported() -> Bool {
+        // On macOS, AVPictureInPictureController.isPictureInPictureSupported() is unreliable
+        // and often returns false even when PiP is available. We check version instead.
+        // PiP requires macOS 10.15+ and the com.apple.security.device.audio-video entitlement.
+        let supported: Bool
         if #available(macOS 10.15, *) {
-            return AVPictureInPictureController.isPictureInPictureSupported()
+            supported = true
+        } else {
+            supported = false
         }
-        return false
+
+        verboseLog("isPipSupported returning: \(supported)", tag: "Plugin")
+        return supported
     }
 
     public func handleSetPipActions(

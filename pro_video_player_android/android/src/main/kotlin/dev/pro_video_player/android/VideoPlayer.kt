@@ -146,7 +146,7 @@ class VideoPlayer(
     init {
         eventChannel = EventChannel(
             messenger,
-            "dev.pro_video_player.android/events/$playerId"
+            "dev.pro_video_player.pro_video_player_android/events/$playerId"
         )
         eventChannel.setStreamHandler(this)
 

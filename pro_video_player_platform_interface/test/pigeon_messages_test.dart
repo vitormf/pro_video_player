@@ -83,16 +83,36 @@ void main() {
   group('PlatformCapabilitiesMessage', () {
     test('encodes and decodes capabilities correctly', () {
       final capabilities = PlatformCapabilitiesMessage(
-        supportsPip: true,
+        supportsPictureInPicture: true,
+        supportsFullscreen: true,
         supportsBackgroundPlayback: true,
         supportsCasting: false,
+        supportsAirPlay: false,
+        supportsChromecast: false,
+        supportsRemotePlayback: false,
+        supportsQualitySelection: true,
+        supportsPlaybackSpeedControl: true,
+        supportsSubtitles: true,
+        supportsExternalSubtitles: true,
+        supportsAudioTrackSelection: true,
+        supportsChapters: false,
+        supportsVideoMetadataExtraction: true,
+        supportsNetworkMonitoring: false,
+        supportsBandwidthEstimation: false,
+        supportsAdaptiveBitrate: true,
+        supportsHLS: true,
+        supportsDASH: false,
+        supportsDeviceVolumeControl: true,
+        supportsScreenBrightnessControl: true,
+        platformName: 'iOS',
+        nativePlayerType: 'AVPlayer',
       );
 
       final encoded = capabilities.encode();
       expect(encoded, isA<List<Object?>>());
 
       final decoded = PlatformCapabilitiesMessage.decode(encoded);
-      expect(decoded.supportsPip, true);
+      expect(decoded.supportsPictureInPicture, true);
       expect(decoded.supportsBackgroundPlayback, true);
       expect(decoded.supportsCasting, false);
     });

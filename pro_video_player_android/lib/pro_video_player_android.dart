@@ -7,9 +7,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
-// Export Pigeon-generated types for Android platform
-export 'src/pigeon_generated/messages.g.dart';
-
 /// The Android implementation of [ProVideoPlayerPlatform].
 ///
 /// This class uses ExoPlayer for video playback on Android.

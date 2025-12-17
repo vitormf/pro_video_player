@@ -10,7 +10,7 @@ class VideoPlayer: SharedVideoPlayerWrapper {
         super.init(
             playerId: playerId,
             registrar: registrar,
-            eventChannelName: "dev.pro_video_player_macos/events/\(playerId)",
+            eventChannelName: "dev.pro_video_player.pro_video_player_macos/events/\(playerId)",
             binaryMessenger: registrar.messenger,
             platformAdapter: platformAdapter,
             source: source,

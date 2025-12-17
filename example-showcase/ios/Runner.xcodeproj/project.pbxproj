@@ -11,7 +11,7 @@
 		2CFBA968417F8BC66DC2AE0B /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A6AD47F7AFD07C0E75FC80BF /* Pods_RunnerTests.framework */; };
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
-		6B2E8059BA1BA08B8C399B70 /* PlatformVideoPlayerPluginTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9B21E0E9D49BFAEC88F68E6 /* PlatformVideoPlayerPluginTests.swift */; };
+		6B2E8059BA1BA08B8C399B70 /* ProVideoPlayerPluginTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9B21E0E9D49BFAEC88F68E6 /* ProVideoPlayerPluginTests.swift */; };
 		72EC5D3B9A2A418ADF4943DE /* VideoPlayerViewFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69C32E7B86A6A26D495DF7D2 /* VideoPlayerViewFactoryTests.swift */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
 		7DD8BD05C15FC19B1A6F78C9 /* VideoPlayerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ACDDC303FC1B886C028F08C /* VideoPlayerTests.swift */; };
@@ -69,7 +69,7 @@
 		97C147001CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A6AD47F7AFD07C0E75FC80BF /* Pods_RunnerTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_RunnerTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		B9B21E0E9D49BFAEC88F68E6 /* PlatformVideoPlayerPluginTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PlatformVideoPlayerPluginTests.swift; sourceTree = "<group>"; };
+		B9B21E0E9D49BFAEC88F68E6 /* ProVideoPlayerPluginTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProVideoPlayerPluginTests.swift; sourceTree = "<group>"; };
 		C7AC2C7C6F0E15AF8BE86006 /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -99,7 +99,7 @@
 				331C807B294A618700263BE5 /* RunnerTests.swift */,
 				7ACDDC303FC1B886C028F08C /* VideoPlayerTests.swift */,
 				69C32E7B86A6A26D495DF7D2 /* VideoPlayerViewFactoryTests.swift */,
-				B9B21E0E9D49BFAEC88F68E6 /* PlatformVideoPlayerPluginTests.swift */,
+				B9B21E0E9D49BFAEC88F68E6 /* ProVideoPlayerPluginTests.swift */,
 			);
 			path = RunnerTests;
 			sourceTree = "<group>";
@@ -114,7 +114,6 @@
 				5779C1F998402C082FF97186 /* Pods-RunnerTests.release.xcconfig */,
 				1D6EC3B2AFAF67888541E5E7 /* Pods-RunnerTests.profile.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -381,7 +380,7 @@
 				331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */,
 				7DD8BD05C15FC19B1A6F78C9 /* VideoPlayerTests.swift in Sources */,
 				72EC5D3B9A2A418ADF4943DE /* VideoPlayerViewFactoryTests.swift in Sources */,
-				6B2E8059BA1BA08B8C399B70 /* PlatformVideoPlayerPluginTests.swift in Sources */,
+				6B2E8059BA1BA08B8C399B70 /* ProVideoPlayerPluginTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

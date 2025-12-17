@@ -24,13 +24,10 @@ run-simple: verify-tools
 	fi
 
 # pigeon-generate: Regenerate Pigeon code for all platforms
-# Use when: After editing shared_pigeon_sources/messages.dart
+# Use when: After editing pro_video_player_platform_interface/pigeons/messages.dart
 pigeon-generate: verify-tools
-	@echo "$(WRENCH) Regenerating Pigeon code for all platforms..."
-	@echo "$(INFO) Android..."
-	@cd pro_video_player_android && ${DART} run pigeon --input pigeons/messages.dart
-	@echo "$(INFO) iOS..."
-	@cd pro_video_player_ios && ${DART} run pigeon --input pigeons/messages.dart
-	@echo "$(INFO) macOS..."
-	@cd pro_video_player_macos && ${DART} run pigeon --input pigeons/messages.dart
+	@echo "$(WRENCH) Regenerating Pigeon code for all platforms from platform_interface..."
+	@cd pro_video_player_platform_interface && ${DART} run pigeon --input pigeons/messages.dart
+	@echo "$(INFO) Copying Swift to macOS..."
+	@cp pro_video_player_ios/ios/Classes/PigeonMessages.swift pro_video_player_macos/macos/Classes/PigeonMessages.swift
 	@echo "$(CHECK) Pigeon code regenerated for all platforms"

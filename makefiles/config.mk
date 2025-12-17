@@ -50,3 +50,75 @@ IOS_SIMULATOR_ID ?= 029E85C7-1570-45A5-B798-14DE432CD3E3
 .PHONY: print-%
 print-%:
 	@echo $($*)
+
+# Helper function: Run command on multiple packages in parallel
+# Usage: $(call run-parallel-packages,package_list,command,web_extra_flags,success_msg_singular,fail_msg)
+# Parameters:
+#   1: package_list - Space-separated list of packages (e.g., $(PACKAGES))
+#   2: command - Command to run in each package (e.g., ${FLUTTER} test)
+#   3: web_extra_flags - Extra flags for pro_video_player_web (e.g., --platform chrome)
+#   4: success_msg_singular - Success message for one package (e.g., "passed", "coverage generated")
+#   5: fail_msg - Failure message (e.g., "Some tests failed", "Coverage generation failed")
+define run-parallel-packages
+	@pkg_count=$$(echo $(1) | wc -w | tr -d ' '); \
+	logs=""; \
+	for pkg in $(1); do \
+		log=$$(mktemp); \
+		logs="$$logs $$log"; \
+		( \
+			pkg_name="$$pkg"; \
+			test_start=$$(date +%s); \
+			if [ "$$pkg_name" = "pro_video_player_web" ] && [ -n "$(3)" ]; then \
+				if (cd $$pkg_name && $(2) $(3) $(OUTPUT_REDIRECT)); then \
+					test_end=$$(date +%s); \
+					echo "$$pkg_name:OK:$$(( $$test_end - $$test_start ))" > $$log; \
+				else \
+					test_end=$$(date +%s); \
+					echo "$$pkg_name:FAILED:$$(( $$test_end - $$test_start ))" > $$log; \
+				fi; \
+			else \
+				if (cd $$pkg_name && $(2) $(OUTPUT_REDIRECT)); then \
+					test_end=$$(date +%s); \
+					echo "$$pkg_name:OK:$$(( $$test_end - $$test_start ))" > $$log; \
+				else \
+					test_end=$$(date +%s); \
+					echo "$$pkg_name:FAILED:$$(( $$test_end - $$test_start ))" > $$log; \
+				fi; \
+			fi \
+		) & \
+	done; \
+	\
+	parse_result() { cat $$$$1 2>/dev/null | cut -d: -f2; }; \
+	has_failures=0; completed=""; count=0; \
+	while true; do \
+		all_done=1; \
+		for log in $$logs; do \
+			case "$$completed" in *"$$log"*) continue ;; esac; \
+			result=$$(parse_result "$$log"); \
+			if [ -n "$$result" ]; then \
+				output=$$(cat $$log); \
+				pkg=$$(echo "$$output" | cut -d: -f1); \
+				time=$$(echo "$$output" | cut -d: -f3); \
+				count=$$((count + 1)); \
+				if [ "$$result" = "OK" ]; then \
+					printf "%d/%d $(CHECK) $$pkg: $(4) ($$$${time}s)\n" "$$count" "$$pkg_count"; \
+				else \
+					printf "%d/%d $(CROSS) $$pkg: failed ($$$${time}s)\n" "$$count" "$$pkg_count"; \
+					has_failures=1; \
+				fi; \
+				completed="$$completed $$log"; \
+			else \
+				all_done=0; \
+			fi; \
+		done; \
+		[ $$all_done -eq 1 ] && break; \
+		sleep 0.1; \
+	done; \
+	rm -f $$logs; \
+	\
+	echo ""; \
+	if [ $$has_failures -eq 1 ]; then \
+		echo "$(CROSS) $(5) ($$$${elapsed}s)"; \
+		exit 1; \
+	fi
+endef

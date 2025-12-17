@@ -1,6 +1,43 @@
 group 'dev.pro_video_player.android'
 version '1.0-SNAPSHOT'
 
+// Flutter SDK location
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { reader ->
+        localProperties.load(reader)
+    }
+}
+def flutterRoot = localProperties.getProperty('flutter.sdk')
+if (flutterRoot == null) {
+    flutterRoot = System.env.FLUTTER_ROOT
+}
+// Try to find Flutter via FVM if not found
+if (flutterRoot == null) {
+    // Try multiple potential locations for .fvmrc
+    def fvmrcLocations = [
+        new File(projectDir, '../../../.fvmrc'),  // From pro_video_player_android/android
+        new File(projectDir, '../../.fvmrc'),      // From example app context
+    ]
+
+    def fvmrc = fvmrcLocations.find { it.exists() }
+    if (fvmrc != null) {
+        def fvmConfig = new groovy.json.JsonSlurper().parse(fvmrc)
+        def fvmVersion = fvmConfig.flutter
+        flutterRoot = System.getProperty('user.home') + '/fvm/versions/' + fvmVersion
+        println "Flutter SDK resolved via FVM ($fvmVersion): $flutterRoot"
+    } else {
+        println "FVM config (.fvmrc) not found in expected locations"
+    }
+} else {
+    println "Flutter SDK found: $flutterRoot"
+}
+
+if (flutterRoot == null) {
+    println "WARNING: Flutter SDK not found! io.flutter.plugin.* classes will not be available for compilation."
+}
+
 buildscript {
     ext.kotlin_version = '2.1.0'
     repositories {
@@ -65,6 +102,11 @@ android {
 }
 
 dependencies {
+    // Flutter embedding (required for io.flutter.plugin.* classes)
+    if (flutterRoot != null) {
+        compileOnly files("$flutterRoot/bin/cache/artifacts/engine/android-arm-release/flutter.jar")
+    }
+
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     implementation "androidx.media3:media3-exoplayer:1.2.0"
     implementation "androidx.media3:media3-exoplayer-dash:1.2.0"

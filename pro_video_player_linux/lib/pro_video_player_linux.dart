@@ -1,12 +1,10 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/widgets.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
 /// The Linux implementation of [ProVideoPlayerPlatform].
 ///
 /// This class uses GStreamer for video playback on Linux.
-class ProVideoPlayerLinux extends MethodChannelBase {
+class ProVideoPlayerLinux extends PigeonMethodChannelBase {
   /// Constructs a ProVideoPlayerLinux.
   ProVideoPlayerLinux() : super('pro_video_player_linux');
 

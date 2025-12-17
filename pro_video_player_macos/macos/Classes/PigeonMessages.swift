@@ -1307,7 +1307,7 @@ class ProVideoPlayerHostApiSetup {
     /// Creates a new video player instance with the given source and options.
     ///
     /// Returns the player ID that should be used for all subsequent operations.
-    let createChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.create\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let createChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.create\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       createChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1326,7 +1326,7 @@ class ProVideoPlayerHostApiSetup {
       createChannel.setMessageHandler(nil)
     }
     /// Disposes a video player instance.
-    let disposeChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.dispose\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let disposeChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.dispose\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       disposeChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1344,7 +1344,7 @@ class ProVideoPlayerHostApiSetup {
       disposeChannel.setMessageHandler(nil)
     }
     /// Starts playback.
-    let playChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.play\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let playChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.play\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       playChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1362,7 +1362,7 @@ class ProVideoPlayerHostApiSetup {
       playChannel.setMessageHandler(nil)
     }
     /// Pauses playback.
-    let pauseChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.pause\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let pauseChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.pause\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       pauseChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1380,7 +1380,7 @@ class ProVideoPlayerHostApiSetup {
       pauseChannel.setMessageHandler(nil)
     }
     /// Stops playback.
-    let stopChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.stop\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let stopChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.stop\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       stopChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1400,7 +1400,7 @@ class ProVideoPlayerHostApiSetup {
     /// Seeks to the specified position.
     ///
     /// [positionMs] is the position in milliseconds.
-    let seekToChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.seekTo\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let seekToChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.seekTo\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       seekToChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1419,7 +1419,7 @@ class ProVideoPlayerHostApiSetup {
       seekToChannel.setMessageHandler(nil)
     }
     /// Sets the playback speed.
-    let setPlaybackSpeedChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setPlaybackSpeed\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setPlaybackSpeedChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setPlaybackSpeed\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setPlaybackSpeedChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1438,7 +1438,7 @@ class ProVideoPlayerHostApiSetup {
       setPlaybackSpeedChannel.setMessageHandler(nil)
     }
     /// Sets the volume (0.0 to 1.0).
-    let setVolumeChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setVolume\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setVolumeChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setVolume\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setVolumeChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1457,7 +1457,7 @@ class ProVideoPlayerHostApiSetup {
       setVolumeChannel.setMessageHandler(nil)
     }
     /// Gets the current playback position in milliseconds.
-    let getPositionChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getPosition\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let getPositionChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getPosition\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getPositionChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1475,7 +1475,7 @@ class ProVideoPlayerHostApiSetup {
       getPositionChannel.setMessageHandler(nil)
     }
     /// Gets the video duration in milliseconds.
-    let getDurationChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getDuration\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let getDurationChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getDuration\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getDurationChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1493,7 +1493,7 @@ class ProVideoPlayerHostApiSetup {
       getDurationChannel.setMessageHandler(nil)
     }
     /// Gets the platform capabilities.
-    let getPlatformCapabilitiesChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getPlatformCapabilities\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let getPlatformCapabilitiesChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getPlatformCapabilities\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getPlatformCapabilitiesChannel.setMessageHandler { _, reply in
         api.getPlatformCapabilities { result in
@@ -1509,7 +1509,7 @@ class ProVideoPlayerHostApiSetup {
       getPlatformCapabilitiesChannel.setMessageHandler(nil)
     }
     /// Enables or disables verbose logging.
-    let setVerboseLoggingChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setVerboseLogging\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setVerboseLoggingChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setVerboseLogging\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setVerboseLoggingChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1527,7 +1527,7 @@ class ProVideoPlayerHostApiSetup {
       setVerboseLoggingChannel.setMessageHandler(nil)
     }
     /// Gets the device volume (0.0 to 1.0).
-    let getDeviceVolumeChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getDeviceVolume\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let getDeviceVolumeChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getDeviceVolume\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getDeviceVolumeChannel.setMessageHandler { _, reply in
         api.getDeviceVolume { result in
@@ -1543,7 +1543,7 @@ class ProVideoPlayerHostApiSetup {
       getDeviceVolumeChannel.setMessageHandler(nil)
     }
     /// Sets the device volume (0.0 to 1.0).
-    let setDeviceVolumeChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setDeviceVolume\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setDeviceVolumeChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setDeviceVolume\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setDeviceVolumeChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1561,7 +1561,7 @@ class ProVideoPlayerHostApiSetup {
       setDeviceVolumeChannel.setMessageHandler(nil)
     }
     /// Gets the screen brightness (0.0 to 1.0).
-    let getScreenBrightnessChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getScreenBrightness\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let getScreenBrightnessChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getScreenBrightness\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getScreenBrightnessChannel.setMessageHandler { _, reply in
         api.getScreenBrightness { result in
@@ -1577,7 +1577,7 @@ class ProVideoPlayerHostApiSetup {
       getScreenBrightnessChannel.setMessageHandler(nil)
     }
     /// Sets the screen brightness (0.0 to 1.0).
-    let setScreenBrightnessChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setScreenBrightness\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setScreenBrightnessChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setScreenBrightness\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setScreenBrightnessChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1595,7 +1595,7 @@ class ProVideoPlayerHostApiSetup {
       setScreenBrightnessChannel.setMessageHandler(nil)
     }
     /// Gets the current battery info.
-    let getBatteryInfoChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getBatteryInfo\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let getBatteryInfoChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getBatteryInfo\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getBatteryInfoChannel.setMessageHandler { _, reply in
         api.getBatteryInfo { result in
@@ -1611,7 +1611,7 @@ class ProVideoPlayerHostApiSetup {
       getBatteryInfoChannel.setMessageHandler(nil)
     }
     /// Sets whether the video should loop.
-    let setLoopingChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setLooping\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setLoopingChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setLooping\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setLoopingChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1630,7 +1630,7 @@ class ProVideoPlayerHostApiSetup {
       setLoopingChannel.setMessageHandler(nil)
     }
     /// Sets the video scaling mode.
-    let setScalingModeChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setScalingMode\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setScalingModeChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setScalingMode\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setScalingModeChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1649,7 +1649,7 @@ class ProVideoPlayerHostApiSetup {
       setScalingModeChannel.setMessageHandler(nil)
     }
     /// Sets the controls mode.
-    let setControlsModeChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setControlsMode\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setControlsModeChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setControlsMode\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setControlsModeChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1668,7 +1668,7 @@ class ProVideoPlayerHostApiSetup {
       setControlsModeChannel.setMessageHandler(nil)
     }
     /// Sets the active subtitle track.
-    let setSubtitleTrackChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setSubtitleTrack\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setSubtitleTrackChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setSubtitleTrack\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setSubtitleTrackChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1687,7 +1687,7 @@ class ProVideoPlayerHostApiSetup {
       setSubtitleTrackChannel.setMessageHandler(nil)
     }
     /// Sets the subtitle render mode.
-    let setSubtitleRenderModeChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setSubtitleRenderMode\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setSubtitleRenderModeChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setSubtitleRenderMode\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setSubtitleRenderModeChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1706,7 +1706,7 @@ class ProVideoPlayerHostApiSetup {
       setSubtitleRenderModeChannel.setMessageHandler(nil)
     }
     /// Adds an external subtitle file.
-    let addExternalSubtitleChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.addExternalSubtitle\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let addExternalSubtitleChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.addExternalSubtitle\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       addExternalSubtitleChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1725,7 +1725,7 @@ class ProVideoPlayerHostApiSetup {
       addExternalSubtitleChannel.setMessageHandler(nil)
     }
     /// Removes an external subtitle track.
-    let removeExternalSubtitleChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.removeExternalSubtitle\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let removeExternalSubtitleChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.removeExternalSubtitle\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       removeExternalSubtitleChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1744,7 +1744,7 @@ class ProVideoPlayerHostApiSetup {
       removeExternalSubtitleChannel.setMessageHandler(nil)
     }
     /// Gets all external subtitle tracks.
-    let getExternalSubtitlesChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getExternalSubtitles\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let getExternalSubtitlesChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getExternalSubtitles\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getExternalSubtitlesChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1762,7 +1762,7 @@ class ProVideoPlayerHostApiSetup {
       getExternalSubtitlesChannel.setMessageHandler(nil)
     }
     /// Sets the active audio track.
-    let setAudioTrackChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setAudioTrack\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setAudioTrackChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setAudioTrack\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setAudioTrackChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1781,7 +1781,7 @@ class ProVideoPlayerHostApiSetup {
       setAudioTrackChannel.setMessageHandler(nil)
     }
     /// Enters picture-in-picture mode.
-    let enterPipChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.enterPip\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let enterPipChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.enterPip\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       enterPipChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1800,7 +1800,7 @@ class ProVideoPlayerHostApiSetup {
       enterPipChannel.setMessageHandler(nil)
     }
     /// Exits picture-in-picture mode.
-    let exitPipChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.exitPip\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let exitPipChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.exitPip\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       exitPipChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1818,7 +1818,7 @@ class ProVideoPlayerHostApiSetup {
       exitPipChannel.setMessageHandler(nil)
     }
     /// Checks if PiP is supported on this platform.
-    let isPipSupportedChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.isPipSupported\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let isPipSupportedChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.isPipSupported\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       isPipSupportedChannel.setMessageHandler { _, reply in
         api.isPipSupported { result in
@@ -1834,7 +1834,7 @@ class ProVideoPlayerHostApiSetup {
       isPipSupportedChannel.setMessageHandler(nil)
     }
     /// Sets the actions available in PiP mode.
-    let setPipActionsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setPipActions\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setPipActionsChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setPipActions\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setPipActionsChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1853,7 +1853,7 @@ class ProVideoPlayerHostApiSetup {
       setPipActionsChannel.setMessageHandler(nil)
     }
     /// Enters fullscreen mode.
-    let enterFullscreenChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.enterFullscreen\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let enterFullscreenChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.enterFullscreen\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       enterFullscreenChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1871,7 +1871,7 @@ class ProVideoPlayerHostApiSetup {
       enterFullscreenChannel.setMessageHandler(nil)
     }
     /// Exits fullscreen mode.
-    let exitFullscreenChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.exitFullscreen\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let exitFullscreenChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.exitFullscreen\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       exitFullscreenChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1889,7 +1889,7 @@ class ProVideoPlayerHostApiSetup {
       exitFullscreenChannel.setMessageHandler(nil)
     }
     /// Sets window fullscreen state (desktop platforms).
-    let setWindowFullscreenChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setWindowFullscreen\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setWindowFullscreenChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setWindowFullscreen\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setWindowFullscreenChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1907,7 +1907,7 @@ class ProVideoPlayerHostApiSetup {
       setWindowFullscreenChannel.setMessageHandler(nil)
     }
     /// Enables or disables background playback.
-    let setBackgroundPlaybackChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setBackgroundPlayback\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setBackgroundPlaybackChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setBackgroundPlayback\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setBackgroundPlaybackChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1926,7 +1926,7 @@ class ProVideoPlayerHostApiSetup {
       setBackgroundPlaybackChannel.setMessageHandler(nil)
     }
     /// Checks if background playback is supported.
-    let isBackgroundPlaybackSupportedChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.isBackgroundPlaybackSupported\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let isBackgroundPlaybackSupportedChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.isBackgroundPlaybackSupported\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       isBackgroundPlaybackSupportedChannel.setMessageHandler { _, reply in
         api.isBackgroundPlaybackSupported { result in
@@ -1942,7 +1942,7 @@ class ProVideoPlayerHostApiSetup {
       isBackgroundPlaybackSupportedChannel.setMessageHandler(nil)
     }
     /// Gets available video quality tracks.
-    let getVideoQualitiesChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getVideoQualities\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let getVideoQualitiesChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getVideoQualities\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getVideoQualitiesChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1960,7 +1960,7 @@ class ProVideoPlayerHostApiSetup {
       getVideoQualitiesChannel.setMessageHandler(nil)
     }
     /// Sets the video quality track.
-    let setVideoQualityChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setVideoQuality\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setVideoQualityChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setVideoQuality\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setVideoQualityChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1979,7 +1979,7 @@ class ProVideoPlayerHostApiSetup {
       setVideoQualityChannel.setMessageHandler(nil)
     }
     /// Gets the current video quality track.
-    let getCurrentVideoQualityChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getCurrentVideoQuality\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let getCurrentVideoQualityChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getCurrentVideoQuality\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getCurrentVideoQualityChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -1997,7 +1997,7 @@ class ProVideoPlayerHostApiSetup {
       getCurrentVideoQualityChannel.setMessageHandler(nil)
     }
     /// Checks if quality selection is supported.
-    let isQualitySelectionSupportedChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.isQualitySelectionSupported\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let isQualitySelectionSupportedChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.isQualitySelectionSupported\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       isQualitySelectionSupportedChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -2015,7 +2015,7 @@ class ProVideoPlayerHostApiSetup {
       isQualitySelectionSupportedChannel.setMessageHandler(nil)
     }
     /// Gets video metadata.
-    let getVideoMetadataChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getVideoMetadata\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let getVideoMetadataChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getVideoMetadata\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getVideoMetadataChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -2033,7 +2033,7 @@ class ProVideoPlayerHostApiSetup {
       getVideoMetadataChannel.setMessageHandler(nil)
     }
     /// Sets media metadata for platform controls.
-    let setMediaMetadataChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.setMediaMetadata\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let setMediaMetadataChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setMediaMetadata\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       setMediaMetadataChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -2052,7 +2052,7 @@ class ProVideoPlayerHostApiSetup {
       setMediaMetadataChannel.setMessageHandler(nil)
     }
     /// Checks if casting is supported on this platform.
-    let isCastingSupportedChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.isCastingSupported\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let isCastingSupportedChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.isCastingSupported\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       isCastingSupportedChannel.setMessageHandler { _, reply in
         api.isCastingSupported { result in
@@ -2068,7 +2068,7 @@ class ProVideoPlayerHostApiSetup {
       isCastingSupportedChannel.setMessageHandler(nil)
     }
     /// Gets available cast devices.
-    let getAvailableCastDevicesChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getAvailableCastDevices\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let getAvailableCastDevicesChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getAvailableCastDevices\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getAvailableCastDevicesChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -2086,7 +2086,7 @@ class ProVideoPlayerHostApiSetup {
       getAvailableCastDevicesChannel.setMessageHandler(nil)
     }
     /// Starts casting to a device.
-    let startCastingChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.startCasting\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let startCastingChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.startCasting\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       startCastingChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -2105,7 +2105,7 @@ class ProVideoPlayerHostApiSetup {
       startCastingChannel.setMessageHandler(nil)
     }
     /// Stops casting.
-    let stopCastingChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.stopCasting\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let stopCastingChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.stopCasting\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       stopCastingChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -2123,7 +2123,7 @@ class ProVideoPlayerHostApiSetup {
       stopCastingChannel.setMessageHandler(nil)
     }
     /// Gets the current cast state.
-    let getCastStateChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getCastState\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let getCastStateChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getCastState\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getCastStateChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -2141,7 +2141,7 @@ class ProVideoPlayerHostApiSetup {
       getCastStateChannel.setMessageHandler(nil)
     }
     /// Gets the current cast device.
-    let getCurrentCastDeviceChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerHostApi.getCurrentCastDevice\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    let getCurrentCastDeviceChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getCurrentCastDevice\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
       getCurrentCastDeviceChannel.setMessageHandler { message, reply in
         let args = message as! [Any?]
@@ -2182,7 +2182,7 @@ class ProVideoPlayerFlutterApi: ProVideoPlayerFlutterApiProtocol {
   }
   /// Called when a video player event occurs.
   func onEvent(playerId playerIdArg: Int64, event eventArg: VideoPlayerEventMessage, completion: @escaping (Result<Void, PigeonError>) -> Void) {
-    let channelName: String = "dev.flutter.pigeon.pro_video_player_macos.ProVideoPlayerFlutterApi.onEvent\(messageChannelSuffix)"
+    let channelName: String = "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onEvent\(messageChannelSuffix)"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
     channel.sendMessage([playerIdArg, eventArg] as [Any?]) { response in
       guard let listResponse = response as? [Any?] else {

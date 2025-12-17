@@ -12,12 +12,6 @@ class MockVideoControlsState {
   bool isDragging = false;
   double? dragProgress;
   bool showRemainingTime = false;
-  // ignore: unreachable_from_main
-  bool get isBackgroundPlaybackSupported => false;
-  // ignore: unreachable_from_main
-  bool get isPipAvailable => true;
-  // ignore: unreachable_from_main
-  bool get isCastingSupported => false;
 }
 
 void main() {

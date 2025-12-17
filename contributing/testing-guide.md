@@ -547,6 +547,8 @@ await tester.pump(const Duration(seconds: 2));
 11. **Widget finder expects one, finds many** → Use `findsWidgets` for common widget types in nested hierarchies (see "Widget Finder Specificity" section above)
 12. **ValueListenableBuilder causing infinite hangs** → FIXED - Lazy EventCoordinator subscription prevents test hangs (see "Known Test Issues" section for solution)
 13. **ProVideoPlayerController.dispose() hangs in widget tests** → Don't dispose controllers in tests - let garbage collection handle cleanup (see solution below)
+14. **Broadcast stream events not immediately available** → Event listeners execute asynchronously; await microtask before assertions (see solution below)
+15. **LayoutBuilder breaking ValueListenableBuilder on Android** → Don't wrap child widgets in LayoutBuilder at wrong level; breaks platform-specific rendering (see solution below)
 
 ### Controller Disposal Hanging in Widget Tests
 
@@ -623,6 +625,162 @@ test('controller unit test', () async {
 - `test/widget/controls/compact_layout_test.dart` - All 11 tests avoid disposal
 - `test/widget/controls/wrappers/desktop_controls_wrapper_test.dart` - Successfully avoid disposal
 - `test/widget/controls/wrappers/simple_tap_wrapper_test.dart` - No disposal needed
+
+### Broadcast Stream Events Execute Asynchronously
+
+**Problem:**
+
+When using `StreamController.broadcast()`, events added to the stream are delivered to listeners asynchronously (on a microtask). This means assertions that check for emitted events will fail if made immediately after the action that emits the event:
+
+```dart
+// ❌ FAILS: Event not yet available in emittedEvents list
+test('emits event when action occurs', () {
+  fixture.clearEmittedEvents();
+
+  manager.performAction(); // Internally calls emitEvent(...)
+
+  // Event added to stream controller, but listener hasn't executed yet!
+  final event = fixture.verifyEventEmitted<MyEvent>(); // ⚠️ FAILS - emittedEvents is still empty
+});
+```
+
+**Why This Happens:**
+
+1. `StreamController.broadcast()` delivers events to listeners using Dart's microtask queue
+2. When code calls `eventController.add(event)`, the event is queued for delivery
+3. Listeners (which add events to the `emittedEvents` list) execute on the next microtask
+4. Test assertions run synchronously, before the microtask executes
+5. Result: `emittedEvents` is empty even though the event was emitted
+
+**Debugging Symptoms:**
+
+- State variables update correctly (synchronous operations work)
+- Event emission code executes without exceptions
+- `eventController.add()` is called successfully
+- But `emittedEvents` list remains empty
+- Listeners eventually receive events (after test has already failed)
+
+**Solution:**
+
+Add `await Future<void>.delayed(Duration.zero)` after actions that emit events. This yields control to the microtask queue, allowing stream listeners to execute:
+
+```dart
+// ✅ WORKS: Wait for microtask queue to process events
+test('emits event when action occurs', () async {
+  fixture.clearEmittedEvents();
+
+  manager.performAction(); // Calls emitEvent(...)
+
+  // Wait for stream listeners to process events
+  await Future<void>.delayed(Duration.zero);
+
+  // Now emittedEvents contains the event
+  final event = fixture.verifyEventEmitted<MyEvent>();
+  expect(event.someProperty, expectedValue);
+});
+```
+
+**When This Pattern Is Required:**
+
+Apply this pattern whenever:
+- Testing code that emits events via a broadcast stream controller
+- Verifying events were emitted after an action
+- Tests mysteriously fail with "expected event but none was emitted"
+- Widget tests using `tester.pump()` don't have this issue (pump processes microtasks)
+- Unit tests without widgets MUST use this pattern
+
+**Real Examples:**
+
+- `pro_video_player_web/test/managers/network_resilience_manager_test.dart` - All event emission tests use this pattern
+- After calling callbacks: `manager.offlineCallbackForTesting!(null); await Future<void>.delayed(Duration.zero);`
+- After triggering errors: `manager.onNetworkError(...); await Future<void>.delayed(Duration.zero);`
+- After recovery operations: `await manager.attemptRecovery(...); await Future<void>.delayed(Duration.zero);`
+
+**Alternative: Synchronous Event Capture (Not Recommended)**
+
+You could make the stream listener synchronous by directly calling a callback instead of using a broadcast stream, but this loses the flexibility of broadcast streams and prevents multiple listeners. The microtask delay is the correct solution.
+
+### LayoutBuilder Breaking ValueListenableBuilder on Android
+
+**Problem:**
+
+Wrapping child widgets containing `ValueListenableBuilder` in a `LayoutBuilder` at the wrong level breaks platform-specific widget rendering on Android. Specifically, this prevents `ValueListenableBuilder` from receiving updates:
+
+```dart
+// ❌ BREAKS ANDROID: LayoutBuilder wraps entire Stack including child
+@override
+Widget build(BuildContext context) => LayoutBuilder(
+  builder: (context, constraints) {
+    return Stack(
+      children: [
+        widget.child, // Contains progress bar with ValueListenableBuilder
+        Positioned(...),
+      ],
+    );
+  },
+);
+```
+
+**Symptoms:**
+- Progress bar doesn't update during video playback (Android only)
+- Duration shows as 0:00 (Android only)
+- Position/time labels don't update (Android only)
+- iOS works fine (platform-specific rendering difference)
+- Video plays correctly, but UI doesn't reflect changes
+
+**Why This Happens:**
+
+`LayoutBuilder` wrapping the entire widget tree interferes with Flutter's widget lifecycle on Android. The `ValueListenableBuilder` inside the child widget doesn't receive controller updates because the LayoutBuilder changes how the widget tree is built and rebuilt on Android.
+
+**Solution:**
+
+Move the `LayoutBuilder` **inside** the positioned widget, not wrapping the entire Stack:
+
+```dart
+// ✅ WORKS: Child renders normally, LayoutBuilder only for gesture area
+@override
+Widget build(BuildContext context) => Stack(
+  children: [
+    widget.child, // ✅ Not wrapped - ValueListenableBuilder receives updates
+    Positioned(
+      bottom: exclusionHeight,
+      child: LayoutBuilder(  // ✅ LayoutBuilder only where needed
+        builder: (context, constraints) {
+          // Use constraints for gesture area calculations
+          return GestureDetector(...);
+        },
+      ),
+    ),
+  ],
+);
+```
+
+**Testing:**
+
+Two levels of tests prevent this regression:
+
+1. **Widget Structure Test** (`video_player_gesture_detector_test.dart`):
+```dart
+testWidgets('has correct widget structure to prevent Android rendering issues', (tester) async {
+  // Verifies child is direct descendant of Stack, not wrapped in LayoutBuilder
+  // Verifies LayoutBuilder is inside Positioned widget where it belongs
+});
+```
+
+2. **E2E Integration Test** (`player_integration_test.dart`):
+```dart
+testWidgets('progress bar updates during playback (Android regression test)', (tester) async {
+  // Runs on actual Android device
+  // Verifies duration > 0
+  // Verifies position increases during playback
+});
+```
+
+**Key Takeaways:**
+- Only use LayoutBuilder when you need size constraints for that specific widget
+- Don't wrap entire widget trees in LayoutBuilder "just in case"
+- Platform-specific rendering bugs may not show up in widget tests
+- Always test on actual devices for UI update issues
 
 ### HitTestBehavior for Gesture Detection
 
@@ -1267,6 +1425,650 @@ for (var i = 0; i < maxAttempts; i++) {
 
 ---
 
+## E2E Testing Architecture
+
+### Overview
+
+E2E (End-to-End) integration tests verify the complete application flow using real platform implementations. Unlike unit and widget tests that use mocks, E2E tests interact with actual video players, network requests, and platform-specific behaviors.
+
+**Key Differences from Unit/Widget Tests:**
+- **Real implementations** - No mocks; tests use actual ExoPlayer, AVPlayer, HTML5 video, etc.
+- **Platform-aware timing** - Mobile devices need longer timeouts than desktop (45s vs 15s for video loading)
+- **Cross-platform challenges** - Handle autoplay restrictions (web/macOS), navigation layouts (master-detail vs single-pane), widget settling (pumpAndSettle hangs on web/macOS)
+- **Integration scope** - Test complete user journeys, not isolated units
+
+### Infrastructure Files
+
+All E2E infrastructure lives in `example-showcase/integration_test/`:
+
+**Shared Constants:**
+- `shared/e2e_constants.dart` - Platform detection, delays, retry counts
+- `shared/e2e_test_media.dart` - Real video URLs and metadata for testing
+- `shared/e2e_viewport.dart` - Viewport sizes and layout detection
+
+**Helper Functions:**
+- `helpers/e2e_helpers.dart` - Wait, tap, time parsing, logging helpers
+- `helpers/e2e_navigation.dart` - Navigation and scrolling (handles master-detail layouts)
+- `helpers/e2e_platform.dart` - Platform-specific helpers and settle() extension
+
+**Test Fixtures:**
+- `shared/e2e_test_fixture.dart` - E2ETestFixture (setup/teardown/timing) + E2ETestFixtureWithHelpers (convenience methods)
+
+### Quick Start: Writing Your First E2E Test
+
+**Standard E2E Test Template:**
+
+```dart
+import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
+import 'package:pro_video_player_example/main.dart';
+
+import 'helpers/e2e_helpers.dart';
+import 'helpers/e2e_navigation.dart' as nav;
+import 'helpers/e2e_platform.dart';
+import 'shared/e2e_constants.dart';
+import 'shared/e2e_test_fixture.dart';
+import 'shared/e2e_test_media.dart';
+
+void main() {
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+
+  testWidgets('My E2E test flow', (tester) async {
+    // 1. Create fixture with helpers
+    final fixture = E2ETestFixtureWithHelpers(
+      enableDetailedLogging: true, // Optional: log platform/viewport info
+    );
+
+    // 2. Pump app
+    await tester.pumpWidget(const ExampleApp());
+
+    // 3. Set up fixture (viewport, error suppression, timing)
+    await fixture.setUp(tester);
+
+    // 4. Wait for app to settle
+    await tester.settle(); // Cross-platform settle (handles web/macOS)
+
+    // 5. Navigate to demo screen
+    await fixture.navigateToDemo(tester, TestKeys.playerFeaturesCard, 'Player Features');
+
+    // 6. Wait for video initialization
+    fixture.startSection('Wait for video init');
+    final durationFinder = find.byKey(TestKeys.durationText);
+    final duration = await waitForVideoInitialization(tester, durationFinder);
+    expectNonZeroDuration(duration);
+    fixture.endSection('Wait for video init');
+
+    // 7. Test playback (skip on platforms with autoplay restrictions)
+    await fixture.ifPlaybackAllowed(tester, () async {
+      await tester.tap(find.byKey(TestKeys.playButton));
+      await tester.settle();
+
+      final positionFinder = find.byKey(TestKeys.positionText);
+      final position = await waitForPlaybackPosition(tester, positionFinder, minSeconds: 2);
+      expect(position, isNotNull, reason: 'Playback should have advanced');
+    });
+
+    // 8. Navigate back home
+    await fixture.goHome(tester);
+
+    // 9. Clean up
+    fixture.tearDown();
+  });
+}
+```
+
+### Helper Functions Reference
+
+#### E2E Platform Helpers (e2e_platform.dart)
+
+**settle() Extension - Cross-Platform Widget Settling:**
+```dart
+// ✅ GOOD: Works on all platforms
+await tester.settle(); // Pumps frames on web/macOS, pumpAndSettle on others
+
+// ❌ BAD: Hangs on web/macOS (continuous video frames)
+await tester.pumpAndSettle();
+```
+
+**Platform Detection:**
+```dart
+E2EPlatform.isWeb           // true on web
+E2EPlatform.isMobile        // true on iOS/Android
+E2EPlatform.isDesktop       // true on macOS/Windows/Linux
+E2EPlatform.isMacOS         // true on macOS
+E2EPlatform.hasAutoplayRestrictions  // true on web/macOS
+E2EPlatform.needsLongerTimeouts      // true on mobile
+```
+
+**Logging:**
+```dart
+logPlatformInfo();    // Logs: Platform, autoplay restrictions, timeout settings
+logViewportInfo(tester); // Logs: Screen size, pixel ratio, layout mode
+```
+
+#### E2E Navigation Helpers (e2e_navigation.dart)
+
+**navigateToDemo() - Navigate to Demo Screen:**
+```dart
+// Automatically handles:
+// - Scrolling card into view
+// - Single-pane vs master-detail layout
+// - "Open Demo" button on web/macOS master-detail layout
+await nav.navigateToDemo(
+  tester,
+  TestKeys.subtitlesDemoCard,
+  'Subtitles Demo',
+  scrollToCard: true, // Optional: default true
+);
+```
+
+**goHome() - Navigate Back to Home:**
+```dart
+// Tries multiple methods with retries:
+// 1. Back button (if visible)
+// 2. App bar back button
+// 3. Navigator.pop()
+await nav.goHome(tester, homeCardKey: TestKeys.homeCard);
+```
+
+**Layout Detection:**
+```dart
+final isMasterDetail = nav.isMasterDetailLayout(tester); // Screen width >= 600
+final isSinglePane = nav.isSinglePaneLayout(tester);     // Screen width < 600
+```
+
+#### E2E Wait Helpers (e2e_helpers.dart)
+
+**waitForVideoInitialization() - Wait for Video to Load:**
+```dart
+final durationFinder = find.byKey(TestKeys.durationText);
+final duration = await waitForVideoInitialization(
+  tester,
+  durationFinder,
+  timeout: E2EDelays.videoLoading, // Optional: 15-45s platform-aware
+);
+
+if (duration != null) {
+  debugPrint('Video loaded with duration: $duration');
+} else {
+  debugPrint('Video initialization timeout');
+}
+```
+
+**waitForPlaybackPosition() - Wait for Playback to Advance:**
+```dart
+final positionFinder = find.byKey(TestKeys.positionText);
+final position = await waitForPlaybackPosition(
+  tester,
+  positionFinder,
+  minSeconds: 2,
+  timeout: E2EDelays.playbackPositionCheck, // Optional: default 10s
+);
+
+expect(position, isNotNull, reason: 'Playback should advance');
+```
+
+**waitForWidget() - Generic Widget Waiting:**
+```dart
+final appeared = await waitForWidget(
+  tester,
+  find.byKey(TestKeys.playButton),
+  timeout: E2EDelays.videoInitialization, // Optional
+);
+
+expect(appeared, isTrue, reason: 'Play button should appear');
+```
+
+**waitForWidgetToDisappear() - Wait for Widget to Hide:**
+```dart
+await tester.tap(find.byKey(TestKeys.closeButton));
+final disappeared = await waitForWidgetToDisappear(
+  tester,
+  find.byKey(TestKeys.modal),
+);
+
+expect(disappeared, isTrue);
+```
+
+#### E2E Timing Helpers (e2e_helpers.dart)
+
+**Time String Parsing:**
+```dart
+final seconds = parseTimeString('02:30'); // Returns: 150
+final formatted = formatTimeString(150);  // Returns: "02:30"
+
+expectTimeAdvanced('00:05', '00:08', minDelta: 2); // Asserts time increased by 2+ seconds
+expectNonZeroDuration('10:00'); // Asserts duration > 0
+```
+
+**Logging:**
+```dart
+logVideoState(
+  positionStr: '02:30',
+  durationStr: '10:00',
+  state: 'playing',
+  extra: {'bitrate': '5000 kbps'},
+);
+// Output: [Video State] Position: 02:30 | Duration: 10:00 | State: playing | bitrate: 5000 kbps
+```
+
+#### E2E Tap Helpers (e2e_helpers.dart)
+
+```dart
+// Tap and wait for controls animation
+await tapAndWaitForControls(tester, find.byType(ProVideoPlayer));
+
+// Tap and wait for settling
+await tapAndSettle(tester, find.byKey(TestKeys.settingsButton));
+```
+
+#### E2E Conditional Execution (e2e_helpers.dart)
+
+```dart
+// Execute only if condition is true
+await executeIf(
+  condition: !E2EPlatform.hasAutoplayRestrictions,
+  callback: () async {
+    await tester.tap(find.byKey(TestKeys.playButton));
+    // ... playback tests
+  },
+  skipMessage: 'Skipping playback test on web/macOS',
+);
+
+// Try operation, return success/failure
+final success = await tryExecute(() async {
+  await tester.tap(find.byKey(TestKeys.pipButton));
+});
+
+if (!success) {
+  debugPrint('PiP not available');
+}
+```
+
+### E2E Test Fixture Methods
+
+**E2ETestFixture (Base):**
+
+```dart
+final fixture = E2ETestFixture(
+  suppressOverflowErrors: true,      // Default: suppress overflow errors
+  setViewport: true,                  // Default: set platform-appropriate viewport
+  customViewportSize: Size(800, 600), // Optional: override viewport
+  enableDetailedLogging: false,       // Default: quiet mode
+);
+
+await fixture.setUp(tester);    // Set up viewport, error suppression, timers
+fixture.tearDown();             // Clean up timers, restore error handler
+
+// Section timing
+fixture.startSection('Navigation');
+// ... operations ...
+fixture.endSection('Navigation');
+// Output: <<< END: Navigation (1500ms / 1.5s) [Total: 5.2s]
+
+// Automatic timing wrapper
+await fixture.timedSection('Video loading', () async {
+  await waitForVideoInitialization(tester, durationFinder);
+});
+
+// Getters
+final viewportSize = fixture.viewportSize;        // Size set during setUp
+final totalElapsed = fixture.totalElapsed;        // Duration since setUp
+final isMasterDetail = fixture.isMasterDetailLayout;  // Layout detection
+final hasAutoplay = fixture.hasAutoplayRestrictions;  // Platform detection
+```
+
+**E2ETestFixtureWithHelpers (Extended):**
+
+```dart
+final fixture = E2ETestFixtureWithHelpers();
+
+// Navigation with automatic timing
+await fixture.navigateToDemo(tester, TestKeys.card, 'Screen Title');
+await fixture.goHome(tester);
+
+// Video testing with automatic timing + logging
+final duration = await fixture.waitForVideoInitialization(tester, durationFinder);
+final position = await fixture.waitForPlaybackPosition(tester, positionFinder, minSeconds: 2);
+
+// Conditional execution (skips on platforms with autoplay restrictions)
+await fixture.ifPlaybackAllowed(tester, () async {
+  await tester.tap(find.byKey(TestKeys.playButton));
+  // ... playback tests ...
+});
+```
+
+### Platform-Specific Considerations
+
+#### Autoplay Restrictions (Web & macOS)
+
+```dart
+// ✅ GOOD: Skip playback tests on restricted platforms
+if (!E2EPlatform.hasAutoplayRestrictions) {
+  await tester.tap(find.byKey(TestKeys.playButton));
+  final position = await waitForPlaybackPosition(tester, positionFinder, minSeconds: 2);
+  expect(position, isNotNull);
+}
+
+// Or use fixture helper
+await fixture.ifPlaybackAllowed(tester, () async {
+  // Playback tests here
+});
+```
+
+#### Platform-Aware Timeouts
+
+```dart
+// Delays automatically adjust based on platform
+E2EDelays.videoInitialization  // 10s desktop, 15s mobile
+E2EDelays.videoLoading         // 15s desktop, 45s mobile
+E2EDelays.controlsAnimation    // 500ms all platforms
+E2EDelays.navigation           // 1s all platforms
+
+// Retry counts also platform-aware
+E2ERetry.maxInitializationAttempts  // 15 desktop, 45 mobile
+E2ERetry.maxWidgetWaitAttempts      // 10 desktop, 30 mobile
+```
+
+#### Scrolling on macOS
+
+```dart
+// ✅ GOOD: Platform-aware scrolling (automatic in navigateToDemo)
+await nav.ensureCardVisible(tester, cardKey);
+
+// Manual scrolling uses platform-aware logic:
+// - Mobile/Web: scrollUntilVisible with fling
+// - macOS: Manual drag (scrollUntilVisible hangs)
+```
+
+#### Widget Settling
+
+```dart
+// ✅ GOOD: Use settle() extension for cross-platform compatibility
+await tester.settle();      // Pumps frames on web/macOS, pumpAndSettle elsewhere
+
+// ❌ BAD: Hangs on web/macOS
+await tester.pumpAndSettle(); // Video frames never stop, causes infinite loop
+```
+
+#### Master-Detail vs Single-Pane Navigation
+
+```dart
+// Navigation helper automatically handles both layouts:
+await nav.navigateToDemo(tester, TestKeys.card, 'Demo Title');
+
+// On web/macOS with wide viewport (≥600px):
+// 1. Taps card → shows detail pane
+// 2. Taps "Open Demo" button → navigates to full screen
+
+// On mobile/narrow viewport (<600px):
+// 1. Taps card → navigates directly to demo screen
+```
+
+### Common E2E Patterns
+
+#### Pattern 1: Basic Video Playback Test
+
+```dart
+testWidgets('video plays and advances', (tester) async {
+  final fixture = E2ETestFixtureWithHelpers();
+  await tester.pumpWidget(const ExampleApp());
+  await fixture.setUp(tester);
+  await tester.settle();
+
+  // Navigate to player
+  await fixture.navigateToDemo(tester, TestKeys.playerCard, 'Player');
+
+  // Wait for initialization
+  final duration = await fixture.waitForVideoInitialization(
+    tester,
+    find.byKey(TestKeys.durationText),
+  );
+  expectNonZeroDuration(duration);
+
+  // Test playback (skip on restricted platforms)
+  await fixture.ifPlaybackAllowed(tester, () async {
+    await tester.tap(find.byKey(TestKeys.playButton));
+    await tester.settle();
+
+    final position = await fixture.waitForPlaybackPosition(
+      tester,
+      find.byKey(TestKeys.positionText),
+      minSeconds: 2,
+    );
+    expect(position, isNotNull);
+  });
+
+  fixture.tearDown();
+});
+```
+
+#### Pattern 2: Navigation Flow Test
+
+```dart
+testWidgets('navigates through multiple screens', (tester) async {
+  final fixture = E2ETestFixtureWithHelpers();
+  await tester.pumpWidget(const ExampleApp());
+  await fixture.setUp(tester);
+  await tester.settle();
+
+  // Test flow: Home → Demo1 → Home → Demo2 → Home
+  await fixture.navigateToDemo(tester, TestKeys.demo1Card, 'Demo 1');
+  expect(find.text('Demo 1'), findsOneWidget);
+
+  await fixture.goHome(tester);
+  expect(find.byKey(TestKeys.demo1Card), findsOneWidget);
+
+  await fixture.navigateToDemo(tester, TestKeys.demo2Card, 'Demo 2');
+  expect(find.text('Demo 2'), findsOneWidget);
+
+  await fixture.goHome(tester);
+
+  fixture.tearDown();
+});
+```
+
+#### Pattern 3: Controls Interaction Test
+
+```dart
+testWidgets('controls appear and respond to taps', (tester) async {
+  final fixture = E2ETestFixtureWithHelpers();
+  await tester.pumpWidget(const ExampleApp());
+  await fixture.setUp(tester);
+  await tester.settle();
+
+  await fixture.navigateToDemo(tester, TestKeys.playerCard, 'Player');
+
+  // Tap video to show controls (if auto-hidden)
+  await tapAndWaitForControls(tester, find.byType(ProVideoPlayer));
+
+  // Verify controls visible
+  expect(find.byKey(TestKeys.playButton), findsOneWidget);
+  expect(find.byKey(TestKeys.seekBar), findsOneWidget);
+
+  // Test control interactions
+  await tester.tap(find.byKey(TestKeys.fullscreenButton));
+  await tester.settle();
+
+  expect(find.byKey(TestKeys.exitFullscreenButton), findsOneWidget);
+
+  fixture.tearDown();
+});
+```
+
+#### Pattern 4: Error Handling Test
+
+```dart
+testWidgets('handles invalid video URL gracefully', (tester) async {
+  final fixture = E2ETestFixtureWithHelpers();
+  await tester.pumpWidget(const ExampleApp());
+  await fixture.setUp(tester);
+  await tester.settle();
+
+  // Navigate to player with invalid URL
+  await fixture.navigateToDemo(tester, TestKeys.errorTestCard, 'Error Test');
+
+  // Wait for error state
+  final errorAppeared = await waitForWidget(
+    tester,
+    find.byIcon(Icons.error),
+    timeout: E2EDelays.videoLoading,
+  );
+
+  expect(errorAppeared, isTrue, reason: 'Error indicator should appear');
+  expect(find.text('Failed to load video'), findsOneWidget);
+
+  fixture.tearDown();
+});
+```
+
+### E2E Troubleshooting
+
+#### Video Not Loading/Initializing
+
+**Problem:** Video duration stays at "00:00" even after waiting.
+
+**Solutions:**
+1. **Check timeout** - Mobile needs 45s, desktop needs 15s
+   ```dart
+   final duration = await waitForVideoInitialization(
+     tester,
+     durationFinder,
+     timeout: E2EPlatform.needsLongerTimeouts
+       ? const Duration(seconds: 45)
+       : const Duration(seconds: 15),
+   );
+   ```
+
+2. **Verify video URL** - Use known-working URLs from `E2ETestMedia`
+   ```dart
+   const testUrl = E2ETestMedia.bigBuckBunny; // Guaranteed to work
+   ```
+
+3. **Check network** - Ensure device has internet access
+
+4. **Add logging** - Enable detailed logging to see what's happening
+   ```dart
+   final fixture = E2ETestFixtureWithHelpers(enableDetailedLogging: true);
+   ```
+
+#### Autoplay Restrictions on Web/macOS
+
+**Problem:** Video doesn't play automatically, playback tests fail.
+
+**Solution:** Always check for autoplay restrictions before testing playback
+```dart
+// ✅ GOOD: Skip gracefully on restricted platforms
+await fixture.ifPlaybackAllowed(tester, () async {
+  await tester.tap(find.byKey(TestKeys.playButton));
+  final position = await waitForPlaybackPosition(tester, positionFinder, minSeconds: 2);
+  expect(position, isNotNull);
+});
+
+// Or manual check
+if (!E2EPlatform.hasAutoplayRestrictions) {
+  // Playback tests
+}
+```
+
+#### Timing Issues on Different Platforms
+
+**Problem:** Test passes on desktop but fails on mobile with "timeout waiting for video".
+
+**Solution:** Use platform-aware timeouts from `E2EDelays`
+```dart
+// ✅ GOOD: Platform-aware
+final timeout = E2EDelays.videoLoading; // 15s desktop, 45s mobile
+
+// ❌ BAD: Hardcoded
+final timeout = const Duration(seconds: 15); // Fails on slow mobile devices
+```
+
+#### Master-Detail vs Single-Pane Layout Detection
+
+**Problem:** Navigation fails on web/macOS because "Open Demo" button isn't tapped.
+
+**Solution:** Use `nav.navigateToDemo()` which automatically handles both layouts
+```dart
+// ✅ GOOD: Automatic layout handling
+await nav.navigateToDemo(tester, TestKeys.card, 'Demo Title');
+
+// ❌ BAD: Manual navigation doesn't handle master-detail
+await tester.tap(find.byKey(TestKeys.card));
+await tester.settle();
+// Missing: Tap "Open Demo" button on web/macOS master-detail layout
+```
+
+#### ScrollUntilVisible Hanging on macOS
+
+**Problem:** `scrollUntilVisible()` hangs indefinitely on macOS.
+
+**Solution:** Use `nav.ensureCardVisible()` which uses manual scrolling on macOS
+```dart
+// ✅ GOOD: Platform-aware scrolling
+await nav.ensureCardVisible(tester, cardKey);
+
+// ❌ BAD: Hangs on macOS
+await tester.scrollUntilVisible(find.byKey(cardKey), 500);
+```
+
+#### pumpAndSettle() Hanging with Video
+
+**Problem:** Test hangs when using `pumpAndSettle()` with video players.
+
+**Solution:** Use `tester.settle()` extension which handles web/macOS correctly
+```dart
+// ✅ GOOD: Cross-platform settle
+await tester.settle();
+
+// ❌ BAD: Hangs on web/macOS (continuous video frames)
+await tester.pumpAndSettle();
+```
+
+### When to Use E2E vs Unit/Widget Tests
+
+**Use E2E Tests For:**
+- Complete user journeys (login → navigate → play video → fullscreen)
+- Cross-platform behavior verification
+- Real video playback testing
+- Network request handling
+- Platform-specific features (PiP, fullscreen, casting)
+- Integration between multiple components
+
+**Use Unit/Widget Tests For:**
+- Isolated component logic
+- State management
+- UI rendering without platform dependencies
+- Fast feedback during development
+- Mocked platform behavior
+
+**Example Decision Tree:**
+
+```
+Testing video player controls?
+├─ Need to verify actual video playback?
+│  └─ YES → E2E test (real platform player required)
+│
+├─ Testing button visibility/layout?
+│  └─ NO → Widget test (mock controller is sufficient)
+│
+└─ Testing state management logic?
+   └─ NO → Unit test (no UI needed)
+```
+
+### Best Practices
+
+1. **Always use infrastructure helpers** - Don't reimplement wait loops or navigation
+2. **Use platform-aware delays** - `E2EDelays.*` constants, not hardcoded durations
+3. **Handle autoplay restrictions** - Check `E2EPlatform.hasAutoplayRestrictions` before playback tests
+4. **Use settle() not pumpAndSettle()** - Video frames cause infinite loops on web/macOS
+5. **Enable logging during debugging** - `E2ETestFixtureWithHelpers(enableDetailedLogging: true)`
+6. **Test on all platforms** - Don't skip platforms, fix underlying issues
+7. **Use known-working media** - `E2ETestMedia.*` constants for reliable tests
+8. **Clean up with tearDown** - Always call `fixture.tearDown()` at test end
+
+---
+
 ## Test Workarounds for Known Limitations
 
 This section documents workarounds for Flutter testing framework limitations that cannot be resolved through code changes.
@@ -1469,9 +2271,193 @@ testWidgets('renders large play button when paused', (tester) async {
 
 ---
 
+## Memory Leak Tracking
+
+### Overview
+
+Flutter's built-in leak tracking automatically detects undisposed objects during tests. Enabled for all tests in this project as of 2025-12-16.
+
+**What It Detects:**
+- **Not-disposed leaks**: Objects that should have been disposed but weren't (e.g., controllers, streams, subscriptions)
+- **Not-GCed leaks** (experimental): Objects that should have been garbage collected but are still retained
+
+### How It Works
+
+Leak tracking is configured globally in `test/flutter_test_config.dart` and runs automatically with every test. When a test completes, Flutter checks if any tracked objects (like ScrollController, AnimationController, etc.) were properly disposed.
+
+**Configuration:**
+```dart
+// test/flutter_test_config.dart
+import 'dart:async';
+import 'package:leak_tracker_flutter_testing/leak_tracker_flutter_testing.dart';
+
+Future<void> testExecutable(FutureOr<void> Function() testMain) async {
+  LeakTesting.enable();
+
+  LeakTesting.settings = LeakTesting.settings.withIgnored(
+    createdByTestHelpers: true, // Ignore test infrastructure leaks
+  );
+
+  await testMain();
+}
+```
+
+### Writing Leak-Free Tests
+
+**✅ GOOD: Proper disposal with addTearDown**
+```dart
+testWidgets('properly disposes controller', (tester) async {
+  final controller = ScrollController();
+  addTearDown(controller.dispose); // Will be called automatically after test
+
+  await tester.pumpWidget(
+    ListView.builder(
+      controller: controller,
+      itemCount: 10,
+      itemBuilder: (context, index) => ListTile(title: Text('Item $index')),
+    ),
+  );
+
+  // Test passes - no leak detected
+});
+```
+
+**❌ BAD: Missing disposal**
+```dart
+testWidgets('leaks controller', (tester) async {
+  final controller = ScrollController();
+  // Missing addTearDown(controller.dispose)
+
+  await tester.pumpWidget(
+    ListView.builder(
+      controller: controller,
+      itemCount: 10,
+      itemBuilder: (context, index) => ListTile(title: Text('Item $index')),
+    ),
+  );
+
+  // Test fails with leak detection error
+});
+```
+
+### Per-Test Configuration
+
+Override leak tracking for specific tests using the `experimentalLeakTesting` parameter:
+
+**Disable leak tracking for a specific test:**
+```dart
+testWidgets('test with known leak', (tester) async {
+  // Test code that intentionally leaks
+}, experimentalLeakTesting: LeakTesting.settings.withIgnoredAll());
+```
+
+**Ignore specific classes:**
+```dart
+testWidgets('test with ScrollController leak', (tester) async {
+  // Test code
+}, experimentalLeakTesting: LeakTesting.settings.withIgnored(
+  classes: ['ScrollController'],
+));
+```
+
+**Enable full tracking (override global ignores):**
+```dart
+testWidgets('test with strict leak tracking', (tester) async {
+  // Test code
+}, experimentalLeakTesting: LeakTesting.settings.withTrackedAll());
+```
+
+### Reading Leak Reports
+
+When a leak is detected, you'll see output like:
+
+```
+Expected: leak free
+  Actual: <Instance of 'Leaks'>
+   Which: contains leaks:
+          notDisposed:
+            total: 1
+            objects:
+              ScrollController:
+                test: my test name
+                identityHashCode: 195084231
+```
+
+**How to Fix:**
+1. Find the test by name in the error output
+2. Locate where the object is created
+3. Add `addTearDown(object.dispose)` right after creation
+4. Re-run tests to verify fix
+
+### Common Patterns
+
+**Controllers:**
+```dart
+final controller = ProVideoPlayerController();
+addTearDown(controller.dispose);
+```
+
+**Stream Subscriptions:**
+```dart
+final subscription = stream.listen((event) { });
+addTearDown(subscription.cancel);
+```
+
+**Animation Controllers:**
+```dart
+final animController = AnimationController(vsync: this);
+addTearDown(animController.dispose);
+```
+
+**FocusNodes:**
+```dart
+final focusNode = FocusNode();
+addTearDown(focusNode.dispose);
+```
+
+### Known Issues & Workarounds
+
+**Issue 1: ProVideoPlayerController disposal hangs in widget tests**
+
+See "Controller Disposal Hanging in Widget Tests" section above for details. Short version: Don't dispose ProVideoPlayerController in widget tests - let GC handle it.
+
+**Issue 2: Platform-specific objects may not be tracked**
+
+Some platform-specific objects (native Android/iOS resources) may not be automatically tracked by Flutter's leak detection. These need manual verification through platform-specific tests.
+
+### Baseline Status (as of 2025-12-16)
+
+**Initial scan results:**
+- Total tests: 1266 (1247 passing, 19 failing due to leaks)
+- Leaks found: 19 undisposed objects
+- Primary culprits: ProVideoPlayerController instances not being disposed
+
+**Next Steps:**
+1. Fix ProVideoPlayerController disposal in tests
+2. Verify all stream subscriptions are cleaned up
+3. Check animation controllers and timer cleanup
+4. Re-run to establish clean baseline
+
+### Best Practices
+
+1. **Always use addTearDown** for disposal - never try to dispose manually in test body
+2. **Add tearDown immediately after creation** - don't wait until end of test
+3. **Don't skip leak-related test failures** - fix the underlying disposal issue
+4. **Use per-test ignores sparingly** - only for known platform/framework issues
+5. **Document ignored leaks** - explain why a leak can't be fixed if you must ignore it
+
+### Resources
+
+- [Leak Tracking Documentation](https://github.com/dart-lang/leak_tracker/blob/main/doc/leak_tracking/DETECT.md)
+- [Flutter Leak Tracking Guide](https://github.com/dart-lang/leak_tracker/blob/main/doc/leak_tracking/OVERVIEW.md)
+- [Troubleshooting Leaks](https://github.com/dart-lang/leak_tracker/blob/main/doc/leak_tracking/TROUBLESHOOT.md)
+
+---
+
 ## Continuous Code Quality Review
 
 1. **Identify missing tests** — Review edge case coverage after implementing
 2. **Review for improvements** — Duplication, complexity, error handling, performance, naming
 3. **Maintain coverage** — Verify coverage hasn't decreased
 4. **Proactive testing** — Add tests for untested code paths
+5. **Fix memory leaks** — Address leak tracking failures promptly

@@ -168,6 +168,31 @@ class TestDelays {
   /// expect(controller.value.isLoading, isFalse);
   /// ```
   static const longOperation = Duration(milliseconds: 600);
+
+  /// Auto-hide timer delay for video controls.
+  ///
+  /// Standard delay before controls automatically hide during playback.
+  /// Used in gesture detector and controls widget tests.
+  ///
+  /// Example:
+  /// ```dart
+  /// await tester.pump(TestDelays.autoHideControls);
+  /// expect(find.byType(VideoPlayerControls), findsNothing);
+  /// ```
+  static const autoHideControls = Duration(seconds: 2);
+
+  /// Gesture double-tap timer delay.
+  ///
+  /// Time window for detecting double-tap gestures in TapGestureManager.
+  /// Single taps trigger after this delay if no second tap arrives.
+  ///
+  /// Example:
+  /// ```dart
+  /// manager.handleTap(position);
+  /// await Future<void>.delayed(TestDelays.gestureDoubleTapWindow);
+  /// verify(() => onSingleTap()).called(1);
+  /// ```
+  static const gestureDoubleTapWindow = Duration(milliseconds: 300);
 }
 
 /// Size constants for widget testing.

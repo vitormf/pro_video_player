@@ -35,7 +35,6 @@ class ConfigurationManager with ManagerCallbacks {
   final void Function() ensureInitialized;
 
   /// Sets whether the video should loop.
-  // ignore: avoid_positional_boolean_parameters
   Future<void> setLooping(bool looping) async {
     ensureInitialized();
     await platform.setLooping(getPlayerId()!, looping);

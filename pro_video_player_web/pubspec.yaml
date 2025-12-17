@@ -16,9 +16,11 @@ dependencies:
     path: ../pro_video_player_platform_interface
   web: ^1.1.0
 
+  meta: any
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  leak_tracker_flutter_testing: any
   mocktail: ^1.0.4
 
 flutter:

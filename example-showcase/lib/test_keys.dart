@@ -58,7 +58,9 @@ abstract final class TestKeys {
   static const videoSourcesErrorDisplay = Key('video_sources_error');
   static const videoMetadataCard = Key('video_metadata_card');
 
-  /// Returns a key for a network video item at the given index.
+  /// Returns a key for a network video item at the given [index].
+  ///
+  /// Used to identify individual video items in the network video sources list.
   static Key videoSourcesNetworkItem(int index) => Key('video_sources_network_item_$index');
 
   // ---------------------------------------------------------------------------
@@ -70,7 +72,9 @@ abstract final class TestKeys {
   static const subtitlesVideoPlayer = Key('subtitles_video_player');
   static const subtitlesNoTracksMessage = Key('subtitles_no_tracks_message');
 
-  /// Returns a key for a subtitle track radio at the given index.
+  /// Returns a key for a subtitle track radio button at the given [index].
+  ///
+  /// Used to identify individual subtitle track selection radio buttons.
   static Key subtitlesTrackRadio(int index) => Key('subtitles_track_radio_$index');
 
   // ---------------------------------------------------------------------------
@@ -94,13 +98,19 @@ abstract final class TestKeys {
   static const multiPlayerEmptyState = Key('multi_player_empty_state');
   static const multiPlayerGrid = Key('multi_player_grid');
 
-  /// Returns a key for a mini player at the given index.
+  /// Returns a key for a mini player at the given [index].
+  ///
+  /// Used to identify individual video player instances in the multi-player grid.
   static Key multiPlayerItem(int index) => Key('multi_player_item_$index');
 
-  /// Returns a key for a mini player's play/pause button at the given index.
+  /// Returns a key for a mini player's play/pause button at the given [index].
+  ///
+  /// Used to identify the play/pause control for a specific player instance.
   static Key multiPlayerItemPlayPause(int index) => Key('multi_player_item_play_pause_$index');
 
-  /// Returns a key for a mini player's remove button at the given index.
+  /// Returns a key for a mini player's remove button at the given [index].
+  ///
+  /// Used to identify the remove button for a specific player instance.
   static Key multiPlayerItemRemove(int index) => Key('multi_player_item_remove_$index');
 
   // ---------------------------------------------------------------------------
@@ -132,7 +142,9 @@ abstract final class TestKeys {
   static const eventsLogEmptyState = Key('events_log_empty_state');
   static const eventsLogList = Key('events_log_list');
 
-  /// Returns a key for an event log item at the given index.
+  /// Returns a key for an event log item at the given [index].
+  ///
+  /// Used to identify individual event entries in the event log list.
   static Key eventsLogItem(int index) => Key('events_log_item_$index');
 
   // ---------------------------------------------------------------------------

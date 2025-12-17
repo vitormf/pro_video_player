@@ -16,6 +16,25 @@ This document MUST be followed strictly. All instructions are mandatory requirem
 
 Always seek the best solution, not the easiest or fastest. Choose cleaner, more maintainable code. Invest time in proper architecture. Don't cut corners. Quality and correctness are paramount; development speed is secondary.
 
+### Parallel Task Execution
+
+CRITICAL: Execute independent tasks in parallel whenever possible to save time and reduce iteration count.
+
+Use parallel execution for:
+- Reading multiple files with Read tool - Call all Read operations in single message
+- Running multiple independent searches with Grep/Glob - Execute all searches simultaneously
+- Running multiple independent Bash commands - Use multiple tool calls in one message
+- Launching multiple subagents for different aspects of review - code-reviewer, security-auditor, doc-checker can all run at once
+
+Examples:
+- Instead of: Read file A, then Read file B, then Read file C (3 sequential messages)
+- Do: Read files A, B, and C in single message with 3 Read tool calls (1 message)
+
+- Instead of: grep pattern1, then grep pattern2, then grep pattern3 (3 sequential messages)
+- Do: All 3 grep searches in single message (1 message)
+
+Only execute sequentially when tasks have dependencies (e.g., must read file before editing it, must complete task A before starting task B that depends on A's results).
+
 ## After Making Changes - Run Quick Check
 
 MANDATORY after any code changes (Dart, Kotlin, Swift), run from project root:
@@ -92,6 +111,7 @@ Keep subagent list in sync with `.claude/agents/`.
 ## Code Philosophy
 
 Core Principles:
+- **DRY (Don't Repeat Yourself)** - CRITICAL principle. Never duplicate code. Extract to functions, shared modules, or generated code. Examples: makefiles use functions to generate 48 targets from 6 templates; iOS/macOS share Swift via hard links; Android/iOS/macOS share MethodChannelBase pattern. If you write similar code twice, refactor it.
 - Short, focused code - Prefer concise over verbose
 - Consistent patterns - Same approach for similar problems
 - Single responsibility - Each class/function does one thing well
@@ -274,12 +294,7 @@ CRITICAL: When working on any task from the roadmap:
 
 1. **Starting a task**: Move the entire task from its current section to "In Progress" section
 2. **During work**: Tick checkboxes for each completed step immediately as you finish them (don't batch updates)
-3. **Before completing**: Verify compliance with all requirements:
-   - contributing/architecture.md - State management patterns, refactoring guidelines, file size limits
-   - contributing/developer-guide.md - API documentation requirements, configurability patterns
-   - contributing/testing-guide.md - Test patterns, TDD practices, documented solutions
-   - Code coverage expectations - 95% Dart per file, 80% native, 80% global minimum
-   - Run `make format quick-check` and ensure it passes
+3. **Before completing**: Verify ALL criteria in contributing/task-completion-checklist.md are met
 4. **After all steps complete**: Move task to "Completed" section with condensed summary
    - Remove implementation details, test coverage numbers, sub-bullet explanations
    - Keep only "what was accomplished" without "how it was implemented"
@@ -330,8 +345,11 @@ Note: This file is optimized for Claude Code reading, not human reading. Priorit
 
 ## Developer Documentation Reference
 
+- contributing/task-completion-checklist.md - Criteria that must be met before marking tasks as complete
 - contributing/architecture.md - State management, architectural patterns, refactoring guidelines, code sharing
 - contributing/testing-guide.md - Test structure patterns, best practices, E2E guidelines, coverage details
 - contributing/developer-guide.md - API documentation requirements, developer configurability, file creation policies
 - contributing/platform-notes.md - Platform-specific implementation details and capabilities
 - contributing/copyright-compliance.md - Attribution requirements and compliance status
+- contributing/pigeon-guide.md - Pigeon platform channel configuration, inter-version compatibility, troubleshooting
+- contributing/pigeon-migration-status.md - Pigeon migration status, what remains from old MethodChannel code, future cleanup opportunities

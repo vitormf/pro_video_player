@@ -12,8 +12,8 @@ import Foundation
 
 /// Handler class that implements the Pigeon-generated ProVideoPlayerHostApi protocol.
 ///
-/// This class bridges between the type-safe Pigeon API and the existing SharedPluginBase
-/// implementation, allowing both MethodChannel and Pigeon APIs to coexist during migration.
+/// This class implements all platform methods using type-safe Pigeon-generated APIs,
+/// providing bidirectional communication between Dart and native code.
 class PigeonHostApiHandler: NSObject, ProVideoPlayerHostApi {
     private weak var sharedBase: SharedPluginBase?
     private let platformBehavior: PlatformPluginBehavior
@@ -367,9 +367,9 @@ class PigeonHostApiHandler: NSObject, ProVideoPlayerHostApi {
         if let track = track {
             args["track"] = [
                 "id": track.id,
-                "label": track.label,
+                "label": track.label as Any,
                 "language": track.language as Any,
-                "isDefault": track.isDefault
+                "isDefault": track.isDefault as Any
             ]
         }
 
@@ -507,9 +507,9 @@ class PigeonHostApiHandler: NSObject, ProVideoPlayerHostApi {
         if let track = track {
             args["track"] = [
                 "id": track.id,
-                "label": track.label,
+                "label": track.label as Any,
                 "language": track.language as Any,
-                "isDefault": track.isDefault
+                "isDefault": track.isDefault as Any
             ]
         }
 
@@ -554,7 +554,9 @@ class PigeonHostApiHandler: NSObject, ProVideoPlayerHostApi {
     }
 
     func isPipSupported(completion: @escaping (Result<Bool, Error>) -> Void) {
-        completion(.success(platformBehavior.isPipSupported()))
+        let supported = platformBehavior.isPipSupported()
+        verboseLog("Pigeon isPipSupported called, returning: \(supported)", tag: "PigeonHandler")
+        completion(.success(supported))
     }
 
     func setPipActions(playerId: Int64, actions: [PipActionMessage?], completion: @escaping (Result<Void, Error>) -> Void) {

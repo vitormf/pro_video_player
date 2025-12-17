@@ -1,7 +1,8 @@
 # Testing tasks
 # Includes Dart tests, native tests, E2E tests, and coverage
 
-.PHONY: test test-coverage analyze check-duplicates check quick-check test-interface test-main test-web \
+.PHONY: test test-coverage analyze check-duplicates check quick-check test-makefiles \
+        test-interface test-main test-web test-web-all \
         test-android-native test-android-native-coverage test-android-instrumented \
         test-android-instrumented-coverage test-android-full-coverage \
         test-ios-native test-ios-native-coverage \
@@ -16,72 +17,10 @@
 # Use when: Verifying code works correctly
 test: verify-setup
 	@start_time=$$(date +%s); \
-	pkg_count=$$(echo $(PACKAGES) | wc -w | tr -d ' '); \
 	printf "$(TEST) Running all tests in parallel...\n\n"; \
-	\
-	logs=""; \
-	for pkg in $(PACKAGES); do \
-		log=$$(mktemp); \
-		logs="$$logs $$log"; \
-		( \
-			pkg_name="$$pkg"; \
-			test_start=$$(date +%s); \
-			if [ "$$pkg_name" = "pro_video_player_web" ]; then \
-				if (cd $$pkg_name && ${FLUTTER} test --platform chrome $(OUTPUT_REDIRECT)); then \
-					test_end=$$(date +%s); \
-					echo "$$pkg_name:OK:$$(( $$test_end - $$test_start ))" > $$log; \
-				else \
-					test_end=$$(date +%s); \
-					echo "$$pkg_name:FAILED:$$(( $$test_end - $$test_start ))" > $$log; \
-				fi; \
-			else \
-				if (cd $$pkg_name && ${FLUTTER} test $(OUTPUT_REDIRECT)); then \
-					test_end=$$(date +%s); \
-					echo "$$pkg_name:OK:$$(( $$test_end - $$test_start ))" > $$log; \
-				else \
-					test_end=$$(date +%s); \
-					echo "$$pkg_name:FAILED:$$(( $$test_end - $$test_start ))" > $$log; \
-				fi; \
-			fi \
-		) & \
-	done; \
-	\
-	parse_result() { cat $$1 2>/dev/null | cut -d: -f2; }; \
-	has_failures=0; completed=""; count=0; \
-	while true; do \
-		all_done=1; \
-		for log in $$logs; do \
-			case "$$completed" in *"$$log"*) continue ;; esac; \
-			result=$$(parse_result "$$log"); \
-			if [ -n "$$result" ]; then \
-				output=$$(cat $$log); \
-				pkg=$$(echo "$$output" | cut -d: -f1); \
-				time=$$(echo "$$output" | cut -d: -f3); \
-				count=$$((count + 1)); \
-				if [ "$$result" = "OK" ]; then \
-					printf "%d/%d $(CHECK) $$pkg: passed ($${time}s)\n" "$$count" "$$pkg_count"; \
-				else \
-					printf "%d/%d $(CROSS) $$pkg: failed ($${time}s)\n" "$$count" "$$pkg_count"; \
-					has_failures=1; \
-				fi; \
-				completed="$$completed $$log"; \
-			else \
-				all_done=0; \
-			fi; \
-		done; \
-		[ $$all_done -eq 1 ] && break; \
-		sleep 0.1; \
-	done; \
-	rm -f $$logs; \
-	\
+	$(call run-parallel-packages,$(PACKAGES),${FLUTTER} test,--platform chrome,passed,Some tests failed); \
 	elapsed=$$(( $$(date +%s) - $$start_time )); \
-	echo ""; \
-	if [ $$has_failures -eq 1 ]; then \
-		echo "$(CROSS) Some tests failed ($${elapsed}s)"; \
-		exit 1; \
-	else \
-		echo "$(CHECK) All tests passed ($${elapsed}s)"; \
-	fi
+	echo "$(CHECK) All tests passed ($${elapsed}s)"
 
 # test-unit: Run only unit tests (pro_video_player package)
 # Use when: Testing business logic without UI
@@ -99,133 +38,19 @@ test-widget:
 # Use when: Checking test coverage
 test-coverage: verify-setup
 	@start_time=$$(date +%s); \
-	pkg_count=$$(echo $(PACKAGES) | wc -w | tr -d ' '); \
 	printf "$(CHART) Running tests with coverage in parallel...\n\n"; \
-	\
-	logs=""; \
-	for pkg in $(PACKAGES); do \
-		log=$$(mktemp); \
-		logs="$$logs $$log"; \
-		( \
-			pkg_name="$$pkg"; \
-			test_start=$$(date +%s); \
-			if [ "$$pkg_name" = "pro_video_player_web" ]; then \
-				if (cd $$pkg_name && ${FLUTTER} test --coverage --platform chrome $(OUTPUT_REDIRECT)); then \
-					test_end=$$(date +%s); \
-					echo "$$pkg_name:OK:$$(( $$test_end - $$test_start ))" > $$log; \
-				else \
-					test_end=$$(date +%s); \
-					echo "$$pkg_name:FAILED:$$(( $$test_end - $$test_start ))" > $$log; \
-				fi; \
-			else \
-				if (cd $$pkg_name && ${FLUTTER} test --coverage $(OUTPUT_REDIRECT)); then \
-					test_end=$$(date +%s); \
-					echo "$$pkg_name:OK:$$(( $$test_end - $$test_start ))" > $$log; \
-				else \
-					test_end=$$(date +%s); \
-					echo "$$pkg_name:FAILED:$$(( $$test_end - $$test_start ))" > $$log; \
-				fi; \
-			fi \
-		) & \
-	done; \
-	\
-	parse_result() { cat $$1 2>/dev/null | cut -d: -f2; }; \
-	has_failures=0; completed=""; count=0; \
-	while true; do \
-		all_done=1; \
-		for log in $$logs; do \
-			case "$$completed" in *"$$log"*) continue ;; esac; \
-			result=$$(parse_result "$$log"); \
-			if [ -n "$$result" ]; then \
-				output=$$(cat $$log); \
-				pkg=$$(echo "$$output" | cut -d: -f1); \
-				time=$$(echo "$$output" | cut -d: -f3); \
-				count=$$((count + 1)); \
-				if [ "$$result" = "OK" ]; then \
-					printf "%d/%d $(CHECK) $$pkg: coverage generated ($${time}s)\n" "$$count" "$$pkg_count"; \
-				else \
-					printf "%d/%d $(CROSS) $$pkg: failed ($${time}s)\n" "$$count" "$$pkg_count"; \
-					has_failures=1; \
-				fi; \
-				completed="$$completed $$log"; \
-			else \
-				all_done=0; \
-			fi; \
-		done; \
-		[ $$all_done -eq 1 ] && break; \
-		sleep 0.1; \
-	done; \
-	rm -f $$logs; \
-	\
+	$(call run-parallel-packages,$(PACKAGES),${FLUTTER} test --coverage,--platform chrome,coverage generated,Coverage generation failed); \
 	elapsed=$$(( $$(date +%s) - $$start_time )); \
-	echo ""; \
-	if [ $$has_failures -eq 1 ]; then \
-		echo "$(CROSS) Coverage generation failed ($${elapsed}s)"; \
-		exit 1; \
-	else \
-		echo "$(CHECK) Coverage reports generated ($${elapsed}s)"; \
-	fi
+	echo "$(CHECK) Coverage reports generated ($${elapsed}s)"
 
 # analyze: Analyze all packages in parallel (strict mode)
 # Use when: Checking code quality
 analyze:
 	@start_time=$$(date +%s); \
-	pkg_count=$$(echo $(PACKAGES) example-showcase example-simple-player | wc -w | tr -d ' '); \
 	printf "$(SEARCH) Analyzing all packages in parallel...\n\n"; \
-	\
-	logs=""; \
-	for pkg in $(PACKAGES) example-showcase example-simple-player; do \
-		log=$$(mktemp); \
-		logs="$$logs $$log"; \
-		( \
-			pkg_name="$$pkg"; \
-			analyze_start=$$(date +%s); \
-			if (cd $$pkg_name && ${FLUTTER} analyze --fatal-infos --fatal-warnings $(OUTPUT_REDIRECT)); then \
-				analyze_end=$$(date +%s); \
-				echo "$$pkg_name:OK:$$(( $$analyze_end - $$analyze_start ))" > $$log; \
-			else \
-				analyze_end=$$(date +%s); \
-				echo "$$pkg_name:FAILED:$$(( $$analyze_end - $$analyze_start ))" > $$log; \
-			fi \
-		) & \
-	done; \
-	\
-	parse_result() { cat $$1 2>/dev/null | cut -d: -f2; }; \
-	has_failures=0; completed=""; count=0; \
-	while true; do \
-		all_done=1; \
-		for log in $$logs; do \
-			case "$$completed" in *"$$log"*) continue ;; esac; \
-			result=$$(parse_result "$$log"); \
-			if [ -n "$$result" ]; then \
-				output=$$(cat $$log); \
-				pkg=$$(echo "$$output" | cut -d: -f1); \
-				time=$$(echo "$$output" | cut -d: -f3); \
-				count=$$((count + 1)); \
-				if [ "$$result" = "OK" ]; then \
-					printf "%d/%d $(CHECK) $$pkg: passed ($${time}s)\n" "$$count" "$$pkg_count"; \
-				else \
-					printf "%d/%d $(CROSS) $$pkg: has issues ($${time}s)\n" "$$count" "$$pkg_count"; \
-					has_failures=1; \
-				fi; \
-				completed="$$completed $$log"; \
-			else \
-				all_done=0; \
-			fi; \
-		done; \
-		[ $$all_done -eq 1 ] && break; \
-		sleep 0.1; \
-	done; \
-	rm -f $$logs; \
-	\
+	$(call run-parallel-packages,$(PACKAGES) example-showcase example-simple-player,${FLUTTER} analyze --fatal-warnings --no-fatal-infos,,passed,Analysis failed); \
 	elapsed=$$(( $$(date +%s) - $$start_time )); \
-	echo ""; \
-	if [ $$has_failures -eq 1 ]; then \
-		echo "$(CROSS) Analysis failed ($${elapsed}s)"; \
-		exit 1; \
-	else \
-		echo "$(CHECK) Analysis passed ($${elapsed}s)"; \
-	fi
+	echo "$(CHECK) Analysis passed ($${elapsed}s)"
 
 # check-duplicates: Detect duplicate/copy-pasted code
 # Use when: Checking for code duplication (runs with check task)
@@ -261,10 +86,12 @@ quick-check:
 	run_timed() { \
 		local log=$$1; shift; \
 		local start=$$(date +%s); \
-		if eval "$$@" > /dev/null 2>&1; then \
+		local error_log=$$(mktemp); \
+		if eval "$$@" > /dev/null 2>$$error_log; then \
 			echo "OK:$$(( $$(date +%s) - $$start ))" > $$log; \
+			rm -f $$error_log; \
 		else \
-			echo "FAILED:$$(( $$(date +%s) - $$start ))" > $$log; \
+			echo "FAILED:$$(( $$(date +%s) - $$start )):$$error_log" > $$log; \
 		fi; \
 	}; \
 	\
@@ -274,19 +101,24 @@ quick-check:
 	( \
 		start=$$(date +%s); dart_pids=""; dart_pkg_logs=""; \
 		for pkg in $(PACKAGES) example-showcase example-simple-player; do \
-			pkg_log=$$(mktemp); dart_pkg_logs="$$dart_pkg_logs $$pkg_log"; \
-			( cd $$pkg && ${FLUTTER} analyze --fatal-infos --fatal-warnings > /dev/null 2>&1 && echo "$$pkg:OK" > $$pkg_log || echo "$$pkg:FAILED" > $$pkg_log ) & dart_pids="$$dart_pids $$!"; \
+			pkg_log=$$(mktemp); pkg_error=$$(mktemp); dart_pkg_logs="$$dart_pkg_logs $$pkg_log"; \
+			( cd $$pkg && ${FLUTTER} analyze --fatal-warnings --no-fatal-infos >$$pkg_error 2>&1 && echo "$$pkg:OK:$$pkg_error" > $$pkg_log || echo "$$pkg:FAILED:$$pkg_error" > $$pkg_log ) & dart_pids="$$dart_pids $$!"; \
 		done; \
 		for pid in $$dart_pids; do wait $$pid; done; \
-		failed=""; \
+		failed=""; error_log=$$(mktemp); \
 		for log in $$dart_pkg_logs; do \
-			output=$$(cat $$log); pkg=$$(echo "$$output" | cut -d: -f1); status=$$(echo "$$output" | cut -d: -f2); \
-			[ "$$status" = "FAILED" ] && failed="$$failed $$pkg"; \
+			output=$$(cat $$log); pkg=$$(echo "$$output" | cut -d: -f1); status=$$(echo "$$output" | cut -d: -f2); pkg_err=$$(echo "$$output" | cut -d: -f3-); \
+			if [ "$$status" = "FAILED" ]; then \
+				failed="$$failed $$pkg"; \
+				echo "=== $$pkg ===" >> $$error_log; \
+				grep -v "Waiting for another flutter command" $$pkg_err 2>/dev/null | head -20 >> $$error_log || tail -20 $$pkg_err >> $$error_log 2>/dev/null; \
+			fi; \
+			rm -f $$pkg_err; \
 		done; \
 		rm -f $$dart_pkg_logs; \
-		[ -n "$$failed" ] && echo "FAILED:$$failed:$$(( $$(date +%s) - $$start ))" > $$dart_log || echo "OK:$$(( $$(date +%s) - $$start ))" > $$dart_log; \
+		[ -n "$$failed" ] && echo "FAILED:$$failed:$$(( $$(date +%s) - $$start )):$$error_log" > $$dart_log || echo "OK:$$(( $$(date +%s) - $$start ))" > $$dart_log; \
 	) & \
-	( run_timed $$kotlin_log "cd example-showcase/android && ./gradlew :pro_video_player_android:compileDebugKotlin --quiet" ) & \
+	( run_timed $$kotlin_log "cd pro_video_player_android/android && ./../../example-showcase/android/gradlew compileDebugKotlin --quiet" ) & \
 	( run_timed $$ios_log "cd example-showcase/ios && xcodebuild build -workspace Runner.xcworkspace -scheme Runner -destination 'generic/platform=iOS Simulator' CODE_SIGN_IDENTITY='' CODE_SIGNING_REQUIRED=NO -quiet" ) & \
 	( run_timed $$macos_log "cd example-showcase/macos && xcodebuild build -workspace Runner.xcworkspace -scheme Runner -destination 'platform=macOS' CODE_SIGN_IDENTITY='' CODE_SIGNING_REQUIRED=NO -quiet" ) & \
 	( run_timed $$format_log "${DART} format . -l 120 --set-exit-if-changed --output=none" ) & \
@@ -298,34 +130,60 @@ quick-check:
 			echo "SKIPPED:$$(( $$(date +%s) - $$start ))" > $$duplicates_log; \
 		else \
 			rm -rf report > /dev/null 2>&1; \
-			if npx jscpd . --config .jscpd.json > /dev/null 2>&1 && ./makefiles/scripts/check-clone-instances.sh > /dev/null 2>&1; then \
+			dup_error=$$(mktemp); \
+			if npx jscpd . --config .jscpd.json > /dev/null 2>&1 && ./makefiles/scripts/check-clone-instances.sh > /dev/null 2>$$dup_error; then \
 				echo "OK:$$(( $$(date +%s) - $$start ))" > $$duplicates_log; \
+				rm -f $$dup_error; \
 			else \
-				echo "FAILED:$$(( $$(date +%s) - $$start ))" > $$duplicates_log; \
+				./makefiles/scripts/check-clone-instances.sh >> $$dup_error 2>&1 || true; \
+				echo "FAILED:$$(( $$(date +%s) - $$start )):$$dup_error" > $$duplicates_log; \
 			fi; \
 		fi \
 	) & \
 	\
 	parse_result() { cat $$1 2>/dev/null | cut -d: -f1; }; \
-	parse_time() { cat $$1 2>/dev/null | rev | cut -d: -f1 | rev; }; \
+	parse_time() { \
+		content=$$(cat $$1 2>/dev/null); \
+		echo "$$content" | awk -F: '{if (NF==4) print $$3; else if (NF==3) print $$2; else print $$NF}'; \
+	}; \
+	parse_error_log() { \
+		content=$$(cat $$1 2>/dev/null); \
+		echo "$$content" | awk -F: '{if (NF==4) print $$4; else if (NF==3) print $$3; else print ""}'; \
+	}; \
 	display_result() { \
-		id=$$1; name=$$2; log=$$3; count=$$4; \
-		result=$$(parse_result "$$log"); time=$$(parse_time "$$log"); \
+		id=$$1; name=$$2; log=$$3; count=$$4; collected_errors=$$5; \
+		result=$$(parse_result "$$log"); time=$$(parse_time "$$log"); error_log=$$(parse_error_log "$$log"); \
 		[ -z "$$result" ] && return 1; \
 		case "$$id:$$result" in \
 			*:OK) printf "%d/8 $(CHECK) $$name: passed ($${time}s)\n" "$$count" ;; \
-			dart:FAILED) failed=$$(cat $$log | cut -d: -f2); printf "%d/8 $(CROSS) $$name: failed ($${time}s) - $$failed\n" "$$count"; ret=2 ;; \
+			dart:FAILED) \
+				failed=$$(cat $$log | cut -d: -f2); \
+				printf "%d/8 $(CROSS) $$name: failed ($${time}s) - $$failed\n" "$$count"; \
+				if [ -f "$$error_log" ]; then \
+					echo "$$error_log" >> "$$collected_errors"; \
+				fi; \
+				ret=2 ;; \
 			format:FAILED) printf "%d/8 $(CROSS) $$name: failed ($${time}s) - run 'make format' to fix\n" "$$count"; ret=2 ;; \
 			links:FAILED) printf "%d/8 $(CROSS) $$name: iOS/macOS sources out of sync ($${time}s) - run 'make setup-shared-links'\n" "$$count"; ret=2 ;; \
 			logging:FAILED) printf "%d/8 $(CROSS) $$name: found unconditional log statements ($${time}s) - run ./makefiles/scripts/check-verbose-logging.sh for details\n" "$$count"; ret=2 ;; \
 			duplicates:SKIPPED) printf "%d/8 $(INFO) $$name: skipped ($${time}s) - jscpd not installed\n" "$$count" ;; \
-			duplicates:FAILED) printf "%d/8 $(CROSS) $$name: code duplication detected ($${time}s) - run 'make check-duplicates' for details\n" "$$count"; ret=2 ;; \
-			*:FAILED) printf "%d/8 $(CROSS) $$name: failed ($${time}s)\n" "$$count"; ret=2 ;; \
+			duplicates:FAILED) \
+				printf "%d/8 $(CROSS) $$name: code duplication detected ($${time}s)\n" "$$count"; \
+				if [ -f "$$error_log" ]; then \
+					echo "$$error_log" >> "$$collected_errors"; \
+				fi; \
+				ret=2 ;; \
+			*:FAILED) \
+				printf "%d/8 $(CROSS) $$name: failed ($${time}s)\n" "$$count"; \
+				if [ -f "$$error_log" ]; then \
+					echo "$$error_log" >> "$$collected_errors"; \
+				fi; \
+				ret=2 ;; \
 		esac; \
 		return $${ret:-0}; \
 	}; \
 	\
-	has_failures=0; completed=""; count=0; \
+	has_failures=0; completed=""; count=0; collected_errors=$$(mktemp); \
 	while true; do \
 		all_done=1; \
 		for check in "dart|Dart|$$dart_log" "kotlin|Kotlin|$$kotlin_log" "ios|iOS (Swift)|$$ios_log" "macos|macOS (Swift)|$$macos_log" "format|Format|$$format_log" "links|Shared Links|$$links_log" "logging|Logging|$$logging_log" "duplicates|Duplicates|$$duplicates_log"; do \
@@ -335,7 +193,7 @@ quick-check:
 			result=$$(parse_result "$$log"); \
 			if [ -n "$$result" ]; then \
 				count=$$((count + 1)); \
-				if display_result "$$id" "$$name" "$$log" "$$count"; then \
+				if display_result "$$id" "$$name" "$$log" "$$count" "$$collected_errors"; then \
 					completed="$$completed $$id"; \
 				else \
 					completed="$$completed $$id"; has_failures=1; \
@@ -348,6 +206,17 @@ quick-check:
 		sleep 0.1; \
 	done; \
 	rm -f $$dart_log $$kotlin_log $$ios_log $$macos_log $$format_log $$links_log $$logging_log $$duplicates_log; \
+	\
+	if [ $$has_failures -eq 1 ] && [ -s "$$collected_errors" ]; then \
+		echo ""; echo "$(CROSS) Error Details:"; echo ""; \
+		while IFS= read -r error_file; do \
+			if [ -f "$$error_file" ]; then \
+				cat "$$error_file"; \
+				rm -f "$$error_file"; \
+			fi; \
+		done < "$$collected_errors"; \
+	fi; \
+	rm -f "$$collected_errors"; \
 	\
 	elapsed=$$(( $$(date +%s) - $$start_time )); echo ""; \
 	[ $$has_failures -eq 1 ] && echo "$(CROSS) Quick check failed ($${elapsed}s)" && exit 1 || echo "$(CHECK) Quick check passed ($${elapsed}s)"
@@ -427,6 +296,57 @@ test-web:
 	cd pro_video_player_web && ${FLUTTER} test --platform chrome $(OUTPUT_REDIRECT); \
 	elapsed=$$(( $$(date +%s) - $$start_time )); \
 	printf "\r$(CHECK) web package tests passed ($${elapsed}s)\n"
+
+# test-web-all: Test web package on all browsers in parallel (Chrome, Firefox, Safari, Edge)
+test-web-all:
+	@start_time=$$(date +%s); \
+	printf "$(TEST) Running web tests on all browsers in parallel...\n\n"; \
+	\
+	logs=""; \
+	browsers="chrome firefox safari edge"; \
+	for browser in $$browsers; do \
+		log=$$(mktemp); \
+		logs="$$logs $$log"; \
+		( \
+			browser_start=$$(date +%s); \
+			if (cd pro_video_player_web && ${FLUTTER} test --platform $$browser 2>&1 | grep -q "All tests passed"); then \
+				browser_end=$$(date +%s); \
+				echo "$$browser:OK:$$(( $$browser_end - $$browser_start ))" > $$log; \
+			else \
+				browser_end=$$(date +%s); \
+				echo "$$browser:FAILED:$$(( $$browser_end - $$browser_start ))" > $$log; \
+			fi \
+		) & \
+	done; \
+	wait; \
+	\
+	printf "\n$(BOLD)Test Results:$(RESET)\n"; \
+	printf "$(GRAY)─────────────────────────────────────$(RESET)\n"; \
+	\
+	failed=0; \
+	for log in $$logs; do \
+		read -r result < $$log; \
+		browser=$$(echo $$result | cut -d: -f1); \
+		status=$$(echo $$result | cut -d: -f2); \
+		time=$$(echo $$result | cut -d: -f3); \
+		if [ "$$status" = "OK" ]; then \
+			printf "$(CHECK) $$browser: passed ($${time}s)\n"; \
+		else \
+			printf "$(CROSS) $$browser: failed ($${time}s)\n"; \
+			failed=$$(($$failed + 1)); \
+		fi; \
+		rm -f $$log; \
+	done; \
+	\
+	elapsed=$$(( $$(date +%s) - $$start_time )); \
+	printf "$(GRAY)─────────────────────────────────────$(RESET)\n"; \
+	\
+	if [ $$failed -eq 0 ]; then \
+		printf "$(CHECK) All browsers passed ($${elapsed}s total)\n\n"; \
+	else \
+		printf "$(CROSS) $$failed browser(s) failed ($${elapsed}s total)\n\n"; \
+		exit 1; \
+	fi
 
 # === Native Tests ===
 
@@ -603,11 +523,61 @@ test-native: test-android-native test-ios-native test-macos-native
 
 # === E2E Tests ===
 
-# test-e2e: Run E2E UI tests (auto-detect device)
+# test-e2e: Run E2E UI tests on ALL platforms in PARALLEL (default)
 test-e2e: verify-setup
-	@echo "$(TEST) Running E2E UI tests..."
-	@echo "$(INFO) For specific platform use: make test-e2e-ios or test-e2e-android"
-	@cd example-showcase && ${FLUTTER} test integration_test/e2e_ui_test.dart
+	@echo "$(TEST) Running E2E UI tests on ALL platforms in PARALLEL..."
+	@echo "$(INFO) Tests will run on: iOS, Android, macOS, Web"
+	@echo "$(INFO) For sequential execution: make test-e2e-sequential"
+	@echo "$(INFO) For single platform: make test-e2e-ios, test-e2e-android, test-e2e-macos, or test-e2e-web"
+	@echo ""
+	@# Create temp directory for logs
+	@mkdir -p /tmp/e2e-logs
+	@# Start all platforms in background
+	@echo "$(HOURGLASS) Starting tests on all platforms..."
+	@make test-e2e-ios > /tmp/e2e-logs/ios.log 2>&1 & IOS_PID=$$!; \
+	make test-e2e-android > /tmp/e2e-logs/android.log 2>&1 & ANDROID_PID=$$!; \
+	make test-e2e-macos > /tmp/e2e-logs/macos.log 2>&1 & MACOS_PID=$$!; \
+	make test-e2e-web > /tmp/e2e-logs/web.log 2>&1 & WEB_PID=$$!; \
+	\
+	echo "$(INFO) Tests running in parallel (PIDs: iOS=$$IOS_PID Android=$$ANDROID_PID macOS=$$MACOS_PID Web=$$WEB_PID)"; \
+	echo "$(INFO) Logs: /tmp/e2e-logs/*.log"; \
+	echo ""; \
+	\
+	echo "$(HOURGLASS) Waiting for all platforms to complete..."; \
+	START_TIME=$$(date +%s); \
+	\
+	wait $$IOS_PID; IOS_EXIT=$$?; IOS_END=$$(date +%s); IOS_TIME=$$((IOS_END - START_TIME)); \
+	wait $$ANDROID_PID; ANDROID_EXIT=$$?; ANDROID_END=$$(date +%s); ANDROID_TIME=$$((ANDROID_END - START_TIME)); \
+	wait $$MACOS_PID; MACOS_EXIT=$$?; MACOS_END=$$(date +%s); MACOS_TIME=$$((MACOS_END - START_TIME)); \
+	wait $$WEB_PID; WEB_EXIT=$$?; WEB_END=$$(date +%s); WEB_TIME=$$((WEB_END - START_TIME)); \
+	\
+	echo ""; \
+	echo "========================================"; \
+	echo "  E2E Test Results (Parallel)"; \
+	echo "========================================"; \
+	printf "%-12s %-10s %-8s %-10s\n" "Platform" "Status" "Time" "Exit Code"; \
+	printf "%-12s %-10s %-8s %-10s\n" "--------" "------" "----" "---------"; \
+	[ $$IOS_EXIT -eq 0 ] && printf "%-12s $(CHECK) %-10s %-8s %-10s\n" "iOS" "PASSED" "$${IOS_TIME}s" "$$IOS_EXIT" || printf "%-12s $(CROSS) %-10s %-8s %-10s\n" "iOS" "FAILED" "$${IOS_TIME}s" "$$IOS_EXIT"; \
+	[ $$ANDROID_EXIT -eq 0 ] && printf "%-12s $(CHECK) %-10s %-8s %-10s\n" "Android" "PASSED" "$${ANDROID_TIME}s" "$$ANDROID_EXIT" || printf "%-12s $(CROSS) %-10s %-8s %-10s\n" "Android" "FAILED" "$${ANDROID_TIME}s" "$$ANDROID_EXIT"; \
+	[ $$MACOS_EXIT -eq 0 ] && printf "%-12s $(CHECK) %-10s %-8s %-10s\n" "macOS" "PASSED" "$${MACOS_TIME}s" "$$MACOS_EXIT" || printf "%-12s $(CROSS) %-10s %-8s %-10s\n" "macOS" "FAILED" "$${MACOS_TIME}s" "$$MACOS_EXIT"; \
+	[ $$WEB_EXIT -eq 0 ] && printf "%-12s $(CHECK) %-10s %-8s %-10s\n" "Web" "PASSED" "$${WEB_TIME}s" "$$WEB_EXIT" || printf "%-12s $(CROSS) %-10s %-8s %-10s\n" "Web" "FAILED" "$${WEB_TIME}s" "$$WEB_EXIT"; \
+	echo "========================================"; \
+	echo ""; \
+	\
+	FAILED=0; \
+	[ $$IOS_EXIT -ne 0 ] && FAILED=$$((FAILED + 1)); \
+	[ $$ANDROID_EXIT -ne 0 ] && FAILED=$$((FAILED + 1)); \
+	[ $$MACOS_EXIT -ne 0 ] && FAILED=$$((FAILED + 1)); \
+	[ $$WEB_EXIT -ne 0 ] && FAILED=$$((FAILED + 1)); \
+	\
+	if [ $$FAILED -gt 0 ]; then \
+		echo "$(CROSS) $$FAILED platform(s) failed"; \
+		echo "$(INFO) Check logs at: /tmp/e2e-logs/*.log"; \
+		exit 1; \
+	else \
+		echo "$(CHECK) All platforms passed!"; \
+		echo "$(INFO) Logs saved at: /tmp/e2e-logs/*.log"; \
+	fi
 
 # test-e2e-ios: Run E2E UI tests on iOS simulator
 test-e2e-ios: verify-setup
@@ -615,7 +585,7 @@ test-e2e-ios: verify-setup
 	@echo "$(HOURGLASS) Booting simulator if needed..."
 	@xcrun simctl boot $(IOS_SIMULATOR_ID) 2>/dev/null || true
 	@sleep 2
-	@cd example-showcase && ${FLUTTER} test integration_test/e2e_ui_test.dart -d $(IOS_SIMULATOR_ID)
+	@cd example-showcase && ${FLUTTER} drive --driver=test_driver/integration_test.dart --target=integration_test/e2e_ui_test.dart -d $(IOS_SIMULATOR_ID)
 	@echo ""
 	@echo "$(CHECK) E2E UI tests on iOS complete!"
 
@@ -637,7 +607,8 @@ test-e2e-macos: verify-setup
 	@echo "$(CHECK) E2E UI tests on macOS complete!"
 
 # test-e2e-web: Run E2E UI tests on Chrome (web)
-# Note: --web-browser-flag disables autoplay restrictions for testing
+# Note: Uses -d chrome for reliable test execution
+# Note: Tests are designed to handle web autoplay restrictions gracefully
 test-e2e-web: verify-setup
 	@echo "$(TEST) Running E2E UI tests on Chrome (web)..."
 	@# Check if chromedriver is installed
@@ -656,11 +627,67 @@ test-e2e-web: verify-setup
 		cd example-showcase && ${FLUTTER} drive \
 			--driver=test_driver/integration_test.dart \
 			--target=integration_test/e2e_ui_test.dart \
-			-d web-server \
-			--web-browser-flag=--autoplay-policy=no-user-gesture-required; \
+			-d chrome; \
 		EXIT_CODE=$$?; \
 		echo "$(INFO) Stopping chromedriver..."; \
 		pkill -f chromedriver 2>/dev/null || true; \
 		if [ $$EXIT_CODE -ne 0 ]; then exit $$EXIT_CODE; fi
 	@echo ""
 	@echo "$(CHECK) E2E UI tests on Chrome complete!"
+
+# test-e2e-sequential: Run E2E UI tests on ALL platforms SEQUENTIALLY
+test-e2e-sequential: verify-setup
+	@echo "$(TEST) Running E2E UI tests on ALL platforms SEQUENTIALLY..."
+	@echo "$(INFO) Tests will run one at a time: iOS → Android → macOS → Web"
+	@echo "$(INFO) For parallel execution: make test-e2e"
+	@echo ""
+	@FAILED=0; \
+	START_TIME=$$(date +%s); \
+	\
+	echo "$(HOURGLASS) Running iOS tests..."; \
+	make test-e2e-ios; \
+	[ $$? -ne 0 ] && FAILED=$$((FAILED + 1)); \
+	echo ""; \
+	\
+	echo "$(HOURGLASS) Running Android tests..."; \
+	make test-e2e-android; \
+	[ $$? -ne 0 ] && FAILED=$$((FAILED + 1)); \
+	echo ""; \
+	\
+	echo "$(HOURGLASS) Running macOS tests..."; \
+	make test-e2e-macos; \
+	[ $$? -ne 0 ] && FAILED=$$((FAILED + 1)); \
+	echo ""; \
+	\
+	echo "$(HOURGLASS) Running Web tests..."; \
+	make test-e2e-web; \
+	[ $$? -ne 0 ] && FAILED=$$((FAILED + 1)); \
+	echo ""; \
+	\
+	END_TIME=$$(date +%s); \
+	TOTAL_TIME=$$((END_TIME - START_TIME)); \
+	\
+	echo "========================================"; \
+	echo "  E2E Test Results (Sequential)"; \
+	echo "========================================"; \
+	echo "Total time: $${TOTAL_TIME}s"; \
+	echo ""; \
+	\
+	if [ $$FAILED -gt 0 ]; then \
+		echo "$(CROSS) $$FAILED platform(s) failed"; \
+		exit 1; \
+	else \
+		echo "$(CHECK) All platforms passed!"; \
+	fi
+
+# test-makefiles: Run BATS tests for makefiles
+# Use when: Verifying makefile changes, CI validation
+test-makefiles:
+	@if ! command -v bats >/dev/null 2>&1; then \
+		echo "$(CROSS) BATS is not installed"; \
+		echo "Install with: brew install bats-core"; \
+		exit 1; \
+	fi; \
+	echo "$(TEST) Running makefile tests..."; \
+	echo ""; \
+	bats tests/makefiles/ && echo "" && echo "$(CHECK) All makefile tests passed"

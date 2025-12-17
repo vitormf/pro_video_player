@@ -1,8 +1,7 @@
 #!/bin/bash
-# Setup hard links for shared sources (Swift + Pigeon)
+# Setup hard links for shared Swift sources
 #
 # Swift sources: shared_apple_sources/ → iOS/macOS
-# Pigeon sources: shared_pigeon_sources/ → Android/iOS/macOS
 #
 # Hard links ensure that editing any linked file updates all copies,
 # eliminating code duplication while maintaining package compatibility.
@@ -52,50 +51,9 @@ for source_file in "$SHARED_SWIFT"/*.swift; do
 done
 
 echo ""
-
-# === Pigeon Sources ===
-
-SHARED_PIGEON="$PROJECT_ROOT/shared_pigeon_sources"
-ANDROID_PIGEON="$PROJECT_ROOT/pro_video_player_android/pigeons"
-IOS_PIGEON="$PROJECT_ROOT/pro_video_player_ios/pigeons"
-MACOS_PIGEON="$PROJECT_ROOT/pro_video_player_macos/pigeons"
-
-echo "Setting up shared Pigeon source hard links..."
-
-# Verify source directory exists
-if [ ! -d "$SHARED_PIGEON" ]; then
-    echo "Error: shared_pigeon_sources directory not found at $SHARED_PIGEON"
-    exit 1
-fi
-
-# Create target directories if they don't exist
-mkdir -p "$ANDROID_PIGEON"
-mkdir -p "$IOS_PIGEON"
-mkdir -p "$MACOS_PIGEON"
-
-# Create hard links for Pigeon files
-for source_file in "$SHARED_PIGEON"/*; do
-    if [ -f "$source_file" ]; then
-        filename=$(basename "$source_file")
-
-        # Remove existing files (they might be copies, not links)
-        rm -f "$ANDROID_PIGEON/$filename"
-        rm -f "$IOS_PIGEON/$filename"
-        rm -f "$MACOS_PIGEON/$filename"
-
-        # Create hard links
-        ln "$source_file" "$ANDROID_PIGEON/$filename"
-        ln "$source_file" "$IOS_PIGEON/$filename"
-        ln "$source_file" "$MACOS_PIGEON/$filename"
-
-        echo "  Linked: $filename"
-    fi
-done
-
-echo ""
 echo "Done! Hard links created successfully."
 echo ""
-echo "Verification (link count should be 3 for Swift, 4 for Pigeon):"
+echo "Verification (link count should be 3 for Swift):"
 ls -la "$SHARED_SWIFT"/*.swift 2>/dev/null | awk '{print $2, $NF}' | while read count file; do
     basename "$file"
 done | head -3

@@ -1,5 +1,3 @@
-// ignore_for_file: avoid_slow_async_io - Necessary: tests require filesystem I/O to verify subtitle discovery functionality
-
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -13,8 +11,10 @@ void main() {
   });
 
   tearDown(() async {
-    if (await tempDir.exists()) {
+    try {
       await tempDir.delete(recursive: true);
+    } catch (_) {
+      // Ignore errors if directory doesn't exist or is already deleted
     }
   });
 

@@ -17,8 +17,8 @@ import io.flutter.FlutterInjector
 /**
  * Handler class that implements the Pigeon-generated ProVideoPlayerHostApi interface.
  *
- * This class bridges between the type-safe Pigeon API and the existing ProVideoPlayerPlugin
- * implementation, allowing both MethodChannel and Pigeon APIs to coexist during migration.
+ * This class implements all platform methods using type-safe Pigeon-generated APIs,
+ * providing bidirectional communication between Dart and native code.
  */
 class PigeonHostApiHandler(
     private val plugin: ProVideoPlayerPlugin,
