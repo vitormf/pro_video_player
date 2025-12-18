@@ -234,106 +234,26 @@ class VideoPlayerOptionsMessage {
   });
 }
 
-/// Platform capabilities returned by the platform.
-class PlatformCapabilitiesMessage {
-  /// Whether Picture-in-Picture is supported.
-  final bool supportsPictureInPicture;
-
-  /// Whether fullscreen is supported.
-  final bool supportsFullscreen;
-
-  /// Whether background playback is supported.
-  final bool supportsBackgroundPlayback;
-
-  /// Whether casting is supported.
-  final bool supportsCasting;
-
-  /// Whether AirPlay is supported.
-  final bool supportsAirPlay;
-
-  /// Whether Chromecast is supported.
-  final bool supportsChromecast;
-
-  /// Whether Remote Playback API is supported.
-  final bool supportsRemotePlayback;
-
-  /// Whether quality selection is supported.
-  final bool supportsQualitySelection;
-
-  /// Whether playback speed control is supported.
-  final bool supportsPlaybackSpeedControl;
-
-  /// Whether subtitles are supported.
-  final bool supportsSubtitles;
-
-  /// Whether external subtitles are supported.
-  final bool supportsExternalSubtitles;
-
-  /// Whether audio track selection is supported.
-  final bool supportsAudioTrackSelection;
-
-  /// Whether chapters are supported.
-  final bool supportsChapters;
-
-  /// Whether video metadata extraction is supported.
-  final bool supportsVideoMetadataExtraction;
-
-  /// Whether network monitoring is supported.
-  final bool supportsNetworkMonitoring;
-
-  /// Whether bandwidth estimation is supported.
-  final bool supportsBandwidthEstimation;
-
-  /// Whether adaptive bitrate streaming is supported.
-  final bool supportsAdaptiveBitrate;
-
-  /// Whether HLS is supported.
-  final bool supportsHLS;
-
-  /// Whether DASH is supported.
-  final bool supportsDASH;
-
-  /// Whether device volume control is supported.
-  final bool supportsDeviceVolumeControl;
-
-  /// Whether screen brightness control is supported.
-  final bool supportsScreenBrightnessControl;
-
-  /// Platform name.
+/// Platform information returned by the platform.
+///
+/// Contains static platform metadata that doesn't require async checks.
+class PlatformInfoMessage {
+  /// Platform name (e.g., "iOS", "Android", "Web").
   final String platformName;
 
-  /// Native player type.
+  /// Native player type (e.g., "AVPlayer", "ExoPlayer", "HTML5").
   final String nativePlayerType;
 
-  /// Additional platform-specific info.
+  /// Additional platform-specific information as key-value pairs.
+  ///
+  /// May include:
+  /// - OS version
+  /// - SDK version
+  /// - Browser user agent
+  /// - Hardware capabilities
   final Map<String?, Object?>? additionalInfo;
 
-  PlatformCapabilitiesMessage({
-    required this.supportsPictureInPicture,
-    required this.supportsFullscreen,
-    required this.supportsBackgroundPlayback,
-    required this.supportsCasting,
-    required this.supportsAirPlay,
-    required this.supportsChromecast,
-    required this.supportsRemotePlayback,
-    required this.supportsQualitySelection,
-    required this.supportsPlaybackSpeedControl,
-    required this.supportsSubtitles,
-    required this.supportsExternalSubtitles,
-    required this.supportsAudioTrackSelection,
-    required this.supportsChapters,
-    required this.supportsVideoMetadataExtraction,
-    required this.supportsNetworkMonitoring,
-    required this.supportsBandwidthEstimation,
-    required this.supportsAdaptiveBitrate,
-    required this.supportsHLS,
-    required this.supportsDASH,
-    required this.supportsDeviceVolumeControl,
-    required this.supportsScreenBrightnessControl,
-    required this.platformName,
-    required this.nativePlayerType,
-    this.additionalInfo,
-  });
+  PlatformInfoMessage({required this.platformName, required this.nativePlayerType, this.additionalInfo});
 }
 
 /// Battery information.
@@ -635,13 +555,99 @@ abstract class ProVideoPlayerHostApi {
   @async
   int getDuration(int playerId);
 
-  /// Gets the platform capabilities.
+  /// Gets static platform information.
   @async
-  PlatformCapabilitiesMessage getPlatformCapabilities();
+  PlatformInfoMessage getPlatformInfo();
 
   /// Enables or disables verbose logging.
   @async
   void setVerboseLogging(bool enabled);
+
+  // ==================== Platform Capabilities ====================
+
+  /// Checks if Picture-in-Picture mode is supported.
+  @async
+  bool supportsPictureInPicture();
+
+  /// Checks if fullscreen mode is supported.
+  @async
+  bool supportsFullscreen();
+
+  /// Checks if background playback is supported.
+  @async
+  bool supportsBackgroundPlayback();
+
+  /// Checks if any form of casting is supported.
+  @async
+  bool supportsCasting();
+
+  /// Checks if AirPlay is supported.
+  @async
+  bool supportsAirPlay();
+
+  /// Checks if Chromecast is supported.
+  @async
+  bool supportsChromecast();
+
+  /// Checks if Remote Playback API is supported.
+  @async
+  bool supportsRemotePlayback();
+
+  /// Checks if quality selection is supported.
+  @async
+  bool supportsQualitySelection();
+
+  /// Checks if playback speed control is supported.
+  @async
+  bool supportsPlaybackSpeedControl();
+
+  /// Checks if subtitles are supported.
+  @async
+  bool supportsSubtitles();
+
+  /// Checks if external subtitles are supported.
+  @async
+  bool supportsExternalSubtitles();
+
+  /// Checks if audio track selection is supported.
+  @async
+  bool supportsAudioTrackSelection();
+
+  /// Checks if chapters are supported.
+  @async
+  bool supportsChapters();
+
+  /// Checks if video metadata extraction is supported.
+  @async
+  bool supportsVideoMetadataExtraction();
+
+  /// Checks if network monitoring is supported.
+  @async
+  bool supportsNetworkMonitoring();
+
+  /// Checks if bandwidth estimation is supported.
+  @async
+  bool supportsBandwidthEstimation();
+
+  /// Checks if adaptive bitrate streaming is supported.
+  @async
+  bool supportsAdaptiveBitrate();
+
+  /// Checks if HLS is supported.
+  @async
+  bool supportsHLS();
+
+  /// Checks if DASH is supported.
+  @async
+  bool supportsDASH();
+
+  /// Checks if device volume control is supported.
+  @async
+  bool supportsDeviceVolumeControl();
+
+  /// Checks if screen brightness control is supported.
+  @async
+  bool supportsScreenBrightnessControl();
 
   // ==================== Device Controls ====================
 

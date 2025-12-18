@@ -131,6 +131,24 @@ bool shouldSkipPlaybackTests() => E2EPlatform.hasAutoplayRestrictions;
 /// ```
 bool hasAutoplayRestrictions() => E2EPlatform.hasAutoplayRestrictions;
 
+/// Returns true if volume controls can be tested on this platform.
+///
+/// Web E2E tests require muted videos for autoplay bypass, so volume
+/// changes don't work. This applies to ALL web browsers (Chrome, Safari, Firefox).
+///
+/// Use this to skip volume-related tests on web.
+///
+/// Example:
+/// ```dart
+/// if (canTestVolumeControls()) {
+///   await tester.drag(volumeSlider, Offset(-100, 0));
+///   expect(find.text('50%'), findsOneWidget);
+/// } else {
+///   debugPrint('Skipping volume test (videos muted on web for autoplay)');
+/// }
+/// ```
+bool canTestVolumeControls() => E2EPlatform.canTestVolumeControls;
+
 // ==========================================================================
 // Platform-Aware Retry Counts
 // ==========================================================================

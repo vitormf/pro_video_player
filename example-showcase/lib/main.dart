@@ -37,6 +37,7 @@ class ExampleApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) => MaterialApp(
     title: 'Pro Video Player Example',
+    debugShowCheckedModeBanner: false,
     theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple), useMaterial3: true),
     initialRoute: '/',
     routes: {

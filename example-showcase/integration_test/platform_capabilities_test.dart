@@ -1,11 +1,9 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:pro_video_player/pro_video_player.dart';
 
-import 'helpers/e2e_platform.dart';
+import 'shared/e2e_constants.dart';
 
 /// Integration tests for platform capability detection.
 ///
@@ -30,8 +28,8 @@ void main() {
 
     testWidgets('PiP should be supported on macOS', (tester) async {
       // Skip test if not on macOS
-      if (!Platform.isMacOS) {
-        printOnFailure('Skipping macOS-specific test (current platform: ${E2EPlatform.currentPlatformName})');
+      if (!E2EPlatform.isMacOS) {
+        printOnFailure('Skipping macOS-specific test (not running on macOS)');
         return;
       }
 
@@ -55,8 +53,8 @@ void main() {
 
     testWidgets('PiP should be supported on iOS', (tester) async {
       // Skip test if not on iOS
-      if (!Platform.isIOS) {
-        printOnFailure('Skipping iOS-specific test (current platform: ${E2EPlatform.currentPlatformName})');
+      if (!E2EPlatform.isIOS) {
+        printOnFailure('Skipping iOS-specific test (not running on iOS)');
         return;
       }
 
@@ -80,8 +78,8 @@ void main() {
 
     testWidgets('PiP should be supported on Android 8.0+', (tester) async {
       // Skip test if not on Android
-      if (!Platform.isAndroid) {
-        printOnFailure('Skipping Android-specific test (current platform: ${E2EPlatform.currentPlatformName})');
+      if (!E2EPlatform.isAndroid) {
+        printOnFailure('Skipping Android-specific test (not running on Android)');
         return;
       }
 
@@ -106,8 +104,8 @@ void main() {
 
     testWidgets('PiP should work on web if browser supports it', (tester) async {
       // Skip test if not on web
-      if (!kIsWeb) {
-        printOnFailure('Skipping web-specific test (current platform: ${E2EPlatform.currentPlatformName})');
+      if (!E2EPlatform.isWeb) {
+        printOnFailure('Skipping web-specific test (not running on web)');
         return;
       }
 
@@ -124,8 +122,9 @@ void main() {
 
     testWidgets('PiP should not be supported on Windows/Linux', (tester) async {
       // Skip test if not on Windows or Linux
-      if (!Platform.isWindows && !Platform.isLinux) {
-        printOnFailure('Skipping Windows/Linux test (current platform: ${E2EPlatform.currentPlatformName})');
+      final isWindowsOrLinux = E2EPlatform.isDesktop && !E2EPlatform.isMacOS;
+      if (!isWindowsOrLinux) {
+        printOnFailure('Skipping Windows/Linux test (not running on Windows or Linux)');
         return;
       }
 
@@ -138,7 +137,7 @@ void main() {
       // Then: PiP should not be supported on Windows/Linux
       expect(pipSupported, isFalse, reason: 'PiP is not yet implemented on Windows/Linux platforms');
 
-      debugPrint('✅ PiP capability correctly detected on ${E2EPlatform.currentPlatformName}: not supported');
+      debugPrint('✅ PiP capability correctly detected on Windows/Linux: not supported');
     });
   });
 
@@ -154,7 +153,7 @@ void main() {
     });
 
     testWidgets('Background playback should be supported on macOS', (tester) async {
-      if (!Platform.isMacOS) {
+      if (!E2EPlatform.isMacOS) {
         printOnFailure('Skipping macOS-specific test');
         return;
       }
@@ -172,7 +171,7 @@ void main() {
     });
 
     testWidgets('Background playback should be supported on iOS', (tester) async {
-      if (!Platform.isIOS) {
+      if (!E2EPlatform.isIOS) {
         printOnFailure('Skipping iOS-specific test');
         return;
       }
@@ -194,7 +193,7 @@ void main() {
     });
 
     testWidgets('Background playback should be supported on Android', (tester) async {
-      if (!Platform.isAndroid) {
+      if (!E2EPlatform.isAndroid) {
         printOnFailure('Skipping Android-specific test');
         return;
       }

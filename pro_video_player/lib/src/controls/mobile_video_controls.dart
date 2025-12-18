@@ -172,59 +172,67 @@ class MobileVideoControls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Mobile layout: gradient overlays at top and bottom, clear center
-    // Extra padding only applied in fullscreen mode to accommodate status/navigation bars
+    // Use actual safe area insets in fullscreen mode to accommodate notches, status bars, home indicators
     final isFullscreen = controller.value.isFullscreen;
-    final topPadding = isFullscreen ? 24.0 : 0.0; // Status bar area (fullscreen only)
-    final bottomPadding = isFullscreen ? 44.0 : 0.0; // Home indicator (fullscreen only)
+    final padding = MediaQuery.of(context).padding;
+    final topPadding = isFullscreen ? padding.top : 0.0;
+    final bottomPadding = isFullscreen ? padding.bottom : 0.0;
+    final leftPadding = isFullscreen ? padding.left : 0.0;
+    final rightPadding = isFullscreen ? padding.right : 0.0;
 
     // Use ClipRect to handle sub-pixel overflow that can occur on certain screen sizes
     return ClipRect(
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           // Top area with gradient (black at top fading to transparent)
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.black.withValues(alpha: 0.7), Colors.transparent],
+          Flexible(
+            fit: FlexFit.loose,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.black.withValues(alpha: 0.7), Colors.transparent],
+                ),
               ),
-            ),
-            child: Padding(
-              padding: EdgeInsets.only(top: topPadding),
-              child: PlayerToolbar(
-                controller: controller,
-                theme: theme,
-                controlsState: controlsState,
-                showSubtitleButton: showSubtitleButton,
-                showAudioButton: showAudioButton,
-                showQualityButton: showQualityButton,
-                showSpeedButton: showSpeedButton,
-                showScalingModeButton: showScalingModeButton,
-                showBackgroundPlaybackButton: showBackgroundPlaybackButton,
-                showPipButton: showPipButton,
-                showOrientationLockButton: showOrientationLockButton,
-                showFullscreenButton: showFullscreenButton,
-                playerToolbarActions: playerToolbarActions,
-                maxPlayerToolbarActions: maxPlayerToolbarActions,
-                autoOverflowActions: autoOverflowActions,
-                onDismiss: onDismiss,
-                isDesktopPlatform: isDesktopPlatform,
-                onShowQualityPicker: onShowQualityPicker,
-                onShowSubtitlePicker: onShowSubtitlePicker,
-                onShowAudioPicker: onShowAudioPicker,
-                onShowChaptersPicker: onShowChaptersPicker,
-                onShowSpeedPicker: onShowSpeedPicker,
-                onShowScalingModePicker: onShowScalingModePicker,
-                onShowOrientationLockPicker: onShowOrientationLockPicker,
-                onFullscreenEnter: onFullscreenEnter,
-                onFullscreenExit: onFullscreenExit,
+              child: Padding(
+                padding: EdgeInsets.only(top: topPadding, left: leftPadding, right: rightPadding),
+                child: PlayerToolbar(
+                  controller: controller,
+                  theme: theme,
+                  controlsState: controlsState,
+                  showSubtitleButton: showSubtitleButton,
+                  showAudioButton: showAudioButton,
+                  showQualityButton: showQualityButton,
+                  showSpeedButton: showSpeedButton,
+                  showScalingModeButton: showScalingModeButton,
+                  showBackgroundPlaybackButton: showBackgroundPlaybackButton,
+                  showPipButton: showPipButton,
+                  showOrientationLockButton: showOrientationLockButton,
+                  showFullscreenButton: showFullscreenButton,
+                  playerToolbarActions: playerToolbarActions,
+                  maxPlayerToolbarActions: maxPlayerToolbarActions,
+                  autoOverflowActions: autoOverflowActions,
+                  onDismiss: onDismiss,
+                  isDesktopPlatform: isDesktopPlatform,
+                  onShowQualityPicker: onShowQualityPicker,
+                  onShowSubtitlePicker: onShowSubtitlePicker,
+                  onShowAudioPicker: onShowAudioPicker,
+                  onShowChaptersPicker: onShowChaptersPicker,
+                  onShowSpeedPicker: onShowSpeedPicker,
+                  onShowScalingModePicker: onShowScalingModePicker,
+                  onShowOrientationLockPicker: onShowOrientationLockPicker,
+                  onFullscreenEnter: onFullscreenEnter,
+                  onFullscreenExit: onFullscreenExit,
+                ),
               ),
             ),
           ),
           // Center controls - no background, video visible
           centerControls,
           // Bottom area with gradient (transparent at top fading to black)
+          // Not flexible - needs minimum height for playback controls
           DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -234,10 +242,11 @@ class MobileVideoControls extends StatelessWidget {
               ),
             ),
             child: Padding(
-              padding: EdgeInsets.only(bottom: bottomPadding),
+              padding: EdgeInsets.only(bottom: bottomPadding, left: leftPadding, right: rightPadding),
               child: BottomControlsBar(
                 controller: controller,
                 theme: theme,
+                isFullscreen: isFullscreen,
                 showRemainingTime: (controlsState as dynamic).showRemainingTime as bool,
                 gestureSeekPosition: gestureSeekPosition,
                 showSkipButtons: showSkipButtons,

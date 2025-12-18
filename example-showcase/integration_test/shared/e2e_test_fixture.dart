@@ -3,17 +3,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/e2e_helpers.dart';
+import '../helpers/e2e_memory_tracker.dart';
 import '../helpers/e2e_navigation.dart' as nav;
 import '../helpers/e2e_platform.dart';
 import 'e2e_constants.dart';
 import 'e2e_viewport.dart';
+
+/// Internal class to track section timing information.
+class _SectionTiming {
+  _SectionTiming(this.name, this.durationMs);
+
+  final String name;
+  final int durationMs;
+
+  double get durationSeconds => durationMs / 1000;
+}
 
 /// E2E test fixture providing common setup and utilities for integration tests.
 ///
 /// This fixture eliminates boilerplate by providing:
 /// - Viewport setup based on platform
 /// - Section timing and logging
-/// - Error suppression for overflow errors
+/// - Memory leak detection (optional)
 /// - Convenient access to all E2E helper functions
 ///
 /// Usage:
@@ -33,19 +44,18 @@ class E2ETestFixture {
   /// Creates an E2E test fixture.
   ///
   /// Parameters:
-  /// - [suppressOverflowErrors]: Whether to suppress overflow errors in tests (default: true)
   /// - [setViewport]: Whether to automatically set viewport size (default: true)
   /// - [customViewportSize]: Custom viewport size (overrides platform default)
   /// - [enableDetailedLogging]: Whether to log detailed platform/viewport info (default: false)
+  /// - [trackMemory]: Whether to track memory usage and detect leaks (default: false)
+  /// - [memoryLeakThresholdMB]: Memory growth threshold in MB to warn about leaks (default: 50.0)
   E2ETestFixture({
-    this.suppressOverflowErrors = true,
     this.setViewport = true,
     this.customViewportSize,
     this.enableDetailedLogging = false,
+    this.trackMemory = false,
+    this.memoryLeakThresholdMB = 50.0,
   });
-
-  /// Whether to suppress overflow errors in tests.
-  final bool suppressOverflowErrors;
 
   /// Whether to automatically set viewport size.
   final bool setViewport;
@@ -56,11 +66,18 @@ class E2ETestFixture {
   /// Whether to log detailed platform/viewport info.
   final bool enableDetailedLogging;
 
+  /// Whether to track memory usage and detect leaks.
+  final bool trackMemory;
+
+  /// Memory growth threshold in MB to warn about leaks.
+  final double memoryLeakThresholdMB;
+
   // Internal state
   Stopwatch? _sectionStopwatch;
   late Stopwatch _totalStopwatch;
-  FlutterExceptionHandler? _originalOnError;
   Size? _actualViewportSize;
+  E2EMemoryTracker? _memoryTracker;
+  final List<_SectionTiming> _sectionTimings = [];
 
   /// The actual viewport size that was set during setUp.
   Size? get viewportSize => _actualViewportSize;
@@ -89,14 +106,15 @@ class E2ETestFixture {
     // Start total timer
     _totalStopwatch = Stopwatch()..start();
 
-    // Set up error suppression
-    if (suppressOverflowErrors) {
-      _setupErrorSuppression();
-    }
-
     // Set up viewport
     if (setViewport) {
       await _setupViewport(tester);
+    }
+
+    // Set up memory tracking
+    if (trackMemory) {
+      _memoryTracker = E2EMemoryTracker(leakThresholdMB: memoryLeakThresholdMB);
+      await _memoryTracker!.captureBaseline('Test setUp');
     }
 
     // Log platform info if requested
@@ -122,24 +140,64 @@ class E2ETestFixture {
   /// });
   /// ```
   void tearDown() {
+    // Print memory report if tracking was enabled
+    if (_memoryTracker != null) {
+      _memoryTracker!.printReport();
+
+      // Warn about potential leaks
+      if (_memoryTracker!.hasLeak()) {
+        final growth = _memoryTracker!.getMemoryGrowth();
+        debugPrint('\n⚠️  WARNING: Potential memory leak detected!');
+        debugPrint('   Memory grew by ${growth.toStringAsFixed(1)}MB during test execution.');
+        debugPrint('   Review the memory report above for details.\n');
+      }
+    }
+
     // Stop timers
     _totalStopwatch.stop();
     _sectionStopwatch?.stop();
 
-    // Restore error handler
-    if (_originalOnError != null) {
-      FlutterError.onError = _originalOnError;
-    }
+    // Print comprehensive timing summary
+    _printTimingSummary();
   }
 
-  void _setupErrorSuppression() {
-    _originalOnError = FlutterError.onError;
-    FlutterError.onError = (details) {
-      final isOverflowError = details.toString().contains('overflowed');
-      if (!isOverflowError) {
-        _originalOnError?.call(details);
-      }
-    };
+  void _printTimingSummary() {
+    if (_sectionTimings.isEmpty) {
+      return;
+    }
+
+    final totalMs = _totalStopwatch.elapsedMilliseconds;
+    final totalSeconds = totalMs / 1000;
+
+    debugPrint('\n${'=' * 80}');
+    debugPrint('E2E TEST TIMING SUMMARY');
+    debugPrint('=' * 80);
+
+    // Print header
+    debugPrint(
+      '${'Section'.padRight(40)}${'Time (s)'.padLeft(12)}${'Time (ms)'.padLeft(12)}${'% of Total'.padLeft(12)}',
+    );
+    debugPrint('-' * 80);
+
+    // Print each section
+    for (final section in _sectionTimings) {
+      final percentage = (section.durationMs / totalMs * 100).toStringAsFixed(1);
+      final line =
+          '${section.name.padRight(40)}'
+          '${section.durationSeconds.toStringAsFixed(1).padLeft(12)}'
+          '${section.durationMs.toString().padLeft(12)}'
+          '${('$percentage%').padLeft(12)}';
+      debugPrint(line);
+    }
+
+    debugPrint('-' * 80);
+    final totalLine =
+        '${'TOTAL'.padRight(40)}'
+        '${totalSeconds.toStringAsFixed(1).padLeft(12)}'
+        '${totalMs.toString().padLeft(12)}'
+        '${'100.0%'.padLeft(12)}';
+    debugPrint(totalLine);
+    debugPrint('${'=' * 80}\n');
   }
 
   Future<void> _setupViewport(WidgetTester tester) async {
@@ -162,6 +220,8 @@ class E2ETestFixture {
   /// Call this at the beginning of a logical test section to start timing.
   /// Follow with [endSection] to log the elapsed time.
   ///
+  /// If memory tracking is enabled, captures a memory snapshot.
+  ///
   /// Example:
   /// ```dart
   /// fixture.startSection('Video loading');
@@ -178,16 +238,26 @@ class E2ETestFixture {
   ///
   /// Must be called after [startSection].
   ///
+  /// If memory tracking is enabled, captures a memory snapshot.
+  ///
   /// Example:
   /// ```dart
   /// fixture.startSection('Navigation');
   /// await navigateToDemo(tester, cardKey, title);
   /// fixture.endSection('Navigation');
   /// ```
-  void endSection(String name) {
+  Future<void> endSection(String name) async {
+    // Capture memory snapshot before logging
+    if (_memoryTracker != null) {
+      await _memoryTracker!.captureSnapshot('End of $name');
+    }
+
     _sectionStopwatch?.stop();
     final elapsed = _sectionStopwatch?.elapsedMilliseconds ?? 0;
     final totalElapsed = _totalStopwatch.elapsedMilliseconds;
+
+    // Record section timing for summary report
+    _sectionTimings.add(_SectionTiming(name, elapsed));
 
     debugPrint(
       '<<< END: $name (${elapsed}ms / ${(elapsed / 1000).toStringAsFixed(1)}s) '
@@ -211,9 +281,30 @@ class E2ETestFixture {
     try {
       await callback();
     } finally {
-      endSection(name);
+      await endSection(name);
     }
   }
+
+  // ==========================================================================
+  // Memory Tracking
+  // ==========================================================================
+
+  /// Captures a memory snapshot at the current point.
+  ///
+  /// Only works if memory tracking is enabled (trackMemory=true).
+  ///
+  /// Example:
+  /// ```dart
+  /// await fixture.captureMemorySnapshot('After video initialization');
+  /// ```
+  Future<void> captureMemorySnapshot(String label) async {
+    if (_memoryTracker != null) {
+      await _memoryTracker!.captureSnapshot(label);
+    }
+  }
+
+  /// Gets the current memory tracker (if enabled).
+  E2EMemoryTracker? get memoryTracker => _memoryTracker;
 
   // ==========================================================================
   // Video State Logging
@@ -279,10 +370,11 @@ class E2ETestFixture {
 class E2ETestFixtureWithHelpers extends E2ETestFixture {
   /// Creates an extended E2E test fixture with convenience helpers.
   E2ETestFixtureWithHelpers({
-    super.suppressOverflowErrors,
     super.setViewport,
     super.customViewportSize,
     super.enableDetailedLogging,
+    super.trackMemory,
+    super.memoryLeakThresholdMB,
   });
 
   // ==========================================================================

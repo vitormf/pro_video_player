@@ -29,6 +29,7 @@ class PipButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => IconButton(
+    key: const Key('toolbar_pip_button'),
     icon: Icon(Icons.picture_in_picture_alt, color: theme.primaryColor),
     iconSize: 20,
     tooltip: 'Picture-in-Picture',

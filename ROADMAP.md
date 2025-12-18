@@ -205,6 +205,27 @@ This document tracks the development progress and planned features for the Pro V
 - Shared EventParser eliminates duplication
 - MethodChannelBase deprecated for Windows/Linux
 
+### Platform Capabilities Async Migration & Legacy Code Cleanup
+- **Rationale:** Some platform capability checks were slow (synchronous), preventing app slowdowns required splitting into individual async methods
+- **Implementation:**
+  - Replaced bulk `getPlatformCapabilities()` with 21 individual async methods (e.g., `supportsPictureInPicture()`, `supportsFullscreen()`, etc.)
+  - Created new `getPlatformInfo()` for static platform metadata (platformName, nativePlayerType, additionalInfo)
+  - Updated all platform implementations (Android, iOS/macOS, Web, Windows, Linux)
+  - Removed legacy `PlatformCapabilities` class entirely (library not yet published, no backward compatibility needed)
+  - **Legacy Code Cleanup:** Removed all remaining legacy MethodChannel handlers across platforms:
+    - Android: Deleted 45 unused handler methods (745 lines removed, ~75% reduction from 984 → 239 lines)
+    - iOS/macOS: Already clean from previous migration (minimal stubs for test compatibility)
+    - Windows: Removed legacy C++ MethodChannel handler (59 lines removed, ~68% reduction from 87 → 28 lines)
+    - Linux: Removed legacy C MethodChannel handler (75 lines removed, ~69% reduction from 109 → 34 lines)
+  - Total legacy code eliminated: ~975 lines across all platforms
+- **Benefits:**
+  - Async capability checks prevent blocking UI
+  - Consistent async API across all 21 capabilities
+  - Platform information separated from capability checks
+  - All legacy MethodChannel code removed (Android, Windows, Linux now stub-only placeholders)
+  - Clean codebase ready for future implementation (Windows/Linux)
+- **Status:** Complete (2025-12-18) - All tests passing, all compilation checks passing
+
 ### Testing Architecture Standardization
 
 <details>

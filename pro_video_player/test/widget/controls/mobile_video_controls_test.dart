@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pro_video_player/pro_video_player.dart';
@@ -7,7 +9,22 @@ import '../../shared/test_helpers.dart';
 import '../../shared/test_setup.dart';
 
 // Mock for VideoControlsState
-class MockVideoControlsState {}
+class MockVideoControlsState {
+  bool get visible => true;
+  bool get isFullyVisible => true;
+  bool get hideInstantly => false;
+  Timer? get hideTimer => null;
+  bool? get isPipAvailable => null;
+  bool? get isBackgroundPlaybackSupported => null;
+  bool? get isCastingSupported => null;
+  bool get showRemainingTime => false;
+  bool get isDragging => false;
+  double? get dragProgress => null;
+  bool get isMouseOverControls => false;
+  Timer? get keyboardOverlayTimer => null;
+  KeyboardOverlayType? get keyboardOverlayType => null;
+  double? get keyboardOverlayValue => null;
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

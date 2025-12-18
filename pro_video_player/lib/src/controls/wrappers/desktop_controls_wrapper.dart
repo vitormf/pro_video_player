@@ -116,7 +116,9 @@ class DesktopControlsWrapper extends StatelessWidget {
   Widget build(BuildContext context) => Listener(
     onPointerSignal: _handleScroll,
     child: GestureDetector(
-      behavior: HitTestBehavior.translucent,
+      // Use deferToChild instead of translucent to allow toolbar buttons to handle their own taps
+      // Without this, the wrapper intercepts all taps and toolbar buttons don't work
+      behavior: HitTestBehavior.deferToChild,
       onTap: () {
         if (controller.value.isPlaying) {
           unawaited(controller.pause());

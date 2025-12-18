@@ -419,7 +419,14 @@ void main() {
         await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(forceMobileLayout: true, controller: controller, enableGestures: false)),
+          buildTestWidget(
+            VideoPlayerControls(
+              forceMobileLayout: true,
+              controller: controller,
+              enableGestures: false,
+              testIsPipAvailable: false, // Explicitly inject false to bypass cache pollution
+            ),
+          ),
         );
         await tester.pump();
 

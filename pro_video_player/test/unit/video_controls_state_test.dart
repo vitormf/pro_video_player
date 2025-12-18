@@ -128,8 +128,8 @@ void main() {
     });
 
     group('Feature Support', () {
-      test('initial isPipAvailable is false', () {
-        expect(state.isPipAvailable, isFalse);
+      test('initial isPipAvailable is null', () {
+        expect(state.isPipAvailable, isNull);
       });
 
       test('setIsPipAvailable updates state and notifies listeners', () {
@@ -142,8 +142,8 @@ void main() {
         expect(notified, isTrue);
       });
 
-      test('initial isBackgroundPlaybackSupported is false', () {
-        expect(state.isBackgroundPlaybackSupported, isFalse);
+      test('initial isBackgroundPlaybackSupported is null', () {
+        expect(state.isBackgroundPlaybackSupported, isNull);
       });
 
       test('setIsBackgroundPlaybackSupported updates state and notifies listeners', () {
@@ -156,8 +156,8 @@ void main() {
         expect(notified, isTrue);
       });
 
-      test('initial isCastingSupported is false', () {
-        expect(state.isCastingSupported, isFalse);
+      test('initial isCastingSupported is null', () {
+        expect(state.isCastingSupported, isNull);
       });
 
       test('setIsCastingSupported updates state and notifies listeners', () {

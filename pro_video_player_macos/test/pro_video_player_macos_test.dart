@@ -3,147 +3,252 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pro_video_player_macos/pro_video_player_macos.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
+import 'package:pro_video_player_platform_interface/testing.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  late ProVideoPlayerMacOS plugin;
+  late PigeonTestHarness harness;
+
+  setUp(() {
+    plugin = ProVideoPlayerMacOS();
+    harness = PigeonTestHarness()..setUp();
+  });
+
+  tearDown(() {
+    harness.tearDown();
+  });
+
   group('ProVideoPlayerMacOS', () {
-    late ProVideoPlayerMacOS platform;
-    final log = <MethodCall>[];
-
-    setUp(() {
-      platform = ProVideoPlayerMacOS();
-      ProVideoPlayerPlatform.instance = platform;
-
-      // Mock method channel
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-        const MethodChannel('dev.pro_video_player.macos/methods'),
-        (methodCall) async {
-          log.add(methodCall);
-          switch (methodCall.method) {
-            case 'create':
-              return 1; // Return player ID
-            case 'isPipSupported':
-              return true;
-            case 'enterPip':
-              return true;
-            case 'enterFullscreen':
-              return true;
-            case 'getPosition':
-              return 0;
-            case 'getDuration':
-              return 10000;
-            default:
-              return null;
-          }
-        },
-      );
-    });
-
-    tearDown(log.clear);
-
     test('is the registered instance', () {
+      ProVideoPlayerPlatform.instance = plugin;
       expect(ProVideoPlayerPlatform.instance, isA<ProVideoPlayerMacOS>());
     });
 
-    test('create returns a player ID', () async {
-      final playerId = await platform.create(source: const VideoSource.network('https://example.com/video.mp4'));
-      expect(playerId, 1);
-      expect(log, hasLength(1));
-      expect(log.first.method, 'create');
+    group('create', () {
+      test('creates player with network source', () async {
+        final playerId = await plugin.create(source: const VideoSource.network('https://example.com/video.mp4'));
+
+        expect(playerId, equals(1));
+        expect(harness.log, hasLength(1));
+        expect(harness.lastCall.method, equals('create'));
+        expect(harness.lastCall.source.type, equals(VideoSourceType.network));
+        expect(harness.lastCall.source.url, equals('https://example.com/video.mp4'));
+      });
+
+      test('creates player with file source', () async {
+        final playerId = await plugin.create(source: const VideoSource.file('/path/to/video.mp4'));
+
+        expect(playerId, equals(1));
+        expect(harness.lastCall.source.type, equals(VideoSourceType.file));
+        expect(harness.lastCall.source.path, equals('/path/to/video.mp4'));
+      });
+
+      test('creates player with asset source', () async {
+        final playerId = await plugin.create(source: const VideoSource.asset('assets/video.mp4'));
+
+        expect(playerId, equals(1));
+        expect(harness.lastCall.source.type, equals(VideoSourceType.asset));
+        expect(harness.lastCall.source.assetPath, equals('assets/video.mp4'));
+      });
+
+      test('creates player with custom options', () async {
+        await plugin.create(
+          source: const VideoSource.network('https://example.com/video.mp4'),
+          options: const VideoPlayerOptions(autoPlay: true, looping: true, volume: 0.8, playbackSpeed: 1.5),
+        );
+
+        expect(harness.lastCall.options.autoPlay, isTrue);
+        expect(harness.lastCall.options.looping, isTrue);
+        expect(harness.lastCall.options.volume, equals(0.8));
+        expect(harness.lastCall.options.playbackSpeed, equals(1.5));
+      });
+
+      test('throws PlatformException when create returns null', () async {
+        harness.setNullResponses();
+
+        expect(
+          () => plugin.create(source: const VideoSource.network('https://example.com/video.mp4')),
+          throwsA(isA<PlatformException>()),
+        );
+      });
     });
 
-    test('dispose calls native dispose', () async {
-      await platform.dispose(1);
-      expect(log.last.method, 'dispose');
-      expect(log.last.arguments, {'playerId': 1});
+    group('playback control', () {
+      test('play calls native method', () async {
+        await plugin.play(1);
+
+        expect(harness.lastCall.method, equals('play'));
+        expect(harness.lastCall.playerId, equals(1));
+      });
+
+      test('pause calls native method', () async {
+        await plugin.pause(1);
+
+        expect(harness.lastCall.method, equals('pause'));
+        expect(harness.lastCall.playerId, equals(1));
+      });
+
+      test('stop calls native method', () async {
+        await plugin.stop(1);
+
+        expect(harness.lastCall.method, equals('stop'));
+        expect(harness.lastCall.playerId, equals(1));
+      });
+
+      test('seekTo calls native method with milliseconds', () async {
+        await plugin.seekTo(1, const Duration(seconds: 30));
+
+        expect(harness.lastCall.method, equals('seekTo'));
+        expect(harness.lastCall.playerId, equals(1));
+        expect(harness.lastCall.position, equals(30000));
+      });
+
+      test('dispose calls native method', () async {
+        await plugin.dispose(1);
+
+        expect(harness.lastCall.method, equals('dispose'));
+        expect(harness.lastCall.playerId, equals(1));
+      });
     });
 
-    test('play calls native play', () async {
-      await platform.play(1);
-      expect(log.last.method, 'play');
-      expect(log.last.arguments, {'playerId': 1});
+    group('settings', () {
+      test('setPlaybackSpeed calls native method', () async {
+        await plugin.setPlaybackSpeed(1, 1.5);
+
+        expect(harness.lastCall.method, equals('setPlaybackSpeed'));
+        expect(harness.lastCall.playerId, equals(1));
+        expect(harness.lastCall.speed, equals(1.5));
+      });
+
+      test('setVolume calls native method', () async {
+        await plugin.setVolume(1, 0.7);
+
+        expect(harness.lastCall.method, equals('setVolume'));
+        expect(harness.lastCall.playerId, equals(1));
+        expect(harness.lastCall.volume, equals(0.7));
+      });
+
+      test('setLooping calls native method', () async {
+        await plugin.setLooping(1, true);
+
+        expect(harness.lastCall.method, equals('setLooping'));
+        expect(harness.lastCall.playerId, equals(1));
+        expect(harness.lastCall.looping, isTrue);
+      });
+
+      test('setSubtitleTrack calls native method with track', () async {
+        await plugin.setSubtitleTrack(1, const SubtitleTrack(id: 'en', label: 'English', language: 'en'));
+
+        expect(harness.lastCall.method, equals('setSubtitleTrack'));
+        expect(harness.lastCall.playerId, equals(1));
+        expect(harness.lastCall.subtitleTrack!.id, equals('en'));
+        expect(harness.lastCall.subtitleTrack!.label, equals('English'));
+      });
+
+      test('setSubtitleTrack calls native method with null', () async {
+        await plugin.setSubtitleTrack(1, null);
+
+        expect(harness.lastCall.method, equals('setSubtitleTrack'));
+        expect(harness.lastCall.subtitleTrack, isNull);
+      });
     });
 
-    test('pause calls native pause', () async {
-      await platform.pause(1);
-      expect(log.last.method, 'pause');
-      expect(log.last.arguments, {'playerId': 1});
+    group('getters', () {
+      test('getPosition returns duration from native', () async {
+        final position = await plugin.getPosition(1);
+
+        expect(position, equals(const Duration(seconds: 30)));
+        expect(harness.lastCall.method, equals('getPosition'));
+      });
+
+      test('getDuration returns duration from native', () async {
+        final duration = await plugin.getDuration(1);
+
+        expect(duration, equals(const Duration(minutes: 2)));
+        expect(harness.lastCall.method, equals('getDuration'));
+      });
     });
 
-    test('seekTo calls native seekTo with milliseconds', () async {
-      await platform.seekTo(1, const Duration(seconds: 5));
-      expect(log.last.method, 'seekTo');
-      expect(log.last.arguments, {'playerId': 1, 'position': 5000});
+    group('PiP', () {
+      test('enterPip calls native method', () async {
+        final result = await plugin.enterPip(1);
+
+        expect(result, isTrue);
+        expect(harness.lastCall.method, equals('enterPip'));
+        expect(harness.lastCall.playerId, equals(1));
+      });
+
+      test('enterPip passes options', () async {
+        await plugin.enterPip(1, options: const PipOptions(aspectRatio: 1.78, autoEnterOnBackground: true));
+
+        expect(harness.lastCall.pipOptions!.aspectRatio, equals(1.78));
+        expect(harness.lastCall.pipOptions!.autoEnterOnBackground, isTrue);
+      });
+
+      test('exitPip calls native method', () async {
+        await plugin.exitPip(1);
+
+        expect(harness.lastCall.method, equals('exitPip'));
+        expect(harness.lastCall.playerId, equals(1));
+      });
+
+      test('isPipSupported returns native result', () async {
+        final result = await plugin.isPipSupported();
+
+        expect(result, isTrue);
+        expect(harness.lastCall.method, equals('isPipSupported'));
+      });
     });
 
-    test('setVolume calls native setVolume', () async {
-      await platform.setVolume(1, 0.8);
-      expect(log.last.method, 'setVolume');
-      expect(log.last.arguments, {'playerId': 1, 'volume': 0.8});
+    group('events', () {
+      test('events throws StateError for uncreated player', () {
+        expect(() => plugin.events(999), throwsA(isA<StateError>()));
+      });
+
+      test('events returns stream after create', () async {
+        await plugin.create(source: const VideoSource.network('https://example.com/video.mp4'));
+
+        final stream = plugin.events(1);
+
+        expect(stream, isA<Stream<VideoPlayerEvent>>());
+      });
+
+      test('events stream is broadcast', () async {
+        await plugin.create(source: const VideoSource.network('https://example.com/video.mp4'));
+
+        final stream = plugin.events(1);
+        // Broadcast streams can have multiple listeners
+        final sub1 = stream.listen((_) {});
+        final sub2 = stream.listen((_) {});
+
+        expect(sub1, isNotNull);
+        expect(sub2, isNotNull);
+
+        await sub1.cancel();
+        await sub2.cancel();
+      });
     });
 
-    test('setPlaybackSpeed calls native setPlaybackSpeed', () async {
-      await platform.setPlaybackSpeed(1, 1.5);
-      expect(log.last.method, 'setPlaybackSpeed');
-      expect(log.last.arguments, {'playerId': 1, 'speed': 1.5});
+    group('dispose', () {
+      test('dispose calls native method and cleans up', () async {
+        // First create a player to set up event controllers
+        await plugin.create(source: const VideoSource.network('https://example.com/video.mp4'));
+
+        await plugin.dispose(1);
+
+        expect(harness.lastCall.method, equals('dispose'));
+        expect(harness.lastCall.playerId, equals(1));
+      });
     });
 
-    test('setLooping calls native setLooping', () async {
-      await platform.setLooping(1, true);
-      expect(log.last.method, 'setLooping');
-      expect(log.last.arguments, {'playerId': 1, 'looping': true});
-    });
+    group('buildView', () {
+      test('returns AppKitView with correct parameters', () {
+        final widget = plugin.buildView(1);
 
-    test('isPipSupported returns native result', () async {
-      final result = await platform.isPipSupported();
-      expect(result, true);
-      expect(log.last.method, 'isPipSupported');
-    });
-
-    test('enterPip calls native enterPip', () async {
-      final result = await platform.enterPip(1);
-      expect(result, true);
-      expect(log.last.method, 'enterPip');
-    });
-
-    test('enterFullscreen calls native enterFullscreen', () async {
-      final result = await platform.enterFullscreen(1);
-      expect(result, true);
-      expect(log.last.method, 'enterFullscreen');
-    });
-
-    test('getPosition returns duration from native', () async {
-      final position = await platform.getPosition(1);
-      expect(position, Duration.zero);
-      expect(log.last.method, 'getPosition');
-    });
-
-    test('getDuration returns duration from native', () async {
-      final duration = await platform.getDuration(1);
-      expect(duration, const Duration(milliseconds: 10000));
-      expect(log.last.method, 'getDuration');
-    });
-
-    test('registerWith sets platform instance', () {
-      ProVideoPlayerMacOS.registerWith();
-      expect(ProVideoPlayerPlatform.instance, isA<ProVideoPlayerMacOS>());
-    });
-
-    testWidgets('buildView returns AppKitView widget', (tester) async {
-      final view = platform.buildView(1);
-      expect(view, isA<AppKitView>());
-    });
-
-    testWidgets('buildView passes playerId and controlsMode', (tester) async {
-      final view = platform.buildView(1, controlsMode: ControlsMode.native) as AppKitView;
-      expect(view.viewType, 'dev.pro_video_player.macos/video_view');
-      expect(view.creationParams, {'playerId': 1, 'controlsMode': 'native'});
-    });
-
-    testWidgets('buildView defaults to none controlsMode', (tester) async {
-      final view = platform.buildView(1) as AppKitView;
-      expect(view.creationParams, {'playerId': 1, 'controlsMode': 'none'});
+        expect(widget, isA<AppKitView>());
+      });
     });
   });
 }

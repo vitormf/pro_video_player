@@ -337,42 +337,123 @@ abstract class ProVideoPlayerPlatform extends PlatformInterface {
     throw UnimplementedError('setVerboseLogging() has not been implemented.');
   }
 
-  /// Gets the platform-specific feature capabilities.
+  /// Gets static platform information.
   ///
-  /// This method queries the native platform to determine which features are
-  /// supported and available. The returned [PlatformCapabilities] object contains
-  /// boolean flags for each feature, allowing the Dart layer to adapt UI and
-  /// functionality accordingly.
-  ///
-  /// Features may be unavailable due to:
-  /// - Platform limitations (e.g., Web doesn't support background playback)
-  /// - Missing native dependencies (e.g., Chromecast SDK not integrated)
-  /// - Runtime conditions (e.g., PiP disabled in system settings)
-  /// - OS version requirements (e.g., PiP requires Android 8.0+)
-  ///
-  /// This method should be called once during initialization and the result
-  /// can be cached. The capabilities typically don't change during app runtime
-  /// (with rare exceptions like installing Cast receivers on the network).
+  /// Returns metadata about the platform (name, player type, additional info)
+  /// that doesn't require async capability checks.
   ///
   /// Example:
   /// ```dart
-  /// final capabilities = await platform.getPlatformCapabilities();
-  ///
-  /// // Only show cast button if casting is supported
-  /// if (capabilities.supportsCasting) {
-  ///   showCastButton();
-  /// }
-  ///
-  /// // Inform user if background playback is not available
-  /// if (!capabilities.supportsBackgroundPlayback) {
-  ///   showWarning('Background playback not supported on this platform');
-  /// }
-  ///
-  /// // Log platform info for debugging
-  /// print('Running on ${capabilities.platformName} with ${capabilities.nativePlayerType}');
+  /// final info = await platform.getPlatformInfo();
+  /// print('Running on ${info.platformName} with ${info.nativePlayerType}');
   /// ```
-  Future<PlatformCapabilities> getPlatformCapabilities() {
-    throw UnimplementedError('getPlatformCapabilities() has not been implemented.');
+  Future<PlatformInfo> getPlatformInfo() {
+    throw UnimplementedError('getPlatformInfo() has not been implemented.');
+  }
+
+  /// Checks if Picture-in-Picture mode is supported.
+  Future<bool> supportsPictureInPicture() {
+    throw UnimplementedError('supportsPictureInPicture() has not been implemented.');
+  }
+
+  /// Checks if fullscreen mode is supported.
+  Future<bool> supportsFullscreen() {
+    throw UnimplementedError('supportsFullscreen() has not been implemented.');
+  }
+
+  /// Checks if background playback is supported.
+  Future<bool> supportsBackgroundPlayback() {
+    throw UnimplementedError('supportsBackgroundPlayback() has not been implemented.');
+  }
+
+  /// Checks if any form of casting is supported.
+  Future<bool> supportsCasting() {
+    throw UnimplementedError('supportsCasting() has not been implemented.');
+  }
+
+  /// Checks if AirPlay is supported.
+  Future<bool> supportsAirPlay() {
+    throw UnimplementedError('supportsAirPlay() has not been implemented.');
+  }
+
+  /// Checks if Chromecast is supported.
+  Future<bool> supportsChromecast() {
+    throw UnimplementedError('supportsChromecast() has not been implemented.');
+  }
+
+  /// Checks if Remote Playback API is supported.
+  Future<bool> supportsRemotePlayback() {
+    throw UnimplementedError('supportsRemotePlayback() has not been implemented.');
+  }
+
+  /// Checks if quality selection is supported.
+  Future<bool> supportsQualitySelection() {
+    throw UnimplementedError('supportsQualitySelection() has not been implemented.');
+  }
+
+  /// Checks if playback speed control is supported.
+  Future<bool> supportsPlaybackSpeedControl() {
+    throw UnimplementedError('supportsPlaybackSpeedControl() has not been implemented.');
+  }
+
+  /// Checks if subtitles are supported.
+  Future<bool> supportsSubtitles() {
+    throw UnimplementedError('supportsSubtitles() has not been implemented.');
+  }
+
+  /// Checks if external subtitles are supported.
+  Future<bool> supportsExternalSubtitles() {
+    throw UnimplementedError('supportsExternalSubtitles() has not been implemented.');
+  }
+
+  /// Checks if audio track selection is supported.
+  Future<bool> supportsAudioTrackSelection() {
+    throw UnimplementedError('supportsAudioTrackSelection() has not been implemented.');
+  }
+
+  /// Checks if chapters are supported.
+  Future<bool> supportsChapters() {
+    throw UnimplementedError('supportsChapters() has not been implemented.');
+  }
+
+  /// Checks if video metadata extraction is supported.
+  Future<bool> supportsVideoMetadataExtraction() {
+    throw UnimplementedError('supportsVideoMetadataExtraction() has not been implemented.');
+  }
+
+  /// Checks if network monitoring is supported.
+  Future<bool> supportsNetworkMonitoring() {
+    throw UnimplementedError('supportsNetworkMonitoring() has not been implemented.');
+  }
+
+  /// Checks if bandwidth estimation is supported.
+  Future<bool> supportsBandwidthEstimation() {
+    throw UnimplementedError('supportsBandwidthEstimation() has not been implemented.');
+  }
+
+  /// Checks if adaptive bitrate streaming is supported.
+  Future<bool> supportsAdaptiveBitrate() {
+    throw UnimplementedError('supportsAdaptiveBitrate() has not been implemented.');
+  }
+
+  /// Checks if HLS is supported.
+  Future<bool> supportsHLS() {
+    throw UnimplementedError('supportsHLS() has not been implemented.');
+  }
+
+  /// Checks if DASH is supported.
+  Future<bool> supportsDASH() {
+    throw UnimplementedError('supportsDASH() has not been implemented.');
+  }
+
+  /// Checks if device volume control is supported.
+  Future<bool> supportsDeviceVolumeControl() {
+    throw UnimplementedError('supportsDeviceVolumeControl() has not been implemented.');
+  }
+
+  /// Checks if screen brightness control is supported.
+  Future<bool> supportsScreenBrightnessControl() {
+    throw UnimplementedError('supportsScreenBrightnessControl() has not been implemented.');
   }
 
   /// Sets the media metadata for platform media controls.

@@ -60,9 +60,9 @@ class ToolbarState {
     this.qualityTrackCount = 0,
     this.hasChapters = false,
     this.isCasting = false,
-    this.isBackgroundPlaybackSupported = false,
-    this.isPipAvailable = false,
-    this.isCastingSupported = false,
+    this.isBackgroundPlaybackSupported,
+    this.isPipAvailable,
+    this.isCastingSupported,
     this.isFullscreen = false,
     this.isDesktopPlatform = false,
   });
@@ -86,13 +86,16 @@ class ToolbarState {
   final bool isCasting;
 
   /// Whether background playback is supported.
-  final bool isBackgroundPlaybackSupported;
+  /// Returns `null` while capability check is in progress.
+  final bool? isBackgroundPlaybackSupported;
 
   /// Whether PiP is available.
-  final bool isPipAvailable;
+  /// Returns `null` while capability check is in progress.
+  final bool? isPipAvailable;
 
   /// Whether casting is supported.
-  final bool isCastingSupported;
+  /// Returns `null` while capability check is in progress.
+  final bool? isCastingSupported;
 
   /// Whether currently in fullscreen mode.
   final bool isFullscreen;
@@ -180,11 +183,11 @@ class VideoToolbarManager {
       PlayerToolbarAction.scalingMode => config.showScalingModeButton && !isCasting,
       PlayerToolbarAction.backgroundPlayback =>
         config.showBackgroundPlaybackButton &&
-            state.isBackgroundPlaybackSupported &&
+            (state.isBackgroundPlaybackSupported ?? false) &&
             !state.isDesktopPlatform &&
             !isCasting,
-      PlayerToolbarAction.pip => config.showPipButton && state.isPipAvailable && !isCasting,
-      PlayerToolbarAction.casting => state.isCastingSupported,
+      PlayerToolbarAction.pip => config.showPipButton && (state.isPipAvailable ?? false) && !isCasting,
+      PlayerToolbarAction.casting => state.isCastingSupported ?? false,
       PlayerToolbarAction.orientationLock => config.showOrientationLockButton && state.isFullscreen && !isCasting,
       // Hide exit fullscreen button when in fullscreen-only mode and already in fullscreen
       PlayerToolbarAction.fullscreen =>
@@ -201,16 +204,17 @@ class VideoToolbarManager {
     required ToolbarState state,
   }) => <PlayerToolbarAction>[
     // Casting is first so it's prominently visible when devices are available
-    if (state.isCastingSupported) PlayerToolbarAction.casting,
+    // Only show capability-dependent buttons after capability check completes (not null)
+    if (state.isCastingSupported ?? false) PlayerToolbarAction.casting,
     if (state.hasPlaylist) ...[PlayerToolbarAction.shuffle, PlayerToolbarAction.repeatMode],
     if (config.showSubtitleButton && state.hasSubtitleTracks) PlayerToolbarAction.subtitles,
     if (config.showAudioButton && state.audioTrackCount > 1) PlayerToolbarAction.audio,
     if (config.showQualityButton && state.qualityTrackCount > 1) PlayerToolbarAction.quality,
     if (config.showSpeedButton) PlayerToolbarAction.speed,
     if (config.showScalingModeButton) PlayerToolbarAction.scalingMode,
-    if (config.showBackgroundPlaybackButton && state.isBackgroundPlaybackSupported)
+    if (config.showBackgroundPlaybackButton && (state.isBackgroundPlaybackSupported ?? false))
       PlayerToolbarAction.backgroundPlayback,
-    if (config.showPipButton && state.isPipAvailable) PlayerToolbarAction.pip,
+    if (config.showPipButton && (state.isPipAvailable ?? false)) PlayerToolbarAction.pip,
     if (config.showOrientationLockButton && state.isFullscreen) PlayerToolbarAction.orientationLock,
     if (config.showFullscreenButton) PlayerToolbarAction.fullscreen,
   ];

@@ -4,6 +4,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:pro_video_player/pro_video_player.dart';
+import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
 import '../constants/video_constants.dart';
 import '../widgets/responsive_video_layout.dart';
@@ -24,10 +25,22 @@ class _PlatformDemoScreenState extends State<PlatformDemoScreen> {
   @override
   void initState() {
     super.initState();
+
+    // Enable verbose logging to debug initialization timing
+    ProVideoPlayerLogger.setVerboseLogging(enabled: true);
+
     _controller = ProVideoPlayerController();
     _detectPlatform();
-    unawaited(_checkPipSupport());
-    unawaited(_initializePlayer());
+
+    // Defer until after first frame to avoid blocking the screen transition
+    // Native iOS AVPlayer initialization now runs on a background thread
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        debugPrint('🎬 [Flutter] Starting PiP check and player initialization');
+        unawaited(_checkPipSupport());
+        unawaited(_initializePlayer());
+      }
+    });
   }
 
   void _detectPlatform() {

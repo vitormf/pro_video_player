@@ -72,8 +72,8 @@ class TapGestureManager {
       }
     } else {
       // Start timer for double tap detection
-      // Only trigger single tap if no second tap comes within 300ms
-      _doubleTapTimer = Timer(const Duration(milliseconds: 300), () {
+      // REDUCED timeout (150ms instead of 300ms) makes single taps feel more responsive
+      _doubleTapTimer = Timer(const Duration(milliseconds: 150), () {
         _doubleTapTimer = null;
         // Single tap confirmed
         onSingleTap();

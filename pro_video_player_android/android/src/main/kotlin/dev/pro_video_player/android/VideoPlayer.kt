@@ -117,6 +117,7 @@ class VideoPlayer(
 
     // Cast state tracking
     private var castContext: CastContext? = null
+    private var castInitFailed: Boolean = false
     private var castStateListener: CastStateListener? = null
     private var sessionManagerListener: SessionManagerListener<com.google.android.gms.cast.framework.CastSession>? = null
     private var isCastingActive: Boolean = false
@@ -143,6 +144,15 @@ class VideoPlayer(
     private var nextExternalSubtitleId: Int = 0
     private var selectedExternalSubtitleId: String? = null
 
+    // Fullscreen transition callbacks for cleanup
+    private var fullscreenEnterRunnable: Runnable? = null
+    private var fullscreenExitRunnable: Runnable? = null
+
+    // Track info caching to avoid redundant events
+    private var lastSentSubtitleTracks: List<Map<String, Any?>>? = null
+    private var lastSentAudioTracks: List<Map<String, Any?>>? = null
+    private var lastSentVideoQualityTracks: List<Map<String, Any?>>? = null
+
     init {
         eventChannel = EventChannel(
             messenger,
@@ -151,7 +161,7 @@ class VideoPlayer(
         eventChannel.setStreamHandler(this)
 
         setupNetworkMonitor()
-        setupCastContext()
+        // Cast context will be lazily initialized when needed
 
         mainHandler.post {
             setupPlayer(source, options)
@@ -159,13 +169,29 @@ class VideoPlayer(
     }
 
     /**
-     * Sets up CastContext for Chromecast integration.
-     * Registers listeners for cast state changes and session events.
+     * Gets or initializes CastContext lazily.
+     * Only initializes when casting features are actually used.
      */
-    private fun setupCastContext() {
-        try {
-            castContext = CastContext.getSharedInstance(context)
+    private fun getCastContext(): CastContext? {
+        if (castContext == null && !castInitFailed) {
+            try {
+                castContext = CastContext.getSharedInstance(context)
+                setupCastListeners()
+            } catch (e: Exception) {
+                verboseLog("Failed to initialize CastContext: ${e.message}", TAG)
+                castInitFailed = true
+            }
+        }
+        return castContext
+    }
 
+    /**
+     * Sets up Cast listeners for state changes and session events.
+     * Called once when CastContext is first accessed.
+     */
+    private fun setupCastListeners() {
+        val context = castContext ?: return
+        try {
             // Set up cast state listener
             castStateListener = CastStateListener { state ->
                 mainHandler.post {
@@ -188,7 +214,7 @@ class VideoPlayer(
                     sendEvent(eventData)
                 }
             }
-            castContext?.addCastStateListener(castStateListener!!)
+            context.addCastStateListener(castStateListener!!)
 
             // Set up session manager listener for more detailed session events
             sessionManagerListener = object : SessionManagerListener<com.google.android.gms.cast.framework.CastSession> {
@@ -274,15 +300,13 @@ class VideoPlayer(
                     // Session is suspended but not ended
                 }
             }
-            castContext?.sessionManager?.addSessionManagerListener(
+            context.sessionManager?.addSessionManagerListener(
                 sessionManagerListener!!,
                 com.google.android.gms.cast.framework.CastSession::class.java
             )
 
         } catch (e: Exception) {
-            // Cast SDK may not be available on all devices
-            verboseLog("Failed to initialize CastContext: ${e.message}", TAG)
-            castContext = null
+            verboseLog("Failed to set up Cast listeners: ${e.message}", TAG)
         }
     }
 
@@ -310,7 +334,7 @@ class VideoPlayer(
      * Gets the current cast device info if connected.
      */
     private fun getCurrentCastDeviceInternal(): Map<String, Any>? {
-        val session = castContext?.sessionManager?.currentCastSession ?: return null
+        val session = getCastContext()?.sessionManager?.currentCastSession ?: return null
         val device = session.castDevice ?: return null
         return mapOf(
             "id" to device.deviceId,
@@ -497,15 +521,33 @@ class VideoPlayer(
                     }
 
                     override fun onTracksChanged(tracks: Tracks) {
+                        // Cache and only send events if tracks actually changed
+                        // ExoPlayer can fire this callback multiple times with identical tracks
+
                         // Notify about subtitle tracks if subtitles are enabled
                         if (subtitlesEnabled) {
-                            notifySubtitleTracks(tracks)
+                            val currentSubtitles = buildSubtitleTrackList(tracks)
+                            if (currentSubtitles != lastSentSubtitleTracks) {
+                                notifySubtitleTracks(tracks)
+                                lastSentSubtitleTracks = currentSubtitles
+                            }
                         }
+
                         // Notify about audio tracks
-                        notifyAudioTracks(tracks)
+                        val currentAudio = buildAudioTrackList(tracks)
+                        if (currentAudio != lastSentAudioTracks) {
+                            notifyAudioTracks(tracks)
+                            lastSentAudioTracks = currentAudio
+                        }
+
                         // Notify about video quality tracks
-                        notifyVideoQualityTracks(tracks)
-                        // Notify about chapters (if available)
+                        val currentVideo = buildVideoQualityTrackList(tracks)
+                        if (currentVideo != lastSentVideoQualityTracks) {
+                            notifyVideoQualityTracks(tracks)
+                            lastSentVideoQualityTracks = currentVideo
+                        }
+
+                        // Always notify about chapters (chapters come from metadata, not tracks)
                         notifyChapters()
                     }
 
@@ -553,27 +595,104 @@ class VideoPlayer(
                 setMediaItem(mediaItem)
                 prepare()
 
-                // Start position updates
-                startPositionUpdates()
+                // Position updates will start on first play() call
             }
 
-        // Set up MediaSession for Bluetooth/external controls
-        // This works even when background playback is disabled
-        exoPlayer?.let { player ->
-            mediaSession = MediaSession.Builder(context, player)
-                .setId("pro_video_player_$playerId")
-                .build()
-            verboseLog("MediaSession created for Bluetooth controls", TAG)
-        }
-
-        // Register for background playback if enabled
+        // Set up MediaSession and register for background playback if enabled
+        // MediaSession is only needed when background playback is enabled
         if (allowBackgroundPlayback) {
             exoPlayer?.let { player ->
+                // Create MediaSession for Bluetooth/external controls
+                mediaSession = MediaSession.Builder(context, player)
+                    .setId("pro_video_player_$playerId")
+                    .build()
+                verboseLog("MediaSession created for background playback", TAG)
+
+                // Register player with background playback service
                 MediaPlaybackService.registerPlayer(playerId, player)
             }
         }
 
         sendEvent(mapOf("type" to "playbackStateChanged", "state" to "ready"))
+    }
+
+    /**
+     * Builds subtitle track list for caching and comparison.
+     * Separate from notifySubtitleTracks to allow caching without sending events.
+     */
+    private fun buildSubtitleTrackList(tracks: Tracks): List<Map<String, Any?>> {
+        val subtitleTracks = mutableListOf<Map<String, Any?>>()
+        var trackCounter = 0
+
+        for ((groupIndex, group) in tracks.groups.withIndex()) {
+            if (group.type == C.TRACK_TYPE_TEXT) {
+                for (i in 0 until group.length) {
+                    val format = group.getTrackFormat(i)
+                    val track = mapOf(
+                        "id" to "$groupIndex:$i",
+                        "label" to "",
+                        "language" to format.language,
+                        "isDefault" to (trackCounter == 0)
+                    )
+                    subtitleTracks.add(track)
+                    trackCounter++
+                }
+            }
+        }
+        return subtitleTracks
+    }
+
+    /**
+     * Builds audio track list for caching and comparison.
+     */
+    private fun buildAudioTrackList(tracks: Tracks): List<Map<String, Any?>> {
+        val audioTracks = mutableListOf<Map<String, Any?>>()
+        var trackCounter = 0
+
+        for ((groupIndex, group) in tracks.groups.withIndex()) {
+            if (group.type == C.TRACK_TYPE_AUDIO) {
+                for (i in 0 until group.length) {
+                    val format = group.getTrackFormat(i)
+                    val track = mapOf(
+                        "id" to "$groupIndex:$i",
+                        "label" to "",
+                        "language" to format.language,
+                        "isDefault" to (trackCounter == 0)
+                    )
+                    audioTracks.add(track)
+                    trackCounter++
+                }
+            }
+        }
+        return audioTracks
+    }
+
+    /**
+     * Builds video quality track list for caching and comparison.
+     */
+    private fun buildVideoQualityTrackList(tracks: Tracks): List<Map<String, Any?>> {
+        val qualityTracks = mutableListOf<Map<String, Any?>>()
+
+        for ((groupIndex, group) in tracks.groups.withIndex()) {
+            if (group.type == C.TRACK_TYPE_VIDEO) {
+                for (i in 0 until group.length) {
+                    val format = group.getTrackFormat(i)
+                    if (format.width > 0 && format.height > 0 && format.bitrate > 0) {
+                        val track = mapOf(
+                            "id" to "$groupIndex:$i",
+                            "bitrate" to format.bitrate,
+                            "width" to format.width,
+                            "height" to format.height,
+                            "frameRate" to (format.frameRate.takeIf { it > 0 }),
+                            "label" to "",
+                            "isDefault" to (qualityTracks.isEmpty())
+                        )
+                        qualityTracks.add(track)
+                    }
+                }
+            }
+        }
+        return qualityTracks
     }
 
     private fun notifySubtitleTracks(tracks: Tracks) {
@@ -1035,11 +1154,10 @@ class VideoPlayer(
      * Handles isPlaying state changes.
      */
     private fun handleIsPlayingChanged(isPlaying: Boolean) {
-        // Only send state change if not currently buffering
-        if (!isBufferingDueToNetwork) {
-            val state = if (isPlaying) "playing" else "paused"
-            sendEvent(mapOf("type" to "playbackStateChanged", "state" to state))
-        }
+        // Always send playing/paused state changes immediately for responsive UI
+        // Note: Player can be both buffering and playing simultaneously
+        val state = if (isPlaying) "playing" else "paused"
+        sendEvent(mapOf("type" to "playbackStateChanged", "state" to state))
     }
 
     /**
@@ -1211,6 +1329,16 @@ class VideoPlayer(
             isPlaying = true
             updateScreenSleepPrevention()
 
+            // Start position updates on first play (lazy initialization)
+            if (positionUpdateRunnable == null) {
+                startPositionUpdates()
+            }
+
+            // Send playing state immediately for responsive UI
+            // Note: ExoPlayer's onIsPlayingChanged() won't fire until STATE_READY,
+            // but we need immediate feedback when user calls play() even during buffering
+            sendEvent(mapOf("type" to "playbackStateChanged", "state" to "playing"))
+
             // Start background playback service if enabled
             if (allowBackgroundPlayback) {
                 startBackgroundPlaybackService()
@@ -1242,6 +1370,9 @@ class VideoPlayer(
             exoPlayer?.pause()
             isPlaying = false
             updateScreenSleepPrevention()
+
+            // Send paused state immediately for responsive UI
+            sendEvent(mapOf("type" to "playbackStateChanged", "state" to "paused"))
         }
     }
 
@@ -1249,7 +1380,7 @@ class VideoPlayer(
      * Gets the RemoteMediaClient for the current Cast session.
      */
     private fun getRemoteMediaClient(): RemoteMediaClient? {
-        return castContext?.sessionManager?.currentCastSession?.remoteMediaClient
+        return getCastContext()?.sessionManager?.currentCastSession?.remoteMediaClient
     }
 
     override fun stop() {
@@ -2286,7 +2417,8 @@ class VideoPlayer(
 
             // Delay hiding system bars to prevent race condition with Flutter's
             // platform view resize. This gives the layout time to stabilize.
-            mainHandler.postDelayed({
+            // Store runnable reference for cleanup in dispose()
+            fullscreenEnterRunnable = Runnable {
                 try {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                         activity.window.insetsController?.let { controller ->
@@ -2307,7 +2439,8 @@ class VideoPlayer(
                 } catch (e: Exception) {
                     verboseLog("Failed to hide system bars: ${e.message}", TAG)
                 }
-            }, FULLSCREEN_TRANSITION_DELAY_MS)
+            }
+            mainHandler.postDelayed(fullscreenEnterRunnable!!, FULLSCREEN_TRANSITION_DELAY_MS)
 
             sendEvent(mapOf("type" to "fullscreenStateChanged", "isFullscreen" to true))
             return true
@@ -2326,7 +2459,8 @@ class VideoPlayer(
 
             // Delay restoring system bars to prevent race condition with Flutter's
             // platform view resize. This gives the layout time to stabilize.
-            mainHandler.postDelayed({
+            // Store runnable reference for cleanup in dispose()
+            fullscreenExitRunnable = Runnable {
                 try {
                     // Restore system bars
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -2341,7 +2475,8 @@ class VideoPlayer(
                 } catch (e: Exception) {
                     verboseLog("Failed to restore system bars: ${e.message}", TAG)
                 }
-            }, FULLSCREEN_TRANSITION_DELAY_MS)
+            }
+            mainHandler.postDelayed(fullscreenExitRunnable!!, FULLSCREEN_TRANSITION_DELAY_MS)
 
             sendEvent(mapOf("type" to "fullscreenStateChanged", "isFullscreen" to false))
         } catch (e: Exception) {
@@ -2575,7 +2710,7 @@ class VideoPlayer(
     }
 
     override fun stopCasting(): Boolean {
-        val sessionManager = castContext?.sessionManager ?: return false
+        val sessionManager = getCastContext()?.sessionManager ?: return false
         val currentSession = sessionManager.currentCastSession
         if (currentSession != null && currentSession.isConnected) {
             sessionManager.endCurrentSession(true)
@@ -2585,7 +2720,7 @@ class VideoPlayer(
     }
 
     override fun getCastState(): String {
-        val state = castContext?.castState ?: return "notConnected"
+        val state = getCastContext()?.castState ?: return "notConnected"
         return VideoFormatUtils.getCastStateString(state)
     }
 
@@ -2600,6 +2735,15 @@ class VideoPlayer(
         // Cancel any pending network retry
         retryRunnable?.let { mainHandler.removeCallbacks(it) }
         retryRunnable = null
+
+        // Cancel any pending fullscreen transitions to prevent crashes after dispose
+        fullscreenEnterRunnable?.let { mainHandler.removeCallbacks(it) }
+        fullscreenEnterRunnable = null
+        fullscreenExitRunnable?.let { mainHandler.removeCallbacks(it) }
+        fullscreenExitRunnable = null
+
+        // Unregister PiP action receiver to prevent memory leak
+        unregisterPipActionReceiver()
 
         // Unregister network callback
         networkCallback?.let { callback ->

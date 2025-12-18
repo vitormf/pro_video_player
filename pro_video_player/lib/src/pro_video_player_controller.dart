@@ -684,49 +684,117 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
 
   // ==================== Platform Capabilities API ====================
 
-  /// Gets the platform-specific feature capabilities.
+  /// Gets static platform information.
   ///
-  /// This method queries the native platform to determine which features are
-  /// supported and available. The returned [PlatformCapabilities] object contains
-  /// boolean flags for each feature, allowing the app to adapt UI and functionality.
-  ///
-  /// Features may be unavailable due to:
-  /// - Platform limitations (e.g., Web doesn't support background playback)
-  /// - Missing native dependencies (e.g., Chromecast SDK not integrated)
-  /// - Runtime conditions (e.g., PiP disabled in system settings)
-  /// - OS version requirements (e.g., PiP requires Android 8.0+)
-  ///
-  /// This method should be called once during initialization and the result
-  /// can be cached. The capabilities typically don't change during app runtime.
-  ///
-  /// Example:
-  /// ```dart
-  /// final capabilities = await controller.getPlatformCapabilities();
-  ///
-  /// // Only show cast button if casting is supported
-  /// if (capabilities.supportsCasting) {
-  ///   showCastButton();
-  /// }
-  ///
-  /// // Adapt UI based on available features
-  /// if (!capabilities.supportsBackgroundPlayback) {
-  ///   showWarning('Background playback not available on this platform');
-  /// }
-  ///
-  /// // Check streaming format support
-  /// if (capabilities.supportsDASH) {
-  ///   loadDashStream();
-  /// } else if (capabilities.supportsHLS) {
-  ///   loadHlsStream();
-  /// }
-  ///
-  /// // Log platform info for debugging
-  /// print('Platform: ${capabilities.platformName}');
-  /// print('Player: ${capabilities.nativePlayerType}');
-  /// print('AirPlay: ${capabilities.supportsAirPlay}');
-  /// print('Chromecast: ${capabilities.supportsChromecast}');
-  /// ```
-  Future<PlatformCapabilities> getPlatformCapabilities() => _platform.getPlatformCapabilities();
+  /// Returns metadata about the platform (name, player type, additional info).
+  Future<PlatformInfo> getPlatformInfo() {
+    return _platform.getPlatformInfo();
+  }
+
+  /// Checks if Picture-in-Picture mode is supported.
+  Future<bool> supportsPictureInPicture() {
+    return _platform.supportsPictureInPicture();
+  }
+
+  /// Checks if fullscreen mode is supported.
+  Future<bool> supportsFullscreen() {
+    return _platform.supportsFullscreen();
+  }
+
+  /// Checks if background playback is supported.
+  Future<bool> supportsBackgroundPlayback() {
+    return _platform.supportsBackgroundPlayback();
+  }
+
+  /// Checks if any form of casting is supported.
+  Future<bool> supportsCasting() {
+    return _platform.supportsCasting();
+  }
+
+  /// Checks if AirPlay is supported.
+  Future<bool> supportsAirPlay() {
+    return _platform.supportsAirPlay();
+  }
+
+  /// Checks if Chromecast is supported.
+  Future<bool> supportsChromecast() {
+    return _platform.supportsChromecast();
+  }
+
+  /// Checks if Remote Playback API is supported.
+  Future<bool> supportsRemotePlayback() {
+    return _platform.supportsRemotePlayback();
+  }
+
+  /// Checks if quality selection is supported.
+  Future<bool> supportsQualitySelection() {
+    return _platform.supportsQualitySelection();
+  }
+
+  /// Checks if playback speed control is supported.
+  Future<bool> supportsPlaybackSpeedControl() {
+    return _platform.supportsPlaybackSpeedControl();
+  }
+
+  /// Checks if subtitles are supported.
+  Future<bool> supportsSubtitles() {
+    return _platform.supportsSubtitles();
+  }
+
+  /// Checks if external subtitles are supported.
+  Future<bool> supportsExternalSubtitles() {
+    return _platform.supportsExternalSubtitles();
+  }
+
+  /// Checks if audio track selection is supported.
+  Future<bool> supportsAudioTrackSelection() {
+    return _platform.supportsAudioTrackSelection();
+  }
+
+  /// Checks if chapters are supported.
+  Future<bool> supportsChapters() {
+    return _platform.supportsChapters();
+  }
+
+  /// Checks if video metadata extraction is supported.
+  Future<bool> supportsVideoMetadataExtraction() {
+    return _platform.supportsVideoMetadataExtraction();
+  }
+
+  /// Checks if network monitoring is supported.
+  Future<bool> supportsNetworkMonitoring() {
+    return _platform.supportsNetworkMonitoring();
+  }
+
+  /// Checks if bandwidth estimation is supported.
+  Future<bool> supportsBandwidthEstimation() {
+    return _platform.supportsBandwidthEstimation();
+  }
+
+  /// Checks if adaptive bitrate streaming is supported.
+  Future<bool> supportsAdaptiveBitrate() {
+    return _platform.supportsAdaptiveBitrate();
+  }
+
+  /// Checks if HLS is supported.
+  Future<bool> supportsHLS() {
+    return _platform.supportsHLS();
+  }
+
+  /// Checks if DASH is supported.
+  Future<bool> supportsDASH() {
+    return _platform.supportsDASH();
+  }
+
+  /// Checks if device volume control is supported.
+  Future<bool> supportsDeviceVolumeControl() {
+    return _platform.supportsDeviceVolumeControl();
+  }
+
+  /// Checks if screen brightness control is supported.
+  Future<bool> supportsScreenBrightnessControl() {
+    return _platform.supportsScreenBrightnessControl();
+  }
 
   // ==================== Battery API ====================
 

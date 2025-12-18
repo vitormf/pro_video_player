@@ -54,6 +54,8 @@ void main() {
       when(() => mockCallbacks.sideGestureAreaFraction).thenReturn(0.25);
       when(() => mockCallbacks.bottomGestureExclusionHeight).thenReturn(80);
       when(() => mockCallbacks.verticalGestureThreshold).thenReturn(30);
+      when(() => mockCallbacks.getControlsVisible()).thenReturn(true);
+      when(() => mockCallbacks.setControlsVisible(visible: any(named: 'visible'))).thenReturn(null);
 
       when(() => mockVolumeManager.startVolumeGesture()).thenAnswer((_) async {});
       when(() => mockBrightnessManager.startBrightnessGesture()).thenAnswer((_) async {});

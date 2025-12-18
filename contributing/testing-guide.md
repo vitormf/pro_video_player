@@ -1514,7 +1514,7 @@ void main() {
     // 2. Pump app
     await tester.pumpWidget(const ExampleApp());
 
-    // 3. Set up fixture (viewport, error suppression, timing)
+    // 3. Set up fixture (viewport, overflow detection, timing)
     await fixture.setUp(tester);
 
     // 4. Wait for app to settle
@@ -1723,13 +1723,14 @@ if (!success) {
 
 ```dart
 final fixture = E2ETestFixture(
-  suppressOverflowErrors: true,      // Default: suppress overflow errors
   setViewport: true,                  // Default: set platform-appropriate viewport
   customViewportSize: Size(800, 600), // Optional: override viewport
   enableDetailedLogging: false,       // Default: quiet mode
+  trackMemory: false,                 // Default: no memory tracking
+  memoryLeakThresholdMB: 50.0,        // Memory growth threshold
 );
 
-await fixture.setUp(tester);    // Set up viewport, error suppression, timers
+await fixture.setUp(tester);    // Set up viewport, overflow detection, timers
 fixture.tearDown();             // Clean up timers, restore error handler
 
 // Section timing
@@ -1822,6 +1823,19 @@ await tester.settle();      // Pumps frames on web/macOS, pumpAndSettle elsewher
 // ❌ BAD: Hangs on web/macOS
 await tester.pumpAndSettle(); // Video frames never stop, causes infinite loop
 ```
+
+#### Overflow Error Detection
+
+E2E tests will **always fail** when widgets overflow their bounds (the yellow and black striped warnings you see in debug mode). This helps catch layout issues early and is intentional.
+
+**Overflow errors should be fixed, not suppressed.** If you encounter overflow errors in E2E tests:
+
+1. Investigate the root cause - is the widget truly overflowing?
+2. Fix the layout issue in your code
+3. Verify the fix across different viewport sizes/platforms
+4. Re-run tests to confirm overflow is resolved
+
+**Note:** Widget tests (non-E2E) also always detect overflow errors. This is intentional - all tests should have precise layout control and proper widget bounds.
 
 #### Master-Detail vs Single-Pane Navigation
 

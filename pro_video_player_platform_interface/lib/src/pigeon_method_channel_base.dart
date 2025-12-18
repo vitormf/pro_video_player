@@ -102,10 +102,10 @@ abstract class PigeonMethodChannelBase extends ProVideoPlayerPlatform {
   }
 
   @override
-  Future<PlatformCapabilities> getPlatformCapabilities() async {
-    ProVideoPlayerLogger.log('Getting platform capabilities', tag: 'PigeonMethodChannel');
-    final message = await _hostApi.getPlatformCapabilities();
-    return _convertPlatformCapabilities(message);
+  Future<PlatformInfo> getPlatformInfo() async {
+    ProVideoPlayerLogger.log('Getting platform info', tag: 'PigeonMethodChannel');
+    final message = await _hostApi.getPlatformInfo();
+    return _convertPlatformInfo(message);
   }
 
   @override
@@ -113,6 +113,71 @@ abstract class PigeonMethodChannelBase extends ProVideoPlayerPlatform {
     ProVideoPlayerLogger.log('Setting verbose logging to: $enabled', tag: 'PigeonMethodChannel');
     await _hostApi.setVerboseLogging(enabled);
   }
+
+  // ==================== Platform Capabilities ====================
+
+  @override
+  Future<bool> supportsPictureInPicture() async => _hostApi.supportsPictureInPicture();
+
+  @override
+  Future<bool> supportsFullscreen() async => _hostApi.supportsFullscreen();
+
+  @override
+  Future<bool> supportsBackgroundPlayback() async => _hostApi.supportsBackgroundPlayback();
+
+  @override
+  Future<bool> supportsCasting() async => _hostApi.supportsCasting();
+
+  @override
+  Future<bool> supportsAirPlay() async => _hostApi.supportsAirPlay();
+
+  @override
+  Future<bool> supportsChromecast() async => _hostApi.supportsChromecast();
+
+  @override
+  Future<bool> supportsRemotePlayback() async => _hostApi.supportsRemotePlayback();
+
+  @override
+  Future<bool> supportsQualitySelection() async => _hostApi.supportsQualitySelection();
+
+  @override
+  Future<bool> supportsPlaybackSpeedControl() async => _hostApi.supportsPlaybackSpeedControl();
+
+  @override
+  Future<bool> supportsSubtitles() async => _hostApi.supportsSubtitles();
+
+  @override
+  Future<bool> supportsExternalSubtitles() async => _hostApi.supportsExternalSubtitles();
+
+  @override
+  Future<bool> supportsAudioTrackSelection() async => _hostApi.supportsAudioTrackSelection();
+
+  @override
+  Future<bool> supportsChapters() async => _hostApi.supportsChapters();
+
+  @override
+  Future<bool> supportsVideoMetadataExtraction() async => _hostApi.supportsVideoMetadataExtraction();
+
+  @override
+  Future<bool> supportsNetworkMonitoring() async => _hostApi.supportsNetworkMonitoring();
+
+  @override
+  Future<bool> supportsBandwidthEstimation() async => _hostApi.supportsBandwidthEstimation();
+
+  @override
+  Future<bool> supportsAdaptiveBitrate() async => _hostApi.supportsAdaptiveBitrate();
+
+  @override
+  Future<bool> supportsHLS() async => _hostApi.supportsHLS();
+
+  @override
+  Future<bool> supportsDASH() async => _hostApi.supportsDASH();
+
+  @override
+  Future<bool> supportsDeviceVolumeControl() async => _hostApi.supportsDeviceVolumeControl();
+
+  @override
+  Future<bool> supportsScreenBrightnessControl() async => _hostApi.supportsScreenBrightnessControl();
 
   // ==================== Device Controls ====================
 
@@ -482,29 +547,11 @@ abstract class PigeonMethodChannelBase extends ProVideoPlayerPlatform {
     autoEnterPipOnBackground: options.autoEnterPipOnBackground,
   );
 
-  /// Converts a Pigeon [PlatformCapabilitiesMessage] to [PlatformCapabilities].
-  PlatformCapabilities _convertPlatformCapabilities(PlatformCapabilitiesMessage message) => PlatformCapabilities(
-    supportsPictureInPicture: message.supportsPictureInPicture,
-    supportsFullscreen: true,
-    supportsBackgroundPlayback: message.supportsBackgroundPlayback,
-    supportsCasting: message.supportsCasting,
-    supportsAirPlay: false,
-    supportsChromecast: false,
-    supportsRemotePlayback: false,
-    supportsQualitySelection: true,
-    supportsPlaybackSpeedControl: true,
-    supportsSubtitles: true,
-    supportsExternalSubtitles: true,
-    supportsAudioTrackSelection: true,
-    supportsChapters: true,
-    supportsVideoMetadataExtraction: true,
-    supportsNetworkMonitoring: true,
-    supportsBandwidthEstimation: true,
-    supportsAdaptiveBitrate: true,
-    supportsHLS: true,
-    supportsDASH: false,
-    supportsDeviceVolumeControl: true,
-    supportsScreenBrightnessControl: true,
+  /// Converts a Pigeon [PlatformInfoMessage] to [PlatformInfo].
+  PlatformInfo _convertPlatformInfo(PlatformInfoMessage message) => PlatformInfo(
+    platformName: message.platformName,
+    nativePlayerType: message.nativePlayerType,
+    additionalInfo: message.additionalInfo?.cast<String, dynamic>(),
   );
 
   VideoSourceType _getSubtitleSourceType(SubtitleSource source) => switch (source) {

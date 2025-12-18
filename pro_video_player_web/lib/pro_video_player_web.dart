@@ -168,37 +168,15 @@ class ProVideoPlayerWeb extends ProVideoPlayerPlatform {
   }
 
   @override
-  Future<PlatformCapabilities> getPlatformCapabilities() async {
-    verboseLog('Getting platform capabilities', tag: 'Plugin');
+  Future<PlatformInfo> getPlatformInfo() async {
+    verboseLog('Getting platform info', tag: 'Plugin');
 
-    // Check browser capabilities at runtime
     final supportsPip = _checkPictureInPictureSupport();
     final supportsFullscreen = _checkFullscreenSupport();
     final supportsRemotePlayback = _checkRemotePlaybackSupport();
     final supportsMediaSession = _checkMediaSessionSupport();
 
-    return PlatformCapabilities(
-      supportsPictureInPicture: supportsPip, // Browser Picture-in-Picture API
-      supportsFullscreen: supportsFullscreen, // Browser Fullscreen API
-      supportsBackgroundPlayback: false, // Web doesn't support background playback
-      supportsCasting: supportsRemotePlayback, // Remote Playback API for casting
-      supportsAirPlay: false, // AirPlay is iOS/macOS only
-      supportsChromecast: false, // Chromecast is Android only (web uses Remote Playback API)
-      supportsRemotePlayback: supportsRemotePlayback, // Browser Remote Playback API
-      supportsQualitySelection: true, // Web supports quality selection with HLS/DASH libraries
-      supportsPlaybackSpeedControl: true, // HTML5 video supports playback rate
-      supportsSubtitles: true, // HTML5 video has TextTrack support
-      supportsExternalSubtitles: true, // Can add TextTrack programmatically
-      supportsAudioTrackSelection: true, // HTML5 video has AudioTrack support
-      supportsChapters: false, // Limited chapter support on web
-      supportsVideoMetadataExtraction: true, // Can extract metadata from video element
-      supportsNetworkMonitoring: true, // Navigator.connection API
-      supportsBandwidthEstimation: false, // Limited bandwidth estimation on web
-      supportsAdaptiveBitrate: true, // HLS.js and dash.js support ABR
-      supportsHLS: true, // HLS.js library support
-      supportsDASH: true, // dash.js library support
-      supportsDeviceVolumeControl: false, // Web cannot control device volume
-      supportsScreenBrightnessControl: false, // Web cannot control screen brightness
+    return PlatformInfo(
       platformName: 'Web',
       nativePlayerType: 'HTML5',
       additionalInfo: {
@@ -209,6 +187,111 @@ class ProVideoPlayerWeb extends ProVideoPlayerPlatform {
         'mediaSessionAvailable': supportsMediaSession,
       },
     );
+  }
+
+  @override
+  Future<bool> supportsPictureInPicture() async {
+    return _checkPictureInPictureSupport();
+  }
+
+  @override
+  Future<bool> supportsFullscreen() async {
+    return _checkFullscreenSupport();
+  }
+
+  @override
+  Future<bool> supportsBackgroundPlayback() async {
+    return false; // Web doesn't support background playback
+  }
+
+  @override
+  Future<bool> supportsCasting() async {
+    return _checkRemotePlaybackSupport(); // Remote Playback API for casting
+  }
+
+  @override
+  Future<bool> supportsAirPlay() async {
+    return false; // AirPlay is iOS/macOS only
+  }
+
+  @override
+  Future<bool> supportsChromecast() async {
+    return false; // Chromecast is Android only (web uses Remote Playback API)
+  }
+
+  @override
+  Future<bool> supportsRemotePlayback() async {
+    return _checkRemotePlaybackSupport(); // Browser Remote Playback API
+  }
+
+  @override
+  Future<bool> supportsQualitySelection() async {
+    return true; // Web supports quality selection with HLS/DASH libraries
+  }
+
+  @override
+  Future<bool> supportsPlaybackSpeedControl() async {
+    return true; // HTML5 video supports playback rate
+  }
+
+  @override
+  Future<bool> supportsSubtitles() async {
+    return true; // HTML5 video has TextTrack support
+  }
+
+  @override
+  Future<bool> supportsExternalSubtitles() async {
+    return true; // Can add TextTrack programmatically
+  }
+
+  @override
+  Future<bool> supportsAudioTrackSelection() async {
+    return true; // HTML5 video has AudioTrack support
+  }
+
+  @override
+  Future<bool> supportsChapters() async {
+    return false; // Limited chapter support on web
+  }
+
+  @override
+  Future<bool> supportsVideoMetadataExtraction() async {
+    return true; // Can extract metadata from video element
+  }
+
+  @override
+  Future<bool> supportsNetworkMonitoring() async {
+    return true; // Navigator.connection API
+  }
+
+  @override
+  Future<bool> supportsBandwidthEstimation() async {
+    return false; // Limited bandwidth estimation on web
+  }
+
+  @override
+  Future<bool> supportsAdaptiveBitrate() async {
+    return true; // HLS.js and dash.js support ABR
+  }
+
+  @override
+  Future<bool> supportsHLS() async {
+    return true; // HLS.js library support
+  }
+
+  @override
+  Future<bool> supportsDASH() async {
+    return true; // dash.js library support
+  }
+
+  @override
+  Future<bool> supportsDeviceVolumeControl() async {
+    return false; // Web cannot control device volume
+  }
+
+  @override
+  Future<bool> supportsScreenBrightnessControl() async {
+    return false; // Web cannot control screen brightness
   }
 
   bool _checkPictureInPictureSupport() {

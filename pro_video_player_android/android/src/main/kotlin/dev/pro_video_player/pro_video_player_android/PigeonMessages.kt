@@ -348,113 +348,39 @@ data class VideoPlayerOptionsMessage (
 }
 
 /**
- * Platform capabilities returned by the platform.
+ * Platform information returned by the platform.
+ *
+ * Contains static platform metadata that doesn't require async checks.
  *
  * Generated class from Pigeon that represents data sent in messages.
  */
-data class PlatformCapabilitiesMessage (
-  /** Whether Picture-in-Picture is supported. */
-  val supportsPictureInPicture: Boolean,
-  /** Whether fullscreen is supported. */
-  val supportsFullscreen: Boolean,
-  /** Whether background playback is supported. */
-  val supportsBackgroundPlayback: Boolean,
-  /** Whether casting is supported. */
-  val supportsCasting: Boolean,
-  /** Whether AirPlay is supported. */
-  val supportsAirPlay: Boolean,
-  /** Whether Chromecast is supported. */
-  val supportsChromecast: Boolean,
-  /** Whether Remote Playback API is supported. */
-  val supportsRemotePlayback: Boolean,
-  /** Whether quality selection is supported. */
-  val supportsQualitySelection: Boolean,
-  /** Whether playback speed control is supported. */
-  val supportsPlaybackSpeedControl: Boolean,
-  /** Whether subtitles are supported. */
-  val supportsSubtitles: Boolean,
-  /** Whether external subtitles are supported. */
-  val supportsExternalSubtitles: Boolean,
-  /** Whether audio track selection is supported. */
-  val supportsAudioTrackSelection: Boolean,
-  /** Whether chapters are supported. */
-  val supportsChapters: Boolean,
-  /** Whether video metadata extraction is supported. */
-  val supportsVideoMetadataExtraction: Boolean,
-  /** Whether network monitoring is supported. */
-  val supportsNetworkMonitoring: Boolean,
-  /** Whether bandwidth estimation is supported. */
-  val supportsBandwidthEstimation: Boolean,
-  /** Whether adaptive bitrate streaming is supported. */
-  val supportsAdaptiveBitrate: Boolean,
-  /** Whether HLS is supported. */
-  val supportsHLS: Boolean,
-  /** Whether DASH is supported. */
-  val supportsDASH: Boolean,
-  /** Whether device volume control is supported. */
-  val supportsDeviceVolumeControl: Boolean,
-  /** Whether screen brightness control is supported. */
-  val supportsScreenBrightnessControl: Boolean,
-  /** Platform name. */
+data class PlatformInfoMessage (
+  /** Platform name (e.g., "iOS", "Android", "Web"). */
   val platformName: String,
-  /** Native player type. */
+  /** Native player type (e.g., "AVPlayer", "ExoPlayer", "HTML5"). */
   val nativePlayerType: String,
-  /** Additional platform-specific info. */
+  /**
+   * Additional platform-specific information as key-value pairs.
+   *
+   * May include:
+   * - OS version
+   * - SDK version
+   * - Browser user agent
+   * - Hardware capabilities
+   */
   val additionalInfo: Map<String?, Any?>? = null
 )
  {
   companion object {
-    fun fromList(pigeonVar_list: List<Any?>): PlatformCapabilitiesMessage {
-      val supportsPictureInPicture = pigeonVar_list[0] as Boolean
-      val supportsFullscreen = pigeonVar_list[1] as Boolean
-      val supportsBackgroundPlayback = pigeonVar_list[2] as Boolean
-      val supportsCasting = pigeonVar_list[3] as Boolean
-      val supportsAirPlay = pigeonVar_list[4] as Boolean
-      val supportsChromecast = pigeonVar_list[5] as Boolean
-      val supportsRemotePlayback = pigeonVar_list[6] as Boolean
-      val supportsQualitySelection = pigeonVar_list[7] as Boolean
-      val supportsPlaybackSpeedControl = pigeonVar_list[8] as Boolean
-      val supportsSubtitles = pigeonVar_list[9] as Boolean
-      val supportsExternalSubtitles = pigeonVar_list[10] as Boolean
-      val supportsAudioTrackSelection = pigeonVar_list[11] as Boolean
-      val supportsChapters = pigeonVar_list[12] as Boolean
-      val supportsVideoMetadataExtraction = pigeonVar_list[13] as Boolean
-      val supportsNetworkMonitoring = pigeonVar_list[14] as Boolean
-      val supportsBandwidthEstimation = pigeonVar_list[15] as Boolean
-      val supportsAdaptiveBitrate = pigeonVar_list[16] as Boolean
-      val supportsHLS = pigeonVar_list[17] as Boolean
-      val supportsDASH = pigeonVar_list[18] as Boolean
-      val supportsDeviceVolumeControl = pigeonVar_list[19] as Boolean
-      val supportsScreenBrightnessControl = pigeonVar_list[20] as Boolean
-      val platformName = pigeonVar_list[21] as String
-      val nativePlayerType = pigeonVar_list[22] as String
-      val additionalInfo = pigeonVar_list[23] as Map<String?, Any?>?
-      return PlatformCapabilitiesMessage(supportsPictureInPicture, supportsFullscreen, supportsBackgroundPlayback, supportsCasting, supportsAirPlay, supportsChromecast, supportsRemotePlayback, supportsQualitySelection, supportsPlaybackSpeedControl, supportsSubtitles, supportsExternalSubtitles, supportsAudioTrackSelection, supportsChapters, supportsVideoMetadataExtraction, supportsNetworkMonitoring, supportsBandwidthEstimation, supportsAdaptiveBitrate, supportsHLS, supportsDASH, supportsDeviceVolumeControl, supportsScreenBrightnessControl, platformName, nativePlayerType, additionalInfo)
+    fun fromList(pigeonVar_list: List<Any?>): PlatformInfoMessage {
+      val platformName = pigeonVar_list[0] as String
+      val nativePlayerType = pigeonVar_list[1] as String
+      val additionalInfo = pigeonVar_list[2] as Map<String?, Any?>?
+      return PlatformInfoMessage(platformName, nativePlayerType, additionalInfo)
     }
   }
   fun toList(): List<Any?> {
     return listOf(
-      supportsPictureInPicture,
-      supportsFullscreen,
-      supportsBackgroundPlayback,
-      supportsCasting,
-      supportsAirPlay,
-      supportsChromecast,
-      supportsRemotePlayback,
-      supportsQualitySelection,
-      supportsPlaybackSpeedControl,
-      supportsSubtitles,
-      supportsExternalSubtitles,
-      supportsAudioTrackSelection,
-      supportsChapters,
-      supportsVideoMetadataExtraction,
-      supportsNetworkMonitoring,
-      supportsBandwidthEstimation,
-      supportsAdaptiveBitrate,
-      supportsHLS,
-      supportsDASH,
-      supportsDeviceVolumeControl,
-      supportsScreenBrightnessControl,
       platformName,
       nativePlayerType,
       additionalInfo,
@@ -1004,7 +930,7 @@ private open class PigeonMessagesPigeonCodec : StandardMessageCodec() {
       }
       140.toByte() -> {
         return (readValue(buffer) as? List<Any?>)?.let {
-          PlatformCapabilitiesMessage.fromList(it)
+          PlatformInfoMessage.fromList(it)
         }
       }
       141.toByte() -> {
@@ -1116,7 +1042,7 @@ private open class PigeonMessagesPigeonCodec : StandardMessageCodec() {
         stream.write(139)
         writeValue(stream, value.toList())
       }
-      is PlatformCapabilitiesMessage -> {
+      is PlatformInfoMessage -> {
         stream.write(140)
         writeValue(stream, value.toList())
       }
@@ -1211,10 +1137,52 @@ interface ProVideoPlayerHostApi {
   fun getPosition(playerId: Long, callback: (Result<Long>) -> Unit)
   /** Gets the video duration in milliseconds. */
   fun getDuration(playerId: Long, callback: (Result<Long>) -> Unit)
-  /** Gets the platform capabilities. */
-  fun getPlatformCapabilities(callback: (Result<PlatformCapabilitiesMessage>) -> Unit)
+  /** Gets static platform information. */
+  fun getPlatformInfo(callback: (Result<PlatformInfoMessage>) -> Unit)
   /** Enables or disables verbose logging. */
   fun setVerboseLogging(enabled: Boolean, callback: (Result<Unit>) -> Unit)
+  /** Checks if Picture-in-Picture mode is supported. */
+  fun supportsPictureInPicture(callback: (Result<Boolean>) -> Unit)
+  /** Checks if fullscreen mode is supported. */
+  fun supportsFullscreen(callback: (Result<Boolean>) -> Unit)
+  /** Checks if background playback is supported. */
+  fun supportsBackgroundPlayback(callback: (Result<Boolean>) -> Unit)
+  /** Checks if any form of casting is supported. */
+  fun supportsCasting(callback: (Result<Boolean>) -> Unit)
+  /** Checks if AirPlay is supported. */
+  fun supportsAirPlay(callback: (Result<Boolean>) -> Unit)
+  /** Checks if Chromecast is supported. */
+  fun supportsChromecast(callback: (Result<Boolean>) -> Unit)
+  /** Checks if Remote Playback API is supported. */
+  fun supportsRemotePlayback(callback: (Result<Boolean>) -> Unit)
+  /** Checks if quality selection is supported. */
+  fun supportsQualitySelection(callback: (Result<Boolean>) -> Unit)
+  /** Checks if playback speed control is supported. */
+  fun supportsPlaybackSpeedControl(callback: (Result<Boolean>) -> Unit)
+  /** Checks if subtitles are supported. */
+  fun supportsSubtitles(callback: (Result<Boolean>) -> Unit)
+  /** Checks if external subtitles are supported. */
+  fun supportsExternalSubtitles(callback: (Result<Boolean>) -> Unit)
+  /** Checks if audio track selection is supported. */
+  fun supportsAudioTrackSelection(callback: (Result<Boolean>) -> Unit)
+  /** Checks if chapters are supported. */
+  fun supportsChapters(callback: (Result<Boolean>) -> Unit)
+  /** Checks if video metadata extraction is supported. */
+  fun supportsVideoMetadataExtraction(callback: (Result<Boolean>) -> Unit)
+  /** Checks if network monitoring is supported. */
+  fun supportsNetworkMonitoring(callback: (Result<Boolean>) -> Unit)
+  /** Checks if bandwidth estimation is supported. */
+  fun supportsBandwidthEstimation(callback: (Result<Boolean>) -> Unit)
+  /** Checks if adaptive bitrate streaming is supported. */
+  fun supportsAdaptiveBitrate(callback: (Result<Boolean>) -> Unit)
+  /** Checks if HLS is supported. */
+  fun supportsHLS(callback: (Result<Boolean>) -> Unit)
+  /** Checks if DASH is supported. */
+  fun supportsDASH(callback: (Result<Boolean>) -> Unit)
+  /** Checks if device volume control is supported. */
+  fun supportsDeviceVolumeControl(callback: (Result<Boolean>) -> Unit)
+  /** Checks if screen brightness control is supported. */
+  fun supportsScreenBrightnessControl(callback: (Result<Boolean>) -> Unit)
   /** Gets the device volume (0.0 to 1.0). */
   fun getDeviceVolume(callback: (Result<Double>) -> Unit)
   /** Sets the device volume (0.0 to 1.0). */
@@ -1493,10 +1461,10 @@ interface ProVideoPlayerHostApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getPlatformCapabilities$separatedMessageChannelSuffix", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getPlatformInfo$separatedMessageChannelSuffix", codec)
         if (api != null) {
           channel.setMessageHandler { _, reply ->
-            api.getPlatformCapabilities{ result: Result<PlatformCapabilitiesMessage> ->
+            api.getPlatformInfo{ result: Result<PlatformInfoMessage> ->
               val error = result.exceptionOrNull()
               if (error != null) {
                 reply.reply(wrapError(error))
@@ -1522,6 +1490,384 @@ interface ProVideoPlayerHostApi {
                 reply.reply(wrapError(error))
               } else {
                 reply.reply(wrapResult(null))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsPictureInPicture$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.supportsPictureInPicture{ result: Result<Boolean> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsFullscreen$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.supportsFullscreen{ result: Result<Boolean> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsBackgroundPlayback$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.supportsBackgroundPlayback{ result: Result<Boolean> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsCasting$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.supportsCasting{ result: Result<Boolean> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsAirPlay$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.supportsAirPlay{ result: Result<Boolean> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsChromecast$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.supportsChromecast{ result: Result<Boolean> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsRemotePlayback$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.supportsRemotePlayback{ result: Result<Boolean> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsQualitySelection$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.supportsQualitySelection{ result: Result<Boolean> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsPlaybackSpeedControl$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.supportsPlaybackSpeedControl{ result: Result<Boolean> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsSubtitles$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.supportsSubtitles{ result: Result<Boolean> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsExternalSubtitles$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.supportsExternalSubtitles{ result: Result<Boolean> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsAudioTrackSelection$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.supportsAudioTrackSelection{ result: Result<Boolean> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsChapters$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.supportsChapters{ result: Result<Boolean> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsVideoMetadataExtraction$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.supportsVideoMetadataExtraction{ result: Result<Boolean> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsNetworkMonitoring$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.supportsNetworkMonitoring{ result: Result<Boolean> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsBandwidthEstimation$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.supportsBandwidthEstimation{ result: Result<Boolean> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsAdaptiveBitrate$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.supportsAdaptiveBitrate{ result: Result<Boolean> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsHLS$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.supportsHLS{ result: Result<Boolean> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsDASH$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.supportsDASH{ result: Result<Boolean> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsDeviceVolumeControl$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.supportsDeviceVolumeControl{ result: Result<Boolean> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(wrapResult(data))
+              }
+            }
+          }
+        } else {
+          channel.setMessageHandler(null)
+        }
+      }
+      run {
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsScreenBrightnessControl$separatedMessageChannelSuffix", codec)
+        if (api != null) {
+          channel.setMessageHandler { _, reply ->
+            api.supportsScreenBrightnessControl{ result: Result<Boolean> ->
+              val error = result.exceptionOrNull()
+              if (error != null) {
+                reply.reply(wrapError(error))
+              } else {
+                val data = result.getOrNull()
+                reply.reply(wrapResult(data))
               }
             }
           }

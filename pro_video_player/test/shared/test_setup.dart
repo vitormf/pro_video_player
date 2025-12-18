@@ -326,6 +326,10 @@ class VideoPlayerTestFixture {
     when(() => mockPlatform.setLooping(any(), any())).thenAnswer((_) async {});
     when(() => mockPlatform.setScalingMode(any(), any())).thenAnswer((_) async {});
 
+    // Device controls (for gestures)
+    when(() => mockPlatform.getDeviceVolume()).thenAnswer((_) async => 0.5);
+    when(() => mockPlatform.setDeviceVolume(any())).thenAnswer((_) async {});
+
     // Track selection
     when(() => mockPlatform.setSubtitleTrack(any(), any())).thenAnswer((_) async {});
     when(() => mockPlatform.setSubtitleOffset(any(), any())).thenAnswer((_) async {});

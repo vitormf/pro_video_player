@@ -4,6 +4,29 @@ import AVFoundation
 import AVKit
 @testable import pro_video_player_macos
 
+// MARK: - Test Helper Extension
+extension SharedVideoPlayerWrapper {
+    /// Convenience method for tests that maintains old API signature
+    func addExternalSubtitle(
+        url: String,
+        format: String?,
+        label: String?,
+        language: String?,
+        isDefault: Bool,
+        completion: @escaping ([String: Any]?) -> Void
+    ) {
+        addExternalSubtitle(
+            sourceType: "url",
+            path: url,
+            format: format,
+            label: label,
+            language: language,
+            isDefault: isDefault,
+            completion: completion
+        )
+    }
+}
+
 class VideoPlayerTests: XCTestCase {
 
     var mockRegistrar: MockFlutterPluginRegistrar!

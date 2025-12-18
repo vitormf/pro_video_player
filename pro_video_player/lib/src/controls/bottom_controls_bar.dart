@@ -21,6 +21,7 @@ class BottomControlsBar extends StatelessWidget {
   const BottomControlsBar({
     required this.controller,
     required this.theme,
+    required this.isFullscreen,
     required this.showRemainingTime,
     required this.gestureSeekPosition,
     required this.showSkipButtons,
@@ -38,6 +39,9 @@ class BottomControlsBar extends StatelessWidget {
 
   /// The theme for styling the controls.
   final VideoPlayerTheme theme;
+
+  /// Whether the player is in fullscreen mode.
+  final bool isFullscreen;
 
   /// Whether to show remaining time instead of total duration.
   final bool showRemainingTime;
@@ -74,9 +78,16 @@ class BottomControlsBar extends StatelessWidget {
       final position = gestureSeekPosition ?? value.position;
       final duration = value.duration;
 
+      // Reduce padding and spacing when not in fullscreen to fit in tighter spaces
+      final padding = isFullscreen ? theme.controlsPadding : const EdgeInsets.symmetric(horizontal: 12, vertical: 6);
+      final verticalSpacing = isFullscreen ? 8.0 : 4.0;
+      final iconSize = isFullscreen ? theme.iconSize : (theme.iconSize * 0.85);
+      final playIconSize = isFullscreen ? 36.0 : 30.0;
+      final fontSize = isFullscreen ? 14.0 : 13.0;
+
       // Mobile: stacked layout with progress bar on top, controls below
       return Container(
-        padding: theme.controlsPadding,
+        padding: padding,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -89,7 +100,7 @@ class BottomControlsBar extends StatelessWidget {
               onDragStart: onDragStart,
               onDragEnd: onDragEnd,
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: verticalSpacing),
             // Control buttons row
             Row(
               children: [
@@ -98,7 +109,7 @@ class BottomControlsBar extends StatelessWidget {
                   width: 56,
                   child: Text(
                     formatVideoDuration(position),
-                    style: TextStyle(color: theme.secondaryColor, fontSize: 14),
+                    style: TextStyle(color: theme.secondaryColor, fontSize: fontSize),
                     textAlign: TextAlign.left,
                   ),
                 ),
@@ -107,47 +118,47 @@ class BottomControlsBar extends StatelessWidget {
                 if (value.playlist != null) ...[
                   IconButton(
                     icon: Icon(Icons.skip_previous, color: theme.primaryColor),
-                    iconSize: theme.iconSize,
+                    iconSize: iconSize,
                     onPressed: controller.playlistPrevious,
                   ),
                   if (showSkipButtons)
                     IconButton(
                       icon: Icon(VideoControlsUtils.getSkipBackwardIcon(skipDuration), color: theme.primaryColor),
-                      iconSize: theme.iconSize,
+                      iconSize: iconSize,
                       onPressed: () => controller.seekBackward(skipDuration),
                     ),
                   IconButton(
                     icon: Icon(value.isPlaying ? Icons.pause : Icons.play_arrow, color: theme.primaryColor),
-                    iconSize: 36,
+                    iconSize: playIconSize,
                     onPressed: value.isPlaying ? controller.pause : controller.play,
                   ),
                   if (showSkipButtons)
                     IconButton(
                       icon: Icon(VideoControlsUtils.getSkipForwardIcon(skipDuration), color: theme.primaryColor),
-                      iconSize: theme.iconSize,
+                      iconSize: iconSize,
                       onPressed: () => controller.seekForward(skipDuration),
                     ),
                   IconButton(
                     icon: Icon(Icons.skip_next, color: theme.primaryColor),
-                    iconSize: theme.iconSize,
+                    iconSize: iconSize,
                     onPressed: controller.playlistNext,
                   ),
                 ] else ...[
                   if (showSkipButtons)
                     IconButton(
                       icon: Icon(VideoControlsUtils.getSkipBackwardIcon(skipDuration), color: theme.primaryColor),
-                      iconSize: theme.iconSize,
+                      iconSize: iconSize,
                       onPressed: () => controller.seekBackward(skipDuration),
                     ),
                   IconButton(
                     icon: Icon(value.isPlaying ? Icons.pause : Icons.play_arrow, color: theme.primaryColor),
-                    iconSize: 36,
+                    iconSize: playIconSize,
                     onPressed: value.isPlaying ? controller.pause : controller.play,
                   ),
                   if (showSkipButtons)
                     IconButton(
                       icon: Icon(VideoControlsUtils.getSkipForwardIcon(skipDuration), color: theme.primaryColor),
-                      iconSize: theme.iconSize,
+                      iconSize: iconSize,
                       onPressed: () => controller.seekForward(skipDuration),
                     ),
                 ],
@@ -161,7 +172,7 @@ class BottomControlsBar extends StatelessWidget {
                       showRemainingTime
                           ? '-${formatVideoDuration(duration - position)}'
                           : formatVideoDuration(duration),
-                      style: TextStyle(color: theme.secondaryColor, fontSize: 14),
+                      style: TextStyle(color: theme.secondaryColor, fontSize: fontSize),
                       textAlign: TextAlign.right,
                     ),
                   ),

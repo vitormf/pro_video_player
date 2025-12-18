@@ -16,21 +16,10 @@ verify-tools: _check-fvm _check-flutter
 	@echo "$(CHECK) All development tools verified"
 
 # verify-setup: Verify project setup has been completed
-# Use when: Before build/test/coverage - ensures hard links and git hooks are configured
+# Use when: Before build/test/coverage - ensures git hooks are configured
 # This target is called automatically by test/build/coverage targets
+# Note: Swift sources are automatically handled by CocoaPods during pod install
 verify-setup:
-	@if [ ! -f "pro_video_player_ios/ios/Classes/Shared/SharedVideoPlayer.swift" ]; then \
-		echo "$(CROSS) Setup incomplete: shared source links not found"; \
-		echo ""; \
-		echo "Run 'make setup' to complete project setup."; \
-		exit 1; \
-	fi
-	@if ! ./makefiles/scripts/verify-shared-links.sh >/dev/null 2>&1; then \
-		echo "$(CROSS) Setup incomplete: shared sources are out of sync"; \
-		echo ""; \
-		echo "Run 'make setup-shared-links' to fix."; \
-		exit 1; \
-	fi
 	@if [ "$$(git config --get core.hooksPath 2>/dev/null)" != ".githooks" ]; then \
 		echo "$(WARN)  Git hooks not configured (run 'make setup-git-hooks')"; \
 	fi

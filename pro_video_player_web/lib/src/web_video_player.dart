@@ -106,11 +106,12 @@ class WebVideoPlayer {
     _videoElement.playbackRate = options.playbackSpeed;
     _videoElement.controls = false; // We'll manage controls separately
 
-    // Set autoplay and muted attributes for reliable autoplay on web
-    // Chrome requires videos to be muted for autoplay without user interaction
-    _videoElement.autoplay = options.autoPlay;
+    // Set muted and autoplay attributes when autoPlay is requested
+    // Note: Autoplay may not work in all contexts due to browser restrictions,
+    // even with muted audio. For reliable playback in tests, call play() explicitly.
     if (options.autoPlay) {
       _videoElement.muted = true; // Mute for autoplay
+      _videoElement.autoplay = true; // Set autoplay attribute
     }
 
     // Register platform view
@@ -436,7 +437,14 @@ class WebVideoPlayer {
   // MARK: - Picture-in-Picture
 
   /// Checks if Picture-in-Picture is supported in the current browser.
-  static bool isPipSupported() => web.document.pictureInPictureEnabled;
+  /// Note: Firefox may throw an error, so we need to handle that.
+  static bool isPipSupported() {
+    try {
+      return web.document.pictureInPictureEnabled;
+    } catch (e) {
+      return false;
+    }
+  }
 
   /// Enters Picture-in-Picture mode.
   Future<bool> enterPip() async {

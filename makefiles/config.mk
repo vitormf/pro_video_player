@@ -65,7 +65,7 @@ print-%:
 #   4: success_msg_singular - Success message for one package (e.g., "passed", "coverage generated")
 #   5: fail_msg - Failure message (e.g., "Some tests failed", "Coverage generation failed")
 define run-parallel-packages
-	@pkg_count=$$(echo $(1) | wc -w | tr -d ' '); \
+	pkg_count=$$(echo $(1) | wc -w | tr -d ' '); \
 	logs=""; \
 	for pkg in $(1); do \
 		log=$$(mktemp); \
@@ -74,27 +74,23 @@ define run-parallel-packages
 			pkg_name="$$pkg"; \
 			test_start=$$(date +%s); \
 			if [ "$$pkg_name" = "pro_video_player_web" ] && [ -n "$(3)" ]; then \
-				if (cd $$pkg_name && $(2) $(3) $(OUTPUT_REDIRECT)); then \
-					test_end=$$(date +%s); \
-					echo "$$pkg_name:OK:$$(( $$test_end - $$test_start ))" > $$log; \
-				else \
-					test_end=$$(date +%s); \
-					echo "$$pkg_name:FAILED:$$(( $$test_end - $$test_start ))" > $$log; \
-				fi; \
+				(cd $$pkg_name && $(2) $(3) $(OUTPUT_REDIRECT)); exit_code=$$?; \
 			else \
-				if (cd $$pkg_name && $(2) $(OUTPUT_REDIRECT)); then \
-					test_end=$$(date +%s); \
-					echo "$$pkg_name:OK:$$(( $$test_end - $$test_start ))" > $$log; \
-				else \
-					test_end=$$(date +%s); \
-					echo "$$pkg_name:FAILED:$$(( $$test_end - $$test_start ))" > $$log; \
-				fi; \
+				(cd $$pkg_name && $(2) $(OUTPUT_REDIRECT)); exit_code=$$?; \
+			fi; \
+			test_end=$$(date +%s); \
+			if [ $$exit_code -eq 0 ]; then \
+				echo "$$pkg_name:OK:$$(( $$test_end - $$test_start ))" > $$log; \
+			elif [ $$exit_code -eq 124 ]; then \
+				echo "$$pkg_name:TIMEOUT:$$(( $$test_end - $$test_start ))" > $$log; \
+			else \
+				echo "$$pkg_name:FAILED:$$(( $$test_end - $$test_start ))" > $$log; \
 			fi \
 		) & \
 	done; \
 	\
 	parse_result() { cat $$$$1 2>/dev/null | cut -d: -f2; }; \
-	has_failures=0; completed=""; count=0; \
+	has_failures=0; completed=""; count=0; wait_count=0; loop_start=$$(date +%s); \
 	while true; do \
 		all_done=1; \
 		for log in $$logs; do \
@@ -107,18 +103,28 @@ define run-parallel-packages
 				count=$$((count + 1)); \
 				if [ "$$result" = "OK" ]; then \
 					printf "%d/%d $(CHECK) $$pkg: $(4) ($$$${time}s)\n" "$$count" "$$pkg_count"; \
+				elif [ "$$result" = "TIMEOUT" ]; then \
+					printf "%d/%d $(WARN) $$pkg: timeout ($$$${time}s)\n" "$$count" "$$pkg_count"; \
+					has_failures=1; \
 				else \
 					printf "%d/%d $(CROSS) $$pkg: failed ($$$${time}s)\n" "$$count" "$$pkg_count"; \
 					has_failures=1; \
 				fi; \
 				completed="$$completed $$log"; \
+				wait_count=0; \
 			else \
 				all_done=0; \
 			fi; \
 		done; \
 		[ $$all_done -eq 1 ] && break; \
+		wait_count=$$((wait_count + 1)); \
+		if [ $$((wait_count % 50)) -eq 0 ]; then \
+			elapsed_now=$$(($$( date +%s) - loop_start)); \
+			printf "\r$(HOURGLASS) Running tests... %d/%d complete (%ds elapsed)" "$$count" "$$pkg_count" "$$elapsed_now"; \
+		fi; \
 		sleep 0.1; \
 	done; \
+	if [ $$wait_count -gt 0 ]; then printf "\r%80s\r" " "; fi; \
 	rm -f $$logs; \
 	\
 	echo ""; \

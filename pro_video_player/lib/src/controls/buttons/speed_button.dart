@@ -41,6 +41,7 @@ class SpeedButton extends StatelessWidget {
     return Tooltip(
       message: 'Playback speed',
       child: TextButton(
+        key: const Key('toolbar_speed_button'),
         onPressed: onPressed,
         style: TextButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 8),

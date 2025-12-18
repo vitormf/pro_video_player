@@ -439,382 +439,67 @@ VideoPlayerOptionsMessage VideoPlayerOptionsMessage::FromEncodableList(const Enc
   return decoded;
 }
 
-// PlatformCapabilitiesMessage
+// PlatformInfoMessage
 
-PlatformCapabilitiesMessage::PlatformCapabilitiesMessage(
-  bool supports_picture_in_picture,
-  bool supports_fullscreen,
-  bool supports_background_playback,
-  bool supports_casting,
-  bool supports_air_play,
-  bool supports_chromecast,
-  bool supports_remote_playback,
-  bool supports_quality_selection,
-  bool supports_playback_speed_control,
-  bool supports_subtitles,
-  bool supports_external_subtitles,
-  bool supports_audio_track_selection,
-  bool supports_chapters,
-  bool supports_video_metadata_extraction,
-  bool supports_network_monitoring,
-  bool supports_bandwidth_estimation,
-  bool supports_adaptive_bitrate,
-  bool supports_h_l_s,
-  bool supports_d_a_s_h,
-  bool supports_device_volume_control,
-  bool supports_screen_brightness_control,
+PlatformInfoMessage::PlatformInfoMessage(
   const std::string& platform_name,
   const std::string& native_player_type)
- : supports_picture_in_picture_(supports_picture_in_picture),
-    supports_fullscreen_(supports_fullscreen),
-    supports_background_playback_(supports_background_playback),
-    supports_casting_(supports_casting),
-    supports_air_play_(supports_air_play),
-    supports_chromecast_(supports_chromecast),
-    supports_remote_playback_(supports_remote_playback),
-    supports_quality_selection_(supports_quality_selection),
-    supports_playback_speed_control_(supports_playback_speed_control),
-    supports_subtitles_(supports_subtitles),
-    supports_external_subtitles_(supports_external_subtitles),
-    supports_audio_track_selection_(supports_audio_track_selection),
-    supports_chapters_(supports_chapters),
-    supports_video_metadata_extraction_(supports_video_metadata_extraction),
-    supports_network_monitoring_(supports_network_monitoring),
-    supports_bandwidth_estimation_(supports_bandwidth_estimation),
-    supports_adaptive_bitrate_(supports_adaptive_bitrate),
-    supports_h_l_s_(supports_h_l_s),
-    supports_d_a_s_h_(supports_d_a_s_h),
-    supports_device_volume_control_(supports_device_volume_control),
-    supports_screen_brightness_control_(supports_screen_brightness_control),
-    platform_name_(platform_name),
+ : platform_name_(platform_name),
     native_player_type_(native_player_type) {}
 
-PlatformCapabilitiesMessage::PlatformCapabilitiesMessage(
-  bool supports_picture_in_picture,
-  bool supports_fullscreen,
-  bool supports_background_playback,
-  bool supports_casting,
-  bool supports_air_play,
-  bool supports_chromecast,
-  bool supports_remote_playback,
-  bool supports_quality_selection,
-  bool supports_playback_speed_control,
-  bool supports_subtitles,
-  bool supports_external_subtitles,
-  bool supports_audio_track_selection,
-  bool supports_chapters,
-  bool supports_video_metadata_extraction,
-  bool supports_network_monitoring,
-  bool supports_bandwidth_estimation,
-  bool supports_adaptive_bitrate,
-  bool supports_h_l_s,
-  bool supports_d_a_s_h,
-  bool supports_device_volume_control,
-  bool supports_screen_brightness_control,
+PlatformInfoMessage::PlatformInfoMessage(
   const std::string& platform_name,
   const std::string& native_player_type,
   const EncodableMap* additional_info)
- : supports_picture_in_picture_(supports_picture_in_picture),
-    supports_fullscreen_(supports_fullscreen),
-    supports_background_playback_(supports_background_playback),
-    supports_casting_(supports_casting),
-    supports_air_play_(supports_air_play),
-    supports_chromecast_(supports_chromecast),
-    supports_remote_playback_(supports_remote_playback),
-    supports_quality_selection_(supports_quality_selection),
-    supports_playback_speed_control_(supports_playback_speed_control),
-    supports_subtitles_(supports_subtitles),
-    supports_external_subtitles_(supports_external_subtitles),
-    supports_audio_track_selection_(supports_audio_track_selection),
-    supports_chapters_(supports_chapters),
-    supports_video_metadata_extraction_(supports_video_metadata_extraction),
-    supports_network_monitoring_(supports_network_monitoring),
-    supports_bandwidth_estimation_(supports_bandwidth_estimation),
-    supports_adaptive_bitrate_(supports_adaptive_bitrate),
-    supports_h_l_s_(supports_h_l_s),
-    supports_d_a_s_h_(supports_d_a_s_h),
-    supports_device_volume_control_(supports_device_volume_control),
-    supports_screen_brightness_control_(supports_screen_brightness_control),
-    platform_name_(platform_name),
+ : platform_name_(platform_name),
     native_player_type_(native_player_type),
     additional_info_(additional_info ? std::optional<EncodableMap>(*additional_info) : std::nullopt) {}
 
-bool PlatformCapabilitiesMessage::supports_picture_in_picture() const {
-  return supports_picture_in_picture_;
-}
-
-void PlatformCapabilitiesMessage::set_supports_picture_in_picture(bool value_arg) {
-  supports_picture_in_picture_ = value_arg;
-}
-
-
-bool PlatformCapabilitiesMessage::supports_fullscreen() const {
-  return supports_fullscreen_;
-}
-
-void PlatformCapabilitiesMessage::set_supports_fullscreen(bool value_arg) {
-  supports_fullscreen_ = value_arg;
-}
-
-
-bool PlatformCapabilitiesMessage::supports_background_playback() const {
-  return supports_background_playback_;
-}
-
-void PlatformCapabilitiesMessage::set_supports_background_playback(bool value_arg) {
-  supports_background_playback_ = value_arg;
-}
-
-
-bool PlatformCapabilitiesMessage::supports_casting() const {
-  return supports_casting_;
-}
-
-void PlatformCapabilitiesMessage::set_supports_casting(bool value_arg) {
-  supports_casting_ = value_arg;
-}
-
-
-bool PlatformCapabilitiesMessage::supports_air_play() const {
-  return supports_air_play_;
-}
-
-void PlatformCapabilitiesMessage::set_supports_air_play(bool value_arg) {
-  supports_air_play_ = value_arg;
-}
-
-
-bool PlatformCapabilitiesMessage::supports_chromecast() const {
-  return supports_chromecast_;
-}
-
-void PlatformCapabilitiesMessage::set_supports_chromecast(bool value_arg) {
-  supports_chromecast_ = value_arg;
-}
-
-
-bool PlatformCapabilitiesMessage::supports_remote_playback() const {
-  return supports_remote_playback_;
-}
-
-void PlatformCapabilitiesMessage::set_supports_remote_playback(bool value_arg) {
-  supports_remote_playback_ = value_arg;
-}
-
-
-bool PlatformCapabilitiesMessage::supports_quality_selection() const {
-  return supports_quality_selection_;
-}
-
-void PlatformCapabilitiesMessage::set_supports_quality_selection(bool value_arg) {
-  supports_quality_selection_ = value_arg;
-}
-
-
-bool PlatformCapabilitiesMessage::supports_playback_speed_control() const {
-  return supports_playback_speed_control_;
-}
-
-void PlatformCapabilitiesMessage::set_supports_playback_speed_control(bool value_arg) {
-  supports_playback_speed_control_ = value_arg;
-}
-
-
-bool PlatformCapabilitiesMessage::supports_subtitles() const {
-  return supports_subtitles_;
-}
-
-void PlatformCapabilitiesMessage::set_supports_subtitles(bool value_arg) {
-  supports_subtitles_ = value_arg;
-}
-
-
-bool PlatformCapabilitiesMessage::supports_external_subtitles() const {
-  return supports_external_subtitles_;
-}
-
-void PlatformCapabilitiesMessage::set_supports_external_subtitles(bool value_arg) {
-  supports_external_subtitles_ = value_arg;
-}
-
-
-bool PlatformCapabilitiesMessage::supports_audio_track_selection() const {
-  return supports_audio_track_selection_;
-}
-
-void PlatformCapabilitiesMessage::set_supports_audio_track_selection(bool value_arg) {
-  supports_audio_track_selection_ = value_arg;
-}
-
-
-bool PlatformCapabilitiesMessage::supports_chapters() const {
-  return supports_chapters_;
-}
-
-void PlatformCapabilitiesMessage::set_supports_chapters(bool value_arg) {
-  supports_chapters_ = value_arg;
-}
-
-
-bool PlatformCapabilitiesMessage::supports_video_metadata_extraction() const {
-  return supports_video_metadata_extraction_;
-}
-
-void PlatformCapabilitiesMessage::set_supports_video_metadata_extraction(bool value_arg) {
-  supports_video_metadata_extraction_ = value_arg;
-}
-
-
-bool PlatformCapabilitiesMessage::supports_network_monitoring() const {
-  return supports_network_monitoring_;
-}
-
-void PlatformCapabilitiesMessage::set_supports_network_monitoring(bool value_arg) {
-  supports_network_monitoring_ = value_arg;
-}
-
-
-bool PlatformCapabilitiesMessage::supports_bandwidth_estimation() const {
-  return supports_bandwidth_estimation_;
-}
-
-void PlatformCapabilitiesMessage::set_supports_bandwidth_estimation(bool value_arg) {
-  supports_bandwidth_estimation_ = value_arg;
-}
-
-
-bool PlatformCapabilitiesMessage::supports_adaptive_bitrate() const {
-  return supports_adaptive_bitrate_;
-}
-
-void PlatformCapabilitiesMessage::set_supports_adaptive_bitrate(bool value_arg) {
-  supports_adaptive_bitrate_ = value_arg;
-}
-
-
-bool PlatformCapabilitiesMessage::supports_h_l_s() const {
-  return supports_h_l_s_;
-}
-
-void PlatformCapabilitiesMessage::set_supports_h_l_s(bool value_arg) {
-  supports_h_l_s_ = value_arg;
-}
-
-
-bool PlatformCapabilitiesMessage::supports_d_a_s_h() const {
-  return supports_d_a_s_h_;
-}
-
-void PlatformCapabilitiesMessage::set_supports_d_a_s_h(bool value_arg) {
-  supports_d_a_s_h_ = value_arg;
-}
-
-
-bool PlatformCapabilitiesMessage::supports_device_volume_control() const {
-  return supports_device_volume_control_;
-}
-
-void PlatformCapabilitiesMessage::set_supports_device_volume_control(bool value_arg) {
-  supports_device_volume_control_ = value_arg;
-}
-
-
-bool PlatformCapabilitiesMessage::supports_screen_brightness_control() const {
-  return supports_screen_brightness_control_;
-}
-
-void PlatformCapabilitiesMessage::set_supports_screen_brightness_control(bool value_arg) {
-  supports_screen_brightness_control_ = value_arg;
-}
-
-
-const std::string& PlatformCapabilitiesMessage::platform_name() const {
+const std::string& PlatformInfoMessage::platform_name() const {
   return platform_name_;
 }
 
-void PlatformCapabilitiesMessage::set_platform_name(std::string_view value_arg) {
+void PlatformInfoMessage::set_platform_name(std::string_view value_arg) {
   platform_name_ = value_arg;
 }
 
 
-const std::string& PlatformCapabilitiesMessage::native_player_type() const {
+const std::string& PlatformInfoMessage::native_player_type() const {
   return native_player_type_;
 }
 
-void PlatformCapabilitiesMessage::set_native_player_type(std::string_view value_arg) {
+void PlatformInfoMessage::set_native_player_type(std::string_view value_arg) {
   native_player_type_ = value_arg;
 }
 
 
-const EncodableMap* PlatformCapabilitiesMessage::additional_info() const {
+const EncodableMap* PlatformInfoMessage::additional_info() const {
   return additional_info_ ? &(*additional_info_) : nullptr;
 }
 
-void PlatformCapabilitiesMessage::set_additional_info(const EncodableMap* value_arg) {
+void PlatformInfoMessage::set_additional_info(const EncodableMap* value_arg) {
   additional_info_ = value_arg ? std::optional<EncodableMap>(*value_arg) : std::nullopt;
 }
 
-void PlatformCapabilitiesMessage::set_additional_info(const EncodableMap& value_arg) {
+void PlatformInfoMessage::set_additional_info(const EncodableMap& value_arg) {
   additional_info_ = value_arg;
 }
 
 
-EncodableList PlatformCapabilitiesMessage::ToEncodableList() const {
+EncodableList PlatformInfoMessage::ToEncodableList() const {
   EncodableList list;
-  list.reserve(24);
-  list.push_back(EncodableValue(supports_picture_in_picture_));
-  list.push_back(EncodableValue(supports_fullscreen_));
-  list.push_back(EncodableValue(supports_background_playback_));
-  list.push_back(EncodableValue(supports_casting_));
-  list.push_back(EncodableValue(supports_air_play_));
-  list.push_back(EncodableValue(supports_chromecast_));
-  list.push_back(EncodableValue(supports_remote_playback_));
-  list.push_back(EncodableValue(supports_quality_selection_));
-  list.push_back(EncodableValue(supports_playback_speed_control_));
-  list.push_back(EncodableValue(supports_subtitles_));
-  list.push_back(EncodableValue(supports_external_subtitles_));
-  list.push_back(EncodableValue(supports_audio_track_selection_));
-  list.push_back(EncodableValue(supports_chapters_));
-  list.push_back(EncodableValue(supports_video_metadata_extraction_));
-  list.push_back(EncodableValue(supports_network_monitoring_));
-  list.push_back(EncodableValue(supports_bandwidth_estimation_));
-  list.push_back(EncodableValue(supports_adaptive_bitrate_));
-  list.push_back(EncodableValue(supports_h_l_s_));
-  list.push_back(EncodableValue(supports_d_a_s_h_));
-  list.push_back(EncodableValue(supports_device_volume_control_));
-  list.push_back(EncodableValue(supports_screen_brightness_control_));
+  list.reserve(3);
   list.push_back(EncodableValue(platform_name_));
   list.push_back(EncodableValue(native_player_type_));
   list.push_back(additional_info_ ? EncodableValue(*additional_info_) : EncodableValue());
   return list;
 }
 
-PlatformCapabilitiesMessage PlatformCapabilitiesMessage::FromEncodableList(const EncodableList& list) {
-  PlatformCapabilitiesMessage decoded(
-    std::get<bool>(list[0]),
-    std::get<bool>(list[1]),
-    std::get<bool>(list[2]),
-    std::get<bool>(list[3]),
-    std::get<bool>(list[4]),
-    std::get<bool>(list[5]),
-    std::get<bool>(list[6]),
-    std::get<bool>(list[7]),
-    std::get<bool>(list[8]),
-    std::get<bool>(list[9]),
-    std::get<bool>(list[10]),
-    std::get<bool>(list[11]),
-    std::get<bool>(list[12]),
-    std::get<bool>(list[13]),
-    std::get<bool>(list[14]),
-    std::get<bool>(list[15]),
-    std::get<bool>(list[16]),
-    std::get<bool>(list[17]),
-    std::get<bool>(list[18]),
-    std::get<bool>(list[19]),
-    std::get<bool>(list[20]),
-    std::get<std::string>(list[21]),
-    std::get<std::string>(list[22]));
-  auto& encodable_additional_info = list[23];
+PlatformInfoMessage PlatformInfoMessage::FromEncodableList(const EncodableList& list) {
+  PlatformInfoMessage decoded(
+    std::get<std::string>(list[0]),
+    std::get<std::string>(list[1]));
+  auto& encodable_additional_info = list[2];
   if (!encodable_additional_info.IsNull()) {
     decoded.set_additional_info(std::get<EncodableMap>(encodable_additional_info));
   }
@@ -2224,7 +1909,7 @@ EncodableValue PigeonInternalCodecSerializer::ReadValueOfType(
         return CustomEncodableValue(VideoPlayerOptionsMessage::FromEncodableList(std::get<EncodableList>(ReadValue(stream))));
       }
     case 140: {
-        return CustomEncodableValue(PlatformCapabilitiesMessage::FromEncodableList(std::get<EncodableList>(ReadValue(stream))));
+        return CustomEncodableValue(PlatformInfoMessage::FromEncodableList(std::get<EncodableList>(ReadValue(stream))));
       }
     case 141: {
         return CustomEncodableValue(BatteryInfoMessage::FromEncodableList(std::get<EncodableList>(ReadValue(stream))));
@@ -2326,9 +2011,9 @@ void PigeonInternalCodecSerializer::WriteValue(
       WriteValue(EncodableValue(std::any_cast<VideoPlayerOptionsMessage>(*custom_value).ToEncodableList()), stream);
       return;
     }
-    if (custom_value->type() == typeid(PlatformCapabilitiesMessage)) {
+    if (custom_value->type() == typeid(PlatformInfoMessage)) {
       stream->WriteByte(140);
-      WriteValue(EncodableValue(std::any_cast<PlatformCapabilitiesMessage>(*custom_value).ToEncodableList()), stream);
+      WriteValue(EncodableValue(std::any_cast<PlatformInfoMessage>(*custom_value).ToEncodableList()), stream);
       return;
     }
     if (custom_value->type() == typeid(BatteryInfoMessage)) {
@@ -2727,11 +2412,11 @@ void ProVideoPlayerHostApi::SetUp(
     }
   }
   {
-    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getPlatformCapabilities" + prepended_suffix, &GetCodec());
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getPlatformInfo" + prepended_suffix, &GetCodec());
     if (api != nullptr) {
       channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
         try {
-          api->GetPlatformCapabilities([reply](ErrorOr<PlatformCapabilitiesMessage>&& output) {
+          api->GetPlatformInfo([reply](ErrorOr<PlatformInfoMessage>&& output) {
             if (output.has_error()) {
               reply(WrapError(output.error()));
               return;
@@ -2767,6 +2452,468 @@ void ProVideoPlayerHostApi::SetUp(
             }
             EncodableList wrapped;
             wrapped.push_back(EncodableValue());
+            reply(EncodableValue(std::move(wrapped)));
+          });
+        } catch (const std::exception& exception) {
+          reply(WrapError(exception.what()));
+        }
+      });
+    } else {
+      channel.SetMessageHandler(nullptr);
+    }
+  }
+  {
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsPictureInPicture" + prepended_suffix, &GetCodec());
+    if (api != nullptr) {
+      channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
+        try {
+          api->SupportsPictureInPicture([reply](ErrorOr<bool>&& output) {
+            if (output.has_error()) {
+              reply(WrapError(output.error()));
+              return;
+            }
+            EncodableList wrapped;
+            wrapped.push_back(EncodableValue(std::move(output).TakeValue()));
+            reply(EncodableValue(std::move(wrapped)));
+          });
+        } catch (const std::exception& exception) {
+          reply(WrapError(exception.what()));
+        }
+      });
+    } else {
+      channel.SetMessageHandler(nullptr);
+    }
+  }
+  {
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsFullscreen" + prepended_suffix, &GetCodec());
+    if (api != nullptr) {
+      channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
+        try {
+          api->SupportsFullscreen([reply](ErrorOr<bool>&& output) {
+            if (output.has_error()) {
+              reply(WrapError(output.error()));
+              return;
+            }
+            EncodableList wrapped;
+            wrapped.push_back(EncodableValue(std::move(output).TakeValue()));
+            reply(EncodableValue(std::move(wrapped)));
+          });
+        } catch (const std::exception& exception) {
+          reply(WrapError(exception.what()));
+        }
+      });
+    } else {
+      channel.SetMessageHandler(nullptr);
+    }
+  }
+  {
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsBackgroundPlayback" + prepended_suffix, &GetCodec());
+    if (api != nullptr) {
+      channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
+        try {
+          api->SupportsBackgroundPlayback([reply](ErrorOr<bool>&& output) {
+            if (output.has_error()) {
+              reply(WrapError(output.error()));
+              return;
+            }
+            EncodableList wrapped;
+            wrapped.push_back(EncodableValue(std::move(output).TakeValue()));
+            reply(EncodableValue(std::move(wrapped)));
+          });
+        } catch (const std::exception& exception) {
+          reply(WrapError(exception.what()));
+        }
+      });
+    } else {
+      channel.SetMessageHandler(nullptr);
+    }
+  }
+  {
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsCasting" + prepended_suffix, &GetCodec());
+    if (api != nullptr) {
+      channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
+        try {
+          api->SupportsCasting([reply](ErrorOr<bool>&& output) {
+            if (output.has_error()) {
+              reply(WrapError(output.error()));
+              return;
+            }
+            EncodableList wrapped;
+            wrapped.push_back(EncodableValue(std::move(output).TakeValue()));
+            reply(EncodableValue(std::move(wrapped)));
+          });
+        } catch (const std::exception& exception) {
+          reply(WrapError(exception.what()));
+        }
+      });
+    } else {
+      channel.SetMessageHandler(nullptr);
+    }
+  }
+  {
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsAirPlay" + prepended_suffix, &GetCodec());
+    if (api != nullptr) {
+      channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
+        try {
+          api->SupportsAirPlay([reply](ErrorOr<bool>&& output) {
+            if (output.has_error()) {
+              reply(WrapError(output.error()));
+              return;
+            }
+            EncodableList wrapped;
+            wrapped.push_back(EncodableValue(std::move(output).TakeValue()));
+            reply(EncodableValue(std::move(wrapped)));
+          });
+        } catch (const std::exception& exception) {
+          reply(WrapError(exception.what()));
+        }
+      });
+    } else {
+      channel.SetMessageHandler(nullptr);
+    }
+  }
+  {
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsChromecast" + prepended_suffix, &GetCodec());
+    if (api != nullptr) {
+      channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
+        try {
+          api->SupportsChromecast([reply](ErrorOr<bool>&& output) {
+            if (output.has_error()) {
+              reply(WrapError(output.error()));
+              return;
+            }
+            EncodableList wrapped;
+            wrapped.push_back(EncodableValue(std::move(output).TakeValue()));
+            reply(EncodableValue(std::move(wrapped)));
+          });
+        } catch (const std::exception& exception) {
+          reply(WrapError(exception.what()));
+        }
+      });
+    } else {
+      channel.SetMessageHandler(nullptr);
+    }
+  }
+  {
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsRemotePlayback" + prepended_suffix, &GetCodec());
+    if (api != nullptr) {
+      channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
+        try {
+          api->SupportsRemotePlayback([reply](ErrorOr<bool>&& output) {
+            if (output.has_error()) {
+              reply(WrapError(output.error()));
+              return;
+            }
+            EncodableList wrapped;
+            wrapped.push_back(EncodableValue(std::move(output).TakeValue()));
+            reply(EncodableValue(std::move(wrapped)));
+          });
+        } catch (const std::exception& exception) {
+          reply(WrapError(exception.what()));
+        }
+      });
+    } else {
+      channel.SetMessageHandler(nullptr);
+    }
+  }
+  {
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsQualitySelection" + prepended_suffix, &GetCodec());
+    if (api != nullptr) {
+      channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
+        try {
+          api->SupportsQualitySelection([reply](ErrorOr<bool>&& output) {
+            if (output.has_error()) {
+              reply(WrapError(output.error()));
+              return;
+            }
+            EncodableList wrapped;
+            wrapped.push_back(EncodableValue(std::move(output).TakeValue()));
+            reply(EncodableValue(std::move(wrapped)));
+          });
+        } catch (const std::exception& exception) {
+          reply(WrapError(exception.what()));
+        }
+      });
+    } else {
+      channel.SetMessageHandler(nullptr);
+    }
+  }
+  {
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsPlaybackSpeedControl" + prepended_suffix, &GetCodec());
+    if (api != nullptr) {
+      channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
+        try {
+          api->SupportsPlaybackSpeedControl([reply](ErrorOr<bool>&& output) {
+            if (output.has_error()) {
+              reply(WrapError(output.error()));
+              return;
+            }
+            EncodableList wrapped;
+            wrapped.push_back(EncodableValue(std::move(output).TakeValue()));
+            reply(EncodableValue(std::move(wrapped)));
+          });
+        } catch (const std::exception& exception) {
+          reply(WrapError(exception.what()));
+        }
+      });
+    } else {
+      channel.SetMessageHandler(nullptr);
+    }
+  }
+  {
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsSubtitles" + prepended_suffix, &GetCodec());
+    if (api != nullptr) {
+      channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
+        try {
+          api->SupportsSubtitles([reply](ErrorOr<bool>&& output) {
+            if (output.has_error()) {
+              reply(WrapError(output.error()));
+              return;
+            }
+            EncodableList wrapped;
+            wrapped.push_back(EncodableValue(std::move(output).TakeValue()));
+            reply(EncodableValue(std::move(wrapped)));
+          });
+        } catch (const std::exception& exception) {
+          reply(WrapError(exception.what()));
+        }
+      });
+    } else {
+      channel.SetMessageHandler(nullptr);
+    }
+  }
+  {
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsExternalSubtitles" + prepended_suffix, &GetCodec());
+    if (api != nullptr) {
+      channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
+        try {
+          api->SupportsExternalSubtitles([reply](ErrorOr<bool>&& output) {
+            if (output.has_error()) {
+              reply(WrapError(output.error()));
+              return;
+            }
+            EncodableList wrapped;
+            wrapped.push_back(EncodableValue(std::move(output).TakeValue()));
+            reply(EncodableValue(std::move(wrapped)));
+          });
+        } catch (const std::exception& exception) {
+          reply(WrapError(exception.what()));
+        }
+      });
+    } else {
+      channel.SetMessageHandler(nullptr);
+    }
+  }
+  {
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsAudioTrackSelection" + prepended_suffix, &GetCodec());
+    if (api != nullptr) {
+      channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
+        try {
+          api->SupportsAudioTrackSelection([reply](ErrorOr<bool>&& output) {
+            if (output.has_error()) {
+              reply(WrapError(output.error()));
+              return;
+            }
+            EncodableList wrapped;
+            wrapped.push_back(EncodableValue(std::move(output).TakeValue()));
+            reply(EncodableValue(std::move(wrapped)));
+          });
+        } catch (const std::exception& exception) {
+          reply(WrapError(exception.what()));
+        }
+      });
+    } else {
+      channel.SetMessageHandler(nullptr);
+    }
+  }
+  {
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsChapters" + prepended_suffix, &GetCodec());
+    if (api != nullptr) {
+      channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
+        try {
+          api->SupportsChapters([reply](ErrorOr<bool>&& output) {
+            if (output.has_error()) {
+              reply(WrapError(output.error()));
+              return;
+            }
+            EncodableList wrapped;
+            wrapped.push_back(EncodableValue(std::move(output).TakeValue()));
+            reply(EncodableValue(std::move(wrapped)));
+          });
+        } catch (const std::exception& exception) {
+          reply(WrapError(exception.what()));
+        }
+      });
+    } else {
+      channel.SetMessageHandler(nullptr);
+    }
+  }
+  {
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsVideoMetadataExtraction" + prepended_suffix, &GetCodec());
+    if (api != nullptr) {
+      channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
+        try {
+          api->SupportsVideoMetadataExtraction([reply](ErrorOr<bool>&& output) {
+            if (output.has_error()) {
+              reply(WrapError(output.error()));
+              return;
+            }
+            EncodableList wrapped;
+            wrapped.push_back(EncodableValue(std::move(output).TakeValue()));
+            reply(EncodableValue(std::move(wrapped)));
+          });
+        } catch (const std::exception& exception) {
+          reply(WrapError(exception.what()));
+        }
+      });
+    } else {
+      channel.SetMessageHandler(nullptr);
+    }
+  }
+  {
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsNetworkMonitoring" + prepended_suffix, &GetCodec());
+    if (api != nullptr) {
+      channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
+        try {
+          api->SupportsNetworkMonitoring([reply](ErrorOr<bool>&& output) {
+            if (output.has_error()) {
+              reply(WrapError(output.error()));
+              return;
+            }
+            EncodableList wrapped;
+            wrapped.push_back(EncodableValue(std::move(output).TakeValue()));
+            reply(EncodableValue(std::move(wrapped)));
+          });
+        } catch (const std::exception& exception) {
+          reply(WrapError(exception.what()));
+        }
+      });
+    } else {
+      channel.SetMessageHandler(nullptr);
+    }
+  }
+  {
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsBandwidthEstimation" + prepended_suffix, &GetCodec());
+    if (api != nullptr) {
+      channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
+        try {
+          api->SupportsBandwidthEstimation([reply](ErrorOr<bool>&& output) {
+            if (output.has_error()) {
+              reply(WrapError(output.error()));
+              return;
+            }
+            EncodableList wrapped;
+            wrapped.push_back(EncodableValue(std::move(output).TakeValue()));
+            reply(EncodableValue(std::move(wrapped)));
+          });
+        } catch (const std::exception& exception) {
+          reply(WrapError(exception.what()));
+        }
+      });
+    } else {
+      channel.SetMessageHandler(nullptr);
+    }
+  }
+  {
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsAdaptiveBitrate" + prepended_suffix, &GetCodec());
+    if (api != nullptr) {
+      channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
+        try {
+          api->SupportsAdaptiveBitrate([reply](ErrorOr<bool>&& output) {
+            if (output.has_error()) {
+              reply(WrapError(output.error()));
+              return;
+            }
+            EncodableList wrapped;
+            wrapped.push_back(EncodableValue(std::move(output).TakeValue()));
+            reply(EncodableValue(std::move(wrapped)));
+          });
+        } catch (const std::exception& exception) {
+          reply(WrapError(exception.what()));
+        }
+      });
+    } else {
+      channel.SetMessageHandler(nullptr);
+    }
+  }
+  {
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsHLS" + prepended_suffix, &GetCodec());
+    if (api != nullptr) {
+      channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
+        try {
+          api->SupportsHLS([reply](ErrorOr<bool>&& output) {
+            if (output.has_error()) {
+              reply(WrapError(output.error()));
+              return;
+            }
+            EncodableList wrapped;
+            wrapped.push_back(EncodableValue(std::move(output).TakeValue()));
+            reply(EncodableValue(std::move(wrapped)));
+          });
+        } catch (const std::exception& exception) {
+          reply(WrapError(exception.what()));
+        }
+      });
+    } else {
+      channel.SetMessageHandler(nullptr);
+    }
+  }
+  {
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsDASH" + prepended_suffix, &GetCodec());
+    if (api != nullptr) {
+      channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
+        try {
+          api->SupportsDASH([reply](ErrorOr<bool>&& output) {
+            if (output.has_error()) {
+              reply(WrapError(output.error()));
+              return;
+            }
+            EncodableList wrapped;
+            wrapped.push_back(EncodableValue(std::move(output).TakeValue()));
+            reply(EncodableValue(std::move(wrapped)));
+          });
+        } catch (const std::exception& exception) {
+          reply(WrapError(exception.what()));
+        }
+      });
+    } else {
+      channel.SetMessageHandler(nullptr);
+    }
+  }
+  {
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsDeviceVolumeControl" + prepended_suffix, &GetCodec());
+    if (api != nullptr) {
+      channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
+        try {
+          api->SupportsDeviceVolumeControl([reply](ErrorOr<bool>&& output) {
+            if (output.has_error()) {
+              reply(WrapError(output.error()));
+              return;
+            }
+            EncodableList wrapped;
+            wrapped.push_back(EncodableValue(std::move(output).TakeValue()));
+            reply(EncodableValue(std::move(wrapped)));
+          });
+        } catch (const std::exception& exception) {
+          reply(WrapError(exception.what()));
+        }
+      });
+    } else {
+      channel.SetMessageHandler(nullptr);
+    }
+  }
+  {
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsScreenBrightnessControl" + prepended_suffix, &GetCodec());
+    if (api != nullptr) {
+      channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
+        try {
+          api->SupportsScreenBrightnessControl([reply](ErrorOr<bool>&& output) {
+            if (output.has_error()) {
+              reply(WrapError(output.error()));
+              return;
+            }
+            EncodableList wrapped;
+            wrapped.push_back(EncodableValue(std::move(output).TakeValue()));
             reply(EncodableValue(std::move(wrapped)));
           });
         } catch (const std::exception& exception) {

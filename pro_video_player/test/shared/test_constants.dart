@@ -129,7 +129,7 @@ class TestDelays {
   /// await tester.pump(TestDelays.doubleTap);
   /// // Now safe to verify single-tap wasn't triggered
   /// ```
-  static const doubleTap = Duration(milliseconds: 350);
+  static const doubleTap = Duration(milliseconds: 200); // 150ms double-tap window + 50ms buffer
 
   /// Duration for drag gestures in tests.
   ///
@@ -192,7 +192,7 @@ class TestDelays {
   /// await Future<void>.delayed(TestDelays.gestureDoubleTapWindow);
   /// verify(() => onSingleTap()).called(1);
   /// ```
-  static const gestureDoubleTapWindow = Duration(milliseconds: 300);
+  static const gestureDoubleTapWindow = Duration(milliseconds: 150);
 }
 
 /// Size constants for widget testing.

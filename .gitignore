@@ -141,3 +141,6 @@ app.*.symbols
 
 # FVM Version Cache
 .fvm/
+# Auto-generated symlinks (created by CocoaPods prepare_command)
+pro_video_player_ios/ios/Classes/Shared/
+pro_video_player_macos/macos/Classes/Shared/

@@ -6,6 +6,18 @@ Instructions for Claude Code when working with this codebase.
 
 This document MUST be followed strictly. All instructions are mandatory requirements, not suggestions.
 
+### NEVER Run Destructive Git Commands Without Permission
+
+**ABSOLUTE RULE:** Never run `git checkout`, `git reset`, `git revert`, `git clean`, or any other destructive git command without explicit user approval, **EVEN IF PERMISSIONS ALLOW IT**.
+
+These commands can lose hours of work. Always ask first:
+- `git checkout` - can discard uncommitted changes
+- `git reset` - can lose commits and changes
+- `git revert` - creates new commits
+- `git clean` - permanently deletes untracked files
+
+**Note:** These should be in the "ask" list in `.claude/settings.json`, NOT in `settings.local.json`. If you see them in the allow list, something is misconfigured.
+
 1. Read this entire document at start of each session
 2. Follow TDD strictly - Write tests BEFORE implementation, no exceptions
 3. Verify compliance before completing any task
@@ -111,7 +123,7 @@ Keep subagent list in sync with `.claude/agents/`.
 ## Code Philosophy
 
 Core Principles:
-- **DRY (Don't Repeat Yourself)** - CRITICAL principle. Never duplicate code. Extract to functions, shared modules, or generated code. Examples: makefiles use functions to generate 48 targets from 6 templates; iOS/macOS share Swift via hard links; Android/iOS/macOS share MethodChannelBase pattern. If you write similar code twice, refactor it.
+- **DRY (Don't Repeat Yourself)** - CRITICAL principle. Never duplicate code. Extract to functions, shared modules, or generated code. Examples: makefiles use functions to generate 48 targets from 6 templates; iOS/macOS share Swift via CocoaPods; Android/iOS/macOS share MethodChannelBase pattern. If you write similar code twice, refactor it.
 - Short, focused code - Prefer concise over verbose
 - Consistent patterns - Same approach for similar problems
 - Single responsibility - Each class/function does one thing well
@@ -120,7 +132,7 @@ Core Principles:
 - Design for testing - Dependency injection, interfaces, mockable components
 - Library independence - Library packages MUST be completely self-sufficient and NEVER reference example app code, classes, resources, or package names under ANY circumstance. Library must work standalone without example apps present.
 
-Shared Apple Sources (iOS/macOS): Swift code shared via `shared_apple_sources/` with hard links. Always run `make setup` after cloning to create hard links. Pre-commit hooks verify sync.
+Shared Apple Sources (iOS/macOS): Swift code shared via `shared_apple_sources/` directory. CocoaPods automatically creates symlinks during `pod install` via the `prepare_command` in each podspec. No manual setup required - symlinks are created automatically when building iOS/macOS apps.
 
 See contributing/architecture.md for details on code sharing, state management patterns, refactoring guidelines.
 
@@ -261,7 +273,7 @@ See contributing/platform-notes.md for platform-specific details (iOS/macOS shar
 ## Build Commands
 
 - `make` - Interactive fzf task selector
-- `make setup` - FVM + install dependencies + create hard links
+- `make setup` - FVM + install dependencies + git hooks
 - `make install` - Dependencies only
 - `make clean` - Clean all packages
 - `make run` - Run example app

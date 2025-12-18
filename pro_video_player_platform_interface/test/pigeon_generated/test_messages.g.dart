@@ -53,7 +53,7 @@ class _PigeonCodec extends StandardMessageCodec {
     } else if (value is VideoPlayerOptionsMessage) {
       buffer.putUint8(139);
       writeValue(buffer, value.encode());
-    } else if (value is PlatformCapabilitiesMessage) {
+    } else if (value is PlatformInfoMessage) {
       buffer.putUint8(140);
       writeValue(buffer, value.encode());
     } else if (value is BatteryInfoMessage) {
@@ -132,7 +132,7 @@ class _PigeonCodec extends StandardMessageCodec {
       case 139:
         return VideoPlayerOptionsMessage.decode(readValue(buffer)!);
       case 140:
-        return PlatformCapabilitiesMessage.decode(readValue(buffer)!);
+        return PlatformInfoMessage.decode(readValue(buffer)!);
       case 141:
         return BatteryInfoMessage.decode(readValue(buffer)!);
       case 142:

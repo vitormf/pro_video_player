@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
 import 'pro_video_player_controller.dart';
@@ -171,7 +171,15 @@ class _ProVideoPlayerState extends State<ProVideoPlayer> {
     valueListenable: widget.controller,
     builder: (context, value, child) {
       if (!widget.controller.isInitialized) {
-        return widget.placeholder ?? const SizedBox.shrink();
+        // Show loading indicator by default while player initializes
+        return widget.placeholder ??
+            AspectRatio(
+              aspectRatio: widget.aspectRatio ?? 16 / 9,
+              child: const ColoredBox(
+                color: Colors.black,
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            );
       }
 
       // Use widget aspectRatio if provided, otherwise use video aspectRatio (fallback to 16:9 if unknown)

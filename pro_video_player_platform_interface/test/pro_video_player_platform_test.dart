@@ -186,10 +186,19 @@ void main() {
         );
       });
 
-      test('getPlatformCapabilities throws UnimplementedError', () {
+      test('getPlatformInfo throws UnimplementedError', () {
         expect(
-          () => platform.getPlatformCapabilities(),
-          throwsA(isA<UnimplementedError>().having((e) => e.message, 'message', contains('getPlatformCapabilities()'))),
+          () => platform.getPlatformInfo(),
+          throwsA(isA<UnimplementedError>().having((e) => e.message, 'message', contains('getPlatformInfo()'))),
+        );
+      });
+
+      test('supportsPictureInPicture throws UnimplementedError', () {
+        expect(
+          () => platform.supportsPictureInPicture(),
+          throwsA(
+            isA<UnimplementedError>().having((e) => e.message, 'message', contains('supportsPictureInPicture()')),
+          ),
         );
       });
     });

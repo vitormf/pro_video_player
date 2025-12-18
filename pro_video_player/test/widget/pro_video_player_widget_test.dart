@@ -30,15 +30,13 @@ void main() {
       expect(find.text('Loading...'), findsOneWidget);
     });
 
-    testWidgets('shows SizedBox.shrink when no placeholder and not initialized', (tester) async {
+    testWidgets('shows CircularProgressIndicator when no placeholder and not initialized', (tester) async {
       final controller = ProVideoPlayerController();
 
       await tester.pumpWidget(buildTestWidget(ProVideoPlayer(controller: controller)));
 
-      // SizedBox.shrink has width and height of 0
-      final sizedBox = tester.widget<SizedBox>(find.byType(SizedBox));
-      expect(sizedBox.width, equals(0));
-      expect(sizedBox.height, equals(0));
+      // Should show loading indicator when not initialized
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
 
     testWidgets('shows video view when initialized', (tester) async {

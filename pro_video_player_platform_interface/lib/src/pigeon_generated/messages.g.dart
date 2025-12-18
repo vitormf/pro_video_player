@@ -326,163 +326,37 @@ class VideoPlayerOptionsMessage {
   }
 }
 
-/// Platform capabilities returned by the platform.
-class PlatformCapabilitiesMessage {
-  PlatformCapabilitiesMessage({
-    required this.supportsPictureInPicture,
-    required this.supportsFullscreen,
-    required this.supportsBackgroundPlayback,
-    required this.supportsCasting,
-    required this.supportsAirPlay,
-    required this.supportsChromecast,
-    required this.supportsRemotePlayback,
-    required this.supportsQualitySelection,
-    required this.supportsPlaybackSpeedControl,
-    required this.supportsSubtitles,
-    required this.supportsExternalSubtitles,
-    required this.supportsAudioTrackSelection,
-    required this.supportsChapters,
-    required this.supportsVideoMetadataExtraction,
-    required this.supportsNetworkMonitoring,
-    required this.supportsBandwidthEstimation,
-    required this.supportsAdaptiveBitrate,
-    required this.supportsHLS,
-    required this.supportsDASH,
-    required this.supportsDeviceVolumeControl,
-    required this.supportsScreenBrightnessControl,
-    required this.platformName,
-    required this.nativePlayerType,
-    this.additionalInfo,
-  });
+/// Platform information returned by the platform.
+///
+/// Contains static platform metadata that doesn't require async checks.
+class PlatformInfoMessage {
+  PlatformInfoMessage({required this.platformName, required this.nativePlayerType, this.additionalInfo});
 
-  /// Whether Picture-in-Picture is supported.
-  bool supportsPictureInPicture;
-
-  /// Whether fullscreen is supported.
-  bool supportsFullscreen;
-
-  /// Whether background playback is supported.
-  bool supportsBackgroundPlayback;
-
-  /// Whether casting is supported.
-  bool supportsCasting;
-
-  /// Whether AirPlay is supported.
-  bool supportsAirPlay;
-
-  /// Whether Chromecast is supported.
-  bool supportsChromecast;
-
-  /// Whether Remote Playback API is supported.
-  bool supportsRemotePlayback;
-
-  /// Whether quality selection is supported.
-  bool supportsQualitySelection;
-
-  /// Whether playback speed control is supported.
-  bool supportsPlaybackSpeedControl;
-
-  /// Whether subtitles are supported.
-  bool supportsSubtitles;
-
-  /// Whether external subtitles are supported.
-  bool supportsExternalSubtitles;
-
-  /// Whether audio track selection is supported.
-  bool supportsAudioTrackSelection;
-
-  /// Whether chapters are supported.
-  bool supportsChapters;
-
-  /// Whether video metadata extraction is supported.
-  bool supportsVideoMetadataExtraction;
-
-  /// Whether network monitoring is supported.
-  bool supportsNetworkMonitoring;
-
-  /// Whether bandwidth estimation is supported.
-  bool supportsBandwidthEstimation;
-
-  /// Whether adaptive bitrate streaming is supported.
-  bool supportsAdaptiveBitrate;
-
-  /// Whether HLS is supported.
-  bool supportsHLS;
-
-  /// Whether DASH is supported.
-  bool supportsDASH;
-
-  /// Whether device volume control is supported.
-  bool supportsDeviceVolumeControl;
-
-  /// Whether screen brightness control is supported.
-  bool supportsScreenBrightnessControl;
-
-  /// Platform name.
+  /// Platform name (e.g., "iOS", "Android", "Web").
   String platformName;
 
-  /// Native player type.
+  /// Native player type (e.g., "AVPlayer", "ExoPlayer", "HTML5").
   String nativePlayerType;
 
-  /// Additional platform-specific info.
+  /// Additional platform-specific information as key-value pairs.
+  ///
+  /// May include:
+  /// - OS version
+  /// - SDK version
+  /// - Browser user agent
+  /// - Hardware capabilities
   Map<String?, Object?>? additionalInfo;
 
   Object encode() {
-    return <Object?>[
-      supportsPictureInPicture,
-      supportsFullscreen,
-      supportsBackgroundPlayback,
-      supportsCasting,
-      supportsAirPlay,
-      supportsChromecast,
-      supportsRemotePlayback,
-      supportsQualitySelection,
-      supportsPlaybackSpeedControl,
-      supportsSubtitles,
-      supportsExternalSubtitles,
-      supportsAudioTrackSelection,
-      supportsChapters,
-      supportsVideoMetadataExtraction,
-      supportsNetworkMonitoring,
-      supportsBandwidthEstimation,
-      supportsAdaptiveBitrate,
-      supportsHLS,
-      supportsDASH,
-      supportsDeviceVolumeControl,
-      supportsScreenBrightnessControl,
-      platformName,
-      nativePlayerType,
-      additionalInfo,
-    ];
+    return <Object?>[platformName, nativePlayerType, additionalInfo];
   }
 
-  static PlatformCapabilitiesMessage decode(Object result) {
+  static PlatformInfoMessage decode(Object result) {
     result as List<Object?>;
-    return PlatformCapabilitiesMessage(
-      supportsPictureInPicture: result[0]! as bool,
-      supportsFullscreen: result[1]! as bool,
-      supportsBackgroundPlayback: result[2]! as bool,
-      supportsCasting: result[3]! as bool,
-      supportsAirPlay: result[4]! as bool,
-      supportsChromecast: result[5]! as bool,
-      supportsRemotePlayback: result[6]! as bool,
-      supportsQualitySelection: result[7]! as bool,
-      supportsPlaybackSpeedControl: result[8]! as bool,
-      supportsSubtitles: result[9]! as bool,
-      supportsExternalSubtitles: result[10]! as bool,
-      supportsAudioTrackSelection: result[11]! as bool,
-      supportsChapters: result[12]! as bool,
-      supportsVideoMetadataExtraction: result[13]! as bool,
-      supportsNetworkMonitoring: result[14]! as bool,
-      supportsBandwidthEstimation: result[15]! as bool,
-      supportsAdaptiveBitrate: result[16]! as bool,
-      supportsHLS: result[17]! as bool,
-      supportsDASH: result[18]! as bool,
-      supportsDeviceVolumeControl: result[19]! as bool,
-      supportsScreenBrightnessControl: result[20]! as bool,
-      platformName: result[21]! as String,
-      nativePlayerType: result[22]! as String,
-      additionalInfo: (result[23] as Map<Object?, Object?>?)?.cast<String?, Object?>(),
+    return PlatformInfoMessage(
+      platformName: result[0]! as String,
+      nativePlayerType: result[1]! as String,
+      additionalInfo: (result[2] as Map<Object?, Object?>?)?.cast<String?, Object?>(),
     );
   }
 }
@@ -998,7 +872,7 @@ class _PigeonCodec extends StandardMessageCodec {
     } else if (value is VideoPlayerOptionsMessage) {
       buffer.putUint8(139);
       writeValue(buffer, value.encode());
-    } else if (value is PlatformCapabilitiesMessage) {
+    } else if (value is PlatformInfoMessage) {
       buffer.putUint8(140);
       writeValue(buffer, value.encode());
     } else if (value is BatteryInfoMessage) {
@@ -1077,7 +951,7 @@ class _PigeonCodec extends StandardMessageCodec {
       case 139:
         return VideoPlayerOptionsMessage.decode(readValue(buffer)!);
       case 140:
-        return PlatformCapabilitiesMessage.decode(readValue(buffer)!);
+        return PlatformInfoMessage.decode(readValue(buffer)!);
       case 141:
         return BatteryInfoMessage.decode(readValue(buffer)!);
       case 142:
@@ -1378,10 +1252,10 @@ class ProVideoPlayerHostApi {
     }
   }
 
-  /// Gets the platform capabilities.
-  Future<PlatformCapabilitiesMessage> getPlatformCapabilities() async {
+  /// Gets static platform information.
+  Future<PlatformInfoMessage> getPlatformInfo() async {
     final String pigeonVar_channelName =
-        'dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getPlatformCapabilities$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getPlatformInfo$pigeonVar_messageChannelSuffix';
     final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
@@ -1402,7 +1276,7 @@ class ProVideoPlayerHostApi {
         message: 'Host platform returned null value for non-null return value.',
       );
     } else {
-      return (pigeonVar_replyList[0] as PlatformCapabilitiesMessage?)!;
+      return (pigeonVar_replyList[0] as PlatformInfoMessage?)!;
     }
   }
 
@@ -1426,6 +1300,594 @@ class ProVideoPlayerHostApi {
       );
     } else {
       return;
+    }
+  }
+
+  /// Checks if Picture-in-Picture mode is supported.
+  Future<bool> supportsPictureInPicture() async {
+    final String pigeonVar_channelName =
+        'dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsPictureInPicture$pigeonVar_messageChannelSuffix';
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final List<Object?>? pigeonVar_replyList = await pigeonVar_channel.send(null) as List<Object?>?;
+    if (pigeonVar_replyList == null) {
+      throw _createConnectionError(pigeonVar_channelName);
+    } else if (pigeonVar_replyList.length > 1) {
+      throw PlatformException(
+        code: pigeonVar_replyList[0]! as String,
+        message: pigeonVar_replyList[1] as String?,
+        details: pigeonVar_replyList[2],
+      );
+    } else if (pigeonVar_replyList[0] == null) {
+      throw PlatformException(
+        code: 'null-error',
+        message: 'Host platform returned null value for non-null return value.',
+      );
+    } else {
+      return (pigeonVar_replyList[0] as bool?)!;
+    }
+  }
+
+  /// Checks if fullscreen mode is supported.
+  Future<bool> supportsFullscreen() async {
+    final String pigeonVar_channelName =
+        'dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsFullscreen$pigeonVar_messageChannelSuffix';
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final List<Object?>? pigeonVar_replyList = await pigeonVar_channel.send(null) as List<Object?>?;
+    if (pigeonVar_replyList == null) {
+      throw _createConnectionError(pigeonVar_channelName);
+    } else if (pigeonVar_replyList.length > 1) {
+      throw PlatformException(
+        code: pigeonVar_replyList[0]! as String,
+        message: pigeonVar_replyList[1] as String?,
+        details: pigeonVar_replyList[2],
+      );
+    } else if (pigeonVar_replyList[0] == null) {
+      throw PlatformException(
+        code: 'null-error',
+        message: 'Host platform returned null value for non-null return value.',
+      );
+    } else {
+      return (pigeonVar_replyList[0] as bool?)!;
+    }
+  }
+
+  /// Checks if background playback is supported.
+  Future<bool> supportsBackgroundPlayback() async {
+    final String pigeonVar_channelName =
+        'dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsBackgroundPlayback$pigeonVar_messageChannelSuffix';
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final List<Object?>? pigeonVar_replyList = await pigeonVar_channel.send(null) as List<Object?>?;
+    if (pigeonVar_replyList == null) {
+      throw _createConnectionError(pigeonVar_channelName);
+    } else if (pigeonVar_replyList.length > 1) {
+      throw PlatformException(
+        code: pigeonVar_replyList[0]! as String,
+        message: pigeonVar_replyList[1] as String?,
+        details: pigeonVar_replyList[2],
+      );
+    } else if (pigeonVar_replyList[0] == null) {
+      throw PlatformException(
+        code: 'null-error',
+        message: 'Host platform returned null value for non-null return value.',
+      );
+    } else {
+      return (pigeonVar_replyList[0] as bool?)!;
+    }
+  }
+
+  /// Checks if any form of casting is supported.
+  Future<bool> supportsCasting() async {
+    final String pigeonVar_channelName =
+        'dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsCasting$pigeonVar_messageChannelSuffix';
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final List<Object?>? pigeonVar_replyList = await pigeonVar_channel.send(null) as List<Object?>?;
+    if (pigeonVar_replyList == null) {
+      throw _createConnectionError(pigeonVar_channelName);
+    } else if (pigeonVar_replyList.length > 1) {
+      throw PlatformException(
+        code: pigeonVar_replyList[0]! as String,
+        message: pigeonVar_replyList[1] as String?,
+        details: pigeonVar_replyList[2],
+      );
+    } else if (pigeonVar_replyList[0] == null) {
+      throw PlatformException(
+        code: 'null-error',
+        message: 'Host platform returned null value for non-null return value.',
+      );
+    } else {
+      return (pigeonVar_replyList[0] as bool?)!;
+    }
+  }
+
+  /// Checks if AirPlay is supported.
+  Future<bool> supportsAirPlay() async {
+    final String pigeonVar_channelName =
+        'dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsAirPlay$pigeonVar_messageChannelSuffix';
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final List<Object?>? pigeonVar_replyList = await pigeonVar_channel.send(null) as List<Object?>?;
+    if (pigeonVar_replyList == null) {
+      throw _createConnectionError(pigeonVar_channelName);
+    } else if (pigeonVar_replyList.length > 1) {
+      throw PlatformException(
+        code: pigeonVar_replyList[0]! as String,
+        message: pigeonVar_replyList[1] as String?,
+        details: pigeonVar_replyList[2],
+      );
+    } else if (pigeonVar_replyList[0] == null) {
+      throw PlatformException(
+        code: 'null-error',
+        message: 'Host platform returned null value for non-null return value.',
+      );
+    } else {
+      return (pigeonVar_replyList[0] as bool?)!;
+    }
+  }
+
+  /// Checks if Chromecast is supported.
+  Future<bool> supportsChromecast() async {
+    final String pigeonVar_channelName =
+        'dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsChromecast$pigeonVar_messageChannelSuffix';
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final List<Object?>? pigeonVar_replyList = await pigeonVar_channel.send(null) as List<Object?>?;
+    if (pigeonVar_replyList == null) {
+      throw _createConnectionError(pigeonVar_channelName);
+    } else if (pigeonVar_replyList.length > 1) {
+      throw PlatformException(
+        code: pigeonVar_replyList[0]! as String,
+        message: pigeonVar_replyList[1] as String?,
+        details: pigeonVar_replyList[2],
+      );
+    } else if (pigeonVar_replyList[0] == null) {
+      throw PlatformException(
+        code: 'null-error',
+        message: 'Host platform returned null value for non-null return value.',
+      );
+    } else {
+      return (pigeonVar_replyList[0] as bool?)!;
+    }
+  }
+
+  /// Checks if Remote Playback API is supported.
+  Future<bool> supportsRemotePlayback() async {
+    final String pigeonVar_channelName =
+        'dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsRemotePlayback$pigeonVar_messageChannelSuffix';
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final List<Object?>? pigeonVar_replyList = await pigeonVar_channel.send(null) as List<Object?>?;
+    if (pigeonVar_replyList == null) {
+      throw _createConnectionError(pigeonVar_channelName);
+    } else if (pigeonVar_replyList.length > 1) {
+      throw PlatformException(
+        code: pigeonVar_replyList[0]! as String,
+        message: pigeonVar_replyList[1] as String?,
+        details: pigeonVar_replyList[2],
+      );
+    } else if (pigeonVar_replyList[0] == null) {
+      throw PlatformException(
+        code: 'null-error',
+        message: 'Host platform returned null value for non-null return value.',
+      );
+    } else {
+      return (pigeonVar_replyList[0] as bool?)!;
+    }
+  }
+
+  /// Checks if quality selection is supported.
+  Future<bool> supportsQualitySelection() async {
+    final String pigeonVar_channelName =
+        'dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsQualitySelection$pigeonVar_messageChannelSuffix';
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final List<Object?>? pigeonVar_replyList = await pigeonVar_channel.send(null) as List<Object?>?;
+    if (pigeonVar_replyList == null) {
+      throw _createConnectionError(pigeonVar_channelName);
+    } else if (pigeonVar_replyList.length > 1) {
+      throw PlatformException(
+        code: pigeonVar_replyList[0]! as String,
+        message: pigeonVar_replyList[1] as String?,
+        details: pigeonVar_replyList[2],
+      );
+    } else if (pigeonVar_replyList[0] == null) {
+      throw PlatformException(
+        code: 'null-error',
+        message: 'Host platform returned null value for non-null return value.',
+      );
+    } else {
+      return (pigeonVar_replyList[0] as bool?)!;
+    }
+  }
+
+  /// Checks if playback speed control is supported.
+  Future<bool> supportsPlaybackSpeedControl() async {
+    final String pigeonVar_channelName =
+        'dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsPlaybackSpeedControl$pigeonVar_messageChannelSuffix';
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final List<Object?>? pigeonVar_replyList = await pigeonVar_channel.send(null) as List<Object?>?;
+    if (pigeonVar_replyList == null) {
+      throw _createConnectionError(pigeonVar_channelName);
+    } else if (pigeonVar_replyList.length > 1) {
+      throw PlatformException(
+        code: pigeonVar_replyList[0]! as String,
+        message: pigeonVar_replyList[1] as String?,
+        details: pigeonVar_replyList[2],
+      );
+    } else if (pigeonVar_replyList[0] == null) {
+      throw PlatformException(
+        code: 'null-error',
+        message: 'Host platform returned null value for non-null return value.',
+      );
+    } else {
+      return (pigeonVar_replyList[0] as bool?)!;
+    }
+  }
+
+  /// Checks if subtitles are supported.
+  Future<bool> supportsSubtitles() async {
+    final String pigeonVar_channelName =
+        'dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsSubtitles$pigeonVar_messageChannelSuffix';
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final List<Object?>? pigeonVar_replyList = await pigeonVar_channel.send(null) as List<Object?>?;
+    if (pigeonVar_replyList == null) {
+      throw _createConnectionError(pigeonVar_channelName);
+    } else if (pigeonVar_replyList.length > 1) {
+      throw PlatformException(
+        code: pigeonVar_replyList[0]! as String,
+        message: pigeonVar_replyList[1] as String?,
+        details: pigeonVar_replyList[2],
+      );
+    } else if (pigeonVar_replyList[0] == null) {
+      throw PlatformException(
+        code: 'null-error',
+        message: 'Host platform returned null value for non-null return value.',
+      );
+    } else {
+      return (pigeonVar_replyList[0] as bool?)!;
+    }
+  }
+
+  /// Checks if external subtitles are supported.
+  Future<bool> supportsExternalSubtitles() async {
+    final String pigeonVar_channelName =
+        'dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsExternalSubtitles$pigeonVar_messageChannelSuffix';
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final List<Object?>? pigeonVar_replyList = await pigeonVar_channel.send(null) as List<Object?>?;
+    if (pigeonVar_replyList == null) {
+      throw _createConnectionError(pigeonVar_channelName);
+    } else if (pigeonVar_replyList.length > 1) {
+      throw PlatformException(
+        code: pigeonVar_replyList[0]! as String,
+        message: pigeonVar_replyList[1] as String?,
+        details: pigeonVar_replyList[2],
+      );
+    } else if (pigeonVar_replyList[0] == null) {
+      throw PlatformException(
+        code: 'null-error',
+        message: 'Host platform returned null value for non-null return value.',
+      );
+    } else {
+      return (pigeonVar_replyList[0] as bool?)!;
+    }
+  }
+
+  /// Checks if audio track selection is supported.
+  Future<bool> supportsAudioTrackSelection() async {
+    final String pigeonVar_channelName =
+        'dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsAudioTrackSelection$pigeonVar_messageChannelSuffix';
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final List<Object?>? pigeonVar_replyList = await pigeonVar_channel.send(null) as List<Object?>?;
+    if (pigeonVar_replyList == null) {
+      throw _createConnectionError(pigeonVar_channelName);
+    } else if (pigeonVar_replyList.length > 1) {
+      throw PlatformException(
+        code: pigeonVar_replyList[0]! as String,
+        message: pigeonVar_replyList[1] as String?,
+        details: pigeonVar_replyList[2],
+      );
+    } else if (pigeonVar_replyList[0] == null) {
+      throw PlatformException(
+        code: 'null-error',
+        message: 'Host platform returned null value for non-null return value.',
+      );
+    } else {
+      return (pigeonVar_replyList[0] as bool?)!;
+    }
+  }
+
+  /// Checks if chapters are supported.
+  Future<bool> supportsChapters() async {
+    final String pigeonVar_channelName =
+        'dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsChapters$pigeonVar_messageChannelSuffix';
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final List<Object?>? pigeonVar_replyList = await pigeonVar_channel.send(null) as List<Object?>?;
+    if (pigeonVar_replyList == null) {
+      throw _createConnectionError(pigeonVar_channelName);
+    } else if (pigeonVar_replyList.length > 1) {
+      throw PlatformException(
+        code: pigeonVar_replyList[0]! as String,
+        message: pigeonVar_replyList[1] as String?,
+        details: pigeonVar_replyList[2],
+      );
+    } else if (pigeonVar_replyList[0] == null) {
+      throw PlatformException(
+        code: 'null-error',
+        message: 'Host platform returned null value for non-null return value.',
+      );
+    } else {
+      return (pigeonVar_replyList[0] as bool?)!;
+    }
+  }
+
+  /// Checks if video metadata extraction is supported.
+  Future<bool> supportsVideoMetadataExtraction() async {
+    final String pigeonVar_channelName =
+        'dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsVideoMetadataExtraction$pigeonVar_messageChannelSuffix';
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final List<Object?>? pigeonVar_replyList = await pigeonVar_channel.send(null) as List<Object?>?;
+    if (pigeonVar_replyList == null) {
+      throw _createConnectionError(pigeonVar_channelName);
+    } else if (pigeonVar_replyList.length > 1) {
+      throw PlatformException(
+        code: pigeonVar_replyList[0]! as String,
+        message: pigeonVar_replyList[1] as String?,
+        details: pigeonVar_replyList[2],
+      );
+    } else if (pigeonVar_replyList[0] == null) {
+      throw PlatformException(
+        code: 'null-error',
+        message: 'Host platform returned null value for non-null return value.',
+      );
+    } else {
+      return (pigeonVar_replyList[0] as bool?)!;
+    }
+  }
+
+  /// Checks if network monitoring is supported.
+  Future<bool> supportsNetworkMonitoring() async {
+    final String pigeonVar_channelName =
+        'dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsNetworkMonitoring$pigeonVar_messageChannelSuffix';
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final List<Object?>? pigeonVar_replyList = await pigeonVar_channel.send(null) as List<Object?>?;
+    if (pigeonVar_replyList == null) {
+      throw _createConnectionError(pigeonVar_channelName);
+    } else if (pigeonVar_replyList.length > 1) {
+      throw PlatformException(
+        code: pigeonVar_replyList[0]! as String,
+        message: pigeonVar_replyList[1] as String?,
+        details: pigeonVar_replyList[2],
+      );
+    } else if (pigeonVar_replyList[0] == null) {
+      throw PlatformException(
+        code: 'null-error',
+        message: 'Host platform returned null value for non-null return value.',
+      );
+    } else {
+      return (pigeonVar_replyList[0] as bool?)!;
+    }
+  }
+
+  /// Checks if bandwidth estimation is supported.
+  Future<bool> supportsBandwidthEstimation() async {
+    final String pigeonVar_channelName =
+        'dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsBandwidthEstimation$pigeonVar_messageChannelSuffix';
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final List<Object?>? pigeonVar_replyList = await pigeonVar_channel.send(null) as List<Object?>?;
+    if (pigeonVar_replyList == null) {
+      throw _createConnectionError(pigeonVar_channelName);
+    } else if (pigeonVar_replyList.length > 1) {
+      throw PlatformException(
+        code: pigeonVar_replyList[0]! as String,
+        message: pigeonVar_replyList[1] as String?,
+        details: pigeonVar_replyList[2],
+      );
+    } else if (pigeonVar_replyList[0] == null) {
+      throw PlatformException(
+        code: 'null-error',
+        message: 'Host platform returned null value for non-null return value.',
+      );
+    } else {
+      return (pigeonVar_replyList[0] as bool?)!;
+    }
+  }
+
+  /// Checks if adaptive bitrate streaming is supported.
+  Future<bool> supportsAdaptiveBitrate() async {
+    final String pigeonVar_channelName =
+        'dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsAdaptiveBitrate$pigeonVar_messageChannelSuffix';
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final List<Object?>? pigeonVar_replyList = await pigeonVar_channel.send(null) as List<Object?>?;
+    if (pigeonVar_replyList == null) {
+      throw _createConnectionError(pigeonVar_channelName);
+    } else if (pigeonVar_replyList.length > 1) {
+      throw PlatformException(
+        code: pigeonVar_replyList[0]! as String,
+        message: pigeonVar_replyList[1] as String?,
+        details: pigeonVar_replyList[2],
+      );
+    } else if (pigeonVar_replyList[0] == null) {
+      throw PlatformException(
+        code: 'null-error',
+        message: 'Host platform returned null value for non-null return value.',
+      );
+    } else {
+      return (pigeonVar_replyList[0] as bool?)!;
+    }
+  }
+
+  /// Checks if HLS is supported.
+  Future<bool> supportsHLS() async {
+    final String pigeonVar_channelName =
+        'dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsHLS$pigeonVar_messageChannelSuffix';
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final List<Object?>? pigeonVar_replyList = await pigeonVar_channel.send(null) as List<Object?>?;
+    if (pigeonVar_replyList == null) {
+      throw _createConnectionError(pigeonVar_channelName);
+    } else if (pigeonVar_replyList.length > 1) {
+      throw PlatformException(
+        code: pigeonVar_replyList[0]! as String,
+        message: pigeonVar_replyList[1] as String?,
+        details: pigeonVar_replyList[2],
+      );
+    } else if (pigeonVar_replyList[0] == null) {
+      throw PlatformException(
+        code: 'null-error',
+        message: 'Host platform returned null value for non-null return value.',
+      );
+    } else {
+      return (pigeonVar_replyList[0] as bool?)!;
+    }
+  }
+
+  /// Checks if DASH is supported.
+  Future<bool> supportsDASH() async {
+    final String pigeonVar_channelName =
+        'dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsDASH$pigeonVar_messageChannelSuffix';
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final List<Object?>? pigeonVar_replyList = await pigeonVar_channel.send(null) as List<Object?>?;
+    if (pigeonVar_replyList == null) {
+      throw _createConnectionError(pigeonVar_channelName);
+    } else if (pigeonVar_replyList.length > 1) {
+      throw PlatformException(
+        code: pigeonVar_replyList[0]! as String,
+        message: pigeonVar_replyList[1] as String?,
+        details: pigeonVar_replyList[2],
+      );
+    } else if (pigeonVar_replyList[0] == null) {
+      throw PlatformException(
+        code: 'null-error',
+        message: 'Host platform returned null value for non-null return value.',
+      );
+    } else {
+      return (pigeonVar_replyList[0] as bool?)!;
+    }
+  }
+
+  /// Checks if device volume control is supported.
+  Future<bool> supportsDeviceVolumeControl() async {
+    final String pigeonVar_channelName =
+        'dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsDeviceVolumeControl$pigeonVar_messageChannelSuffix';
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final List<Object?>? pigeonVar_replyList = await pigeonVar_channel.send(null) as List<Object?>?;
+    if (pigeonVar_replyList == null) {
+      throw _createConnectionError(pigeonVar_channelName);
+    } else if (pigeonVar_replyList.length > 1) {
+      throw PlatformException(
+        code: pigeonVar_replyList[0]! as String,
+        message: pigeonVar_replyList[1] as String?,
+        details: pigeonVar_replyList[2],
+      );
+    } else if (pigeonVar_replyList[0] == null) {
+      throw PlatformException(
+        code: 'null-error',
+        message: 'Host platform returned null value for non-null return value.',
+      );
+    } else {
+      return (pigeonVar_replyList[0] as bool?)!;
+    }
+  }
+
+  /// Checks if screen brightness control is supported.
+  Future<bool> supportsScreenBrightnessControl() async {
+    final String pigeonVar_channelName =
+        'dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsScreenBrightnessControl$pigeonVar_messageChannelSuffix';
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final List<Object?>? pigeonVar_replyList = await pigeonVar_channel.send(null) as List<Object?>?;
+    if (pigeonVar_replyList == null) {
+      throw _createConnectionError(pigeonVar_channelName);
+    } else if (pigeonVar_replyList.length > 1) {
+      throw PlatformException(
+        code: pigeonVar_replyList[0]! as String,
+        message: pigeonVar_replyList[1] as String?,
+        details: pigeonVar_replyList[2],
+      );
+    } else if (pigeonVar_replyList[0] == null) {
+      throw PlatformException(
+        code: 'null-error',
+        message: 'Host platform returned null value for non-null return value.',
+      );
+    } else {
+      return (pigeonVar_replyList[0] as bool?)!;
     }
   }
 

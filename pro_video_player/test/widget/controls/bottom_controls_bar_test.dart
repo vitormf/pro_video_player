@@ -24,6 +24,7 @@ void main() {
           BottomControlsBar(
             controller: controller,
             theme: theme,
+            isFullscreen: false,
             showRemainingTime: false,
             gestureSeekPosition: null,
             showSkipButtons: false,
@@ -46,6 +47,7 @@ void main() {
           BottomControlsBar(
             controller: controller,
             theme: theme,
+            isFullscreen: false,
             showRemainingTime: false,
             gestureSeekPosition: null,
             showSkipButtons: false,
@@ -69,6 +71,7 @@ void main() {
           BottomControlsBar(
             controller: controller,
             theme: theme,
+            isFullscreen: false,
             showRemainingTime: false,
             gestureSeekPosition: null,
             showSkipButtons: true,
@@ -93,6 +96,7 @@ void main() {
           BottomControlsBar(
             controller: controller,
             theme: theme,
+            isFullscreen: false,
             showRemainingTime: false,
             gestureSeekPosition: null,
             showSkipButtons: false,
@@ -117,6 +121,7 @@ void main() {
           BottomControlsBar(
             controller: controller,
             theme: theme,
+            isFullscreen: false,
             showRemainingTime: false,
             gestureSeekPosition: null,
             showSkipButtons: false,
@@ -140,6 +145,7 @@ void main() {
           BottomControlsBar(
             controller: controller,
             theme: theme,
+            isFullscreen: false,
             showRemainingTime: true,
             gestureSeekPosition: null,
             showSkipButtons: false,
@@ -165,6 +171,7 @@ void main() {
           BottomControlsBar(
             controller: controller,
             theme: theme,
+            isFullscreen: false,
             showRemainingTime: false,
             gestureSeekPosition: null,
             showSkipButtons: false,
@@ -195,6 +202,7 @@ void main() {
           BottomControlsBar(
             controller: controller,
             theme: theme,
+            isFullscreen: false,
             showRemainingTime: false,
             gestureSeekPosition: null,
             showSkipButtons: true,
@@ -221,6 +229,7 @@ void main() {
           BottomControlsBar(
             controller: controller,
             theme: customTheme,
+            isFullscreen: true,
             showRemainingTime: false,
             gestureSeekPosition: null,
             showSkipButtons: false,
@@ -245,7 +254,7 @@ void main() {
       }
     });
 
-    testWidgets('applies theme padding', (tester) async {
+    testWidgets('applies theme padding in fullscreen', (tester) async {
       final customTheme = VideoPlayerTheme.light().copyWith(controlsPadding: const EdgeInsets.all(32));
 
       await tester.pumpWidget(
@@ -253,6 +262,7 @@ void main() {
           BottomControlsBar(
             controller: controller,
             theme: customTheme,
+            isFullscreen: true,
             showRemainingTime: false,
             gestureSeekPosition: null,
             showSkipButtons: false,
@@ -269,6 +279,31 @@ void main() {
       // Find the Container with padding
       final container = tester.widget<Container>(find.byType(Container).first);
       expect(container.padding, const EdgeInsets.all(32));
+    });
+
+    testWidgets('uses reduced padding when not in fullscreen', (tester) async {
+      await tester.pumpWidget(
+        buildTestWidget(
+          BottomControlsBar(
+            controller: controller,
+            theme: theme,
+            isFullscreen: false,
+            showRemainingTime: false,
+            gestureSeekPosition: null,
+            showSkipButtons: false,
+            skipDuration: const Duration(seconds: 10),
+            liveScrubbingMode: LiveScrubbingMode.adaptive,
+            enableSeekBarHoverPreview: false,
+            onDragStart: () {},
+            onDragEnd: () {},
+            onToggleTimeDisplay: () {},
+          ),
+        ),
+      );
+
+      // Find the Container with padding - should use reduced padding
+      final container = tester.widget<Container>(find.byType(Container).first);
+      expect(container.padding, const EdgeInsets.symmetric(horizontal: 12, vertical: 6));
     });
   });
 }

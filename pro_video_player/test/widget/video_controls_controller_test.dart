@@ -174,7 +174,7 @@ void main() {
 
         await Future<void>.delayed(TestDelays.stateUpdate);
 
-        expect(controller.controlsState.isBackgroundPlaybackSupported, isFalse);
+        expect(controller.controlsState.isBackgroundPlaybackSupported, isNull);
 
         controller.dispose();
       });

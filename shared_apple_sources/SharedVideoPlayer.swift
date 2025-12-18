@@ -36,6 +36,7 @@ class SharedVideoPlayer: NSObject {
     private(set) var playerLayer: AVPlayerLayer?
     private var isLooping: Bool = false
     private var timeObserver: Any?
+    private var kvoObserversAdded: Bool = false
     private var pipController: AVPictureInPictureController?
     private var isPipControllerReady: Bool = false
     private var pipActionsConfig: [[String: Any]]?
@@ -193,61 +194,114 @@ class SharedVideoPlayer: NSObject {
         // This works even when background playback is disabled
         setupRemoteCommandCenter()
 
-        // Create player item with headers if needed
-        var asset: AVURLAsset
-        if let headers = source["headers"] as? [String: String], !headers.isEmpty {
-            asset = AVURLAsset(url: videoUrl, options: ["AVURLAssetHTTPHeaderFieldsKey": headers])
-        } else {
-            asset = AVURLAsset(url: videoUrl)
+        // Perform heavy initialization on background thread to avoid blocking UI
+        // AVPlayer, AVPlayerItem, and AVURLAsset can all be created off the main thread
+        let startTime = Date()
+        verboseLog("🎬 [INIT] Starting background initialization", tag: "SharedVideoPlayer")
+
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self = self else { return }
+
+            verboseLog("🎬 [INIT] Creating AVURLAsset (elapsed: \(Date().timeIntervalSince(startTime) * 1000)ms)", tag: "SharedVideoPlayer")
+
+            // Create player item with headers if needed
+            var asset: AVURLAsset
+            if let headers = source["headers"] as? [String: String], !headers.isEmpty {
+                asset = AVURLAsset(url: videoUrl, options: ["AVURLAssetHTTPHeaderFieldsKey": headers])
+            } else {
+                asset = AVURLAsset(url: videoUrl)
+            }
+
+            verboseLog("🎬 [INIT] Creating AVPlayerItem (elapsed: \(Date().timeIntervalSince(startTime) * 1000)ms)", tag: "SharedVideoPlayer")
+            let playerItem = AVPlayerItem(asset: asset)
+
+            // Configure buffering based on tier
+            if let bufferingTier = options["bufferingTier"] as? String {
+                playerItem.preferredForwardBufferDuration = self.bufferDurationForTier(bufferingTier)
+            }
+
+            // Configure ABR (Adaptive Bitrate) max bitrate constraint
+            if let maxBitrate = options["maxBitrate"] as? Int, maxBitrate > 0 {
+                playerItem.preferredPeakBitRate = Double(maxBitrate)
+            }
+
+            verboseLog("🎬 [INIT] Creating AVPlayer (elapsed: \(Date().timeIntervalSince(startTime) * 1000)ms)", tag: "SharedVideoPlayer")
+            let player = AVPlayer(playerItem: playerItem)
+
+            verboseLog("🎬 [INIT] PHASE 1 - Queue minimal setup (elapsed: \(Date().timeIntervalSince(startTime) * 1000)ms)", tag: "SharedVideoPlayer")
+
+            // Phase 1: ONLY create the layer - absolute minimum for display
+            DispatchQueue.main.async {
+                verboseLog("🎬 [PHASE 1] START - Creating layer (elapsed: \(Date().timeIntervalSince(startTime) * 1000)ms)", tag: "SharedVideoPlayer")
+                self.playerLayer = AVPlayerLayer(player: player)
+                verboseLog("🎬 [PHASE 1] Layer created (elapsed: \(Date().timeIntervalSince(startTime) * 1000)ms)", tag: "SharedVideoPlayer")
+            }
+
+            // Phase 2: Assign player/item and configure (deferred separately)
+            verboseLog("🎬 [INIT] PHASE 2 - Queue configuration (elapsed: \(Date().timeIntervalSince(startTime) * 1000)ms)", tag: "SharedVideoPlayer")
+            DispatchQueue.main.async {
+                verboseLog("🎬 [PHASE 2] START - Configuration (elapsed: \(Date().timeIntervalSince(startTime) * 1000)ms)", tag: "SharedVideoPlayer")
+
+                self.player = player
+                self.playerItem = playerItem
+                self.playerLayer?.videoGravity = .resizeAspect
+
+                verboseLog("🎬 [PHASE 2] Player assigned (elapsed: \(Date().timeIntervalSince(startTime) * 1000)ms)", tag: "SharedVideoPlayer")
+
+                    // Apply scaling mode if specified
+                    if let scalingMode = options["scalingMode"] as? String {
+                        self.applyScalingMode(scalingMode)
+                    }
+
+                    if let volume = options["volume"] as? Double {
+                        self.player?.volume = Float(volume)
+                    }
+
+                    if let speed = options["playbackSpeed"] as? Double {
+                        self.playbackSpeed = Float(speed)
+                    }
+
+                    self.isLooping = options["looping"] as? Bool ?? false
+
+                    // Start playback if autoPlay is enabled, otherwise set rate to 0
+                    let shouldAutoPlay = options["autoPlay"] as? Bool ?? false
+                    if shouldAutoPlay {
+                        self.player?.rate = self.playbackSpeed
+                        self.isPlaying = true
+                    } else {
+                        self.player?.rate = 0
+                    }
+
+                    verboseLog("🎬 [PHASE 2] Setting up observers (elapsed: \(Date().timeIntervalSince(startTime) * 1000)ms)", tag: "SharedVideoPlayer")
+                    // Setup observers (critical for playback)
+                    self.setupObservers()
+
+                    verboseLog("🎬 [PHASE 2] Setting up casting (elapsed: \(Date().timeIntervalSince(startTime) * 1000)ms)", tag: "SharedVideoPlayer")
+                    // Setup casting (lightweight part)
+                    self.setupCastingWithoutRouteCheck()
+
+                    verboseLog("🎬 [PHASE 2] Sending events (elapsed: \(Date().timeIntervalSince(startTime) * 1000)ms)", tag: "SharedVideoPlayer")
+                    // Send playback state event (playing if autoPlay, ready otherwise)
+                    let playbackState = shouldAutoPlay ? "playing" : "ready"
+                    self.sendEvent(["type": "playbackStateChanged", "state": playbackState])
+
+                    // Update screen sleep and now playing info if autoplaying
+                    if shouldAutoPlay {
+                        self.updateScreenSleepPrevention()
+                        self.updateNowPlayingInfo()
+                    }
+
+                    verboseLog("🎬 [PHASE 2] Events sent (elapsed: \(Date().timeIntervalSince(startTime) * 1000)ms)", tag: "SharedVideoPlayer")
+            }
+
+            // Phase 3: Slow AVAudioSession access (deferred to very end)
+            verboseLog("🎬 [INIT] PHASE 3 - Queue AVAudioSession (elapsed: \(Date().timeIntervalSince(startTime) * 1000)ms)", tag: "SharedVideoPlayer")
+            DispatchQueue.main.async {
+                verboseLog("🎬 [PHASE 3] START - AVAudioSession (elapsed: \(Date().timeIntervalSince(startTime) * 1000)ms)", tag: "SharedVideoPlayer")
+                self.updateAvailableRoutes()
+                verboseLog("🎬 [PHASE 3] END - COMPLETE (elapsed: \(Date().timeIntervalSince(startTime) * 1000)ms)", tag: "SharedVideoPlayer")
+            }
         }
-
-        playerItem = AVPlayerItem(asset: asset)
-
-        // Configure buffering based on tier
-        if let bufferingTier = options["bufferingTier"] as? String {
-            playerItem?.preferredForwardBufferDuration = bufferDurationForTier(bufferingTier)
-        }
-
-        // Configure ABR (Adaptive Bitrate) max bitrate constraint
-        // Note: AVPlayer only supports max bitrate via preferredPeakBitRate
-        // minBitrate is not supported on iOS/macOS
-        if let maxBitrate = options["maxBitrate"] as? Int, maxBitrate > 0 {
-            playerItem?.preferredPeakBitRate = Double(maxBitrate)
-            verboseLog("setupPlayer: Set max bitrate to \(maxBitrate) bps")
-        }
-
-        player = AVPlayer(playerItem: playerItem)
-        playerLayer = AVPlayerLayer(player: player)
-
-        // Configure AirPlay/casting
-        setupCasting()
-
-        // Apply scaling mode
-        if let scalingMode = options["scalingMode"] as? String {
-            applyScalingMode(scalingMode)
-        } else {
-            playerLayer?.videoGravity = .resizeAspect
-        }
-
-        if let volume = options["volume"] as? Double {
-            player?.volume = Float(volume)
-        }
-
-        // Store playback speed but don't apply it yet
-        if let speed = options["playbackSpeed"] as? Double {
-            playbackSpeed = Float(speed)
-        }
-
-        // Ensure player starts paused
-        player?.rate = 0
-
-        isLooping = options["looping"] as? Bool ?? false
-
-        setupObservers()
-        sendEvent(["type": "playbackStateChanged", "state": "ready"])
-
-        // Extract and send metadata
-        extractAndSendMetadata()
     }
 
     /// Extracts and sends metadata from the current player item. Internal for testability.
@@ -283,13 +337,16 @@ class SharedVideoPlayer: NSObject {
             metadata["width"] = Int(abs(size.width))
             metadata["height"] = Int(abs(size.height))
 
-            // Frame rate
-            if videoTrack.nominalFrameRate > 0 {
+            // Frame rate - check if loaded first
+            var error: NSError?
+            let frameRateStatus = videoTrack.statusOfValue(forKey: "nominalFrameRate", error: &error)
+            if frameRateStatus == .loaded && videoTrack.nominalFrameRate > 0 {
                 metadata["frameRate"] = Double(videoTrack.nominalFrameRate)
             }
 
-            // Video bitrate (estimated data rate)
-            if videoTrack.estimatedDataRate > 0 {
+            // Video bitrate (estimated data rate) - check if loaded first
+            let bitrateStatus = videoTrack.statusOfValue(forKey: "estimatedDataRate", error: &error)
+            if bitrateStatus == .loaded && videoTrack.estimatedDataRate > 0 {
                 metadata["videoBitrate"] = Int(videoTrack.estimatedDataRate)
             }
 
@@ -303,8 +360,10 @@ class SharedVideoPlayer: NSObject {
 
         // Audio track info
         if let audioTrack = asset.tracks(withMediaType: .audio).first {
-            // Audio bitrate
-            if audioTrack.estimatedDataRate > 0 {
+            // Audio bitrate - check if loaded first
+            var error: NSError?
+            let bitrateStatus = audioTrack.statusOfValue(forKey: "estimatedDataRate", error: &error)
+            if bitrateStatus == .loaded && audioTrack.estimatedDataRate > 0 {
                 metadata["audioBitrate"] = Int(audioTrack.estimatedDataRate)
             }
 
@@ -382,9 +441,12 @@ class SharedVideoPlayer: NSObject {
     }
 
     /// Extracts and sends technical video metadata as an event.
+    /// Can be called from background thread - will dispatch sendEvent to main thread.
     func extractAndSendVideoMetadata() {
         guard let metadata = getVideoMetadata() else { return }
-        sendEvent(["type": "videoMetadataExtracted", "metadata": metadata])
+        DispatchQueue.main.async {
+            self.sendEvent(["type": "videoMetadataExtracted", "metadata": metadata])
+        }
     }
 
     // MARK: - Observers
@@ -395,6 +457,7 @@ class SharedVideoPlayer: NSObject {
         playerItem?.addObserver(self, forKeyPath: "playbackBufferEmpty", options: [.new], context: nil)
         playerItem?.addObserver(self, forKeyPath: "playbackLikelyToKeepUp", options: [.new], context: nil)
         playerItem?.addObserver(self, forKeyPath: "playbackBufferFull", options: [.new], context: nil)
+        kvoObserversAdded = true
 
         NotificationCenter.default.addObserver(
             self,
@@ -481,17 +544,53 @@ class SharedVideoPlayer: NSObject {
             let duration = Int(CMTimeGetSeconds(item.duration) * 1000)
             sendEvent(["type": "durationChanged", "duration": duration])
 
+            // Defer video size and metadata extraction to avoid blocking
+            // Use AVFoundation's async loading to avoid warnings
             if let track = item.asset.tracks(withMediaType: .video).first {
-                let size = track.naturalSize.applying(track.preferredTransform)
-                sendEvent([
-                    "type": "videoSizeChanged",
-                    "width": Int(abs(size.width)),
-                    "height": Int(abs(size.height)),
-                ])
+                track.loadValuesAsynchronously(forKeys: ["naturalSize", "preferredTransform"]) { [weak self] in
+                    guard let self = self else { return }
+                    var error: NSError?
+                    let status = track.statusOfValue(forKey: "naturalSize", error: &error)
+
+                    if status == .loaded {
+                        let size = track.naturalSize.applying(track.preferredTransform)
+                        DispatchQueue.main.async {
+                            self.sendEvent([
+                                "type": "videoSizeChanged",
+                                "width": Int(abs(size.width)),
+                                "height": Int(abs(size.height)),
+                            ])
+                        }
+                    }
+                }
             }
 
-            // Send technical video metadata
-            extractAndSendVideoMetadata()
+            // Load metadata properties asynchronously
+            let asset = item.asset
+            let videoTrack = asset.tracks(withMediaType: .video).first
+            let audioTrack = asset.tracks(withMediaType: .audio).first
+
+            // Use dispatch group to wait for both video and audio properties to load
+            let metadataGroup = DispatchGroup()
+
+            if let videoTrack = videoTrack {
+                metadataGroup.enter()
+                videoTrack.loadValuesAsynchronously(forKeys: ["nominalFrameRate", "estimatedDataRate", "naturalSize", "preferredTransform"]) {
+                    metadataGroup.leave()
+                }
+            }
+
+            if let audioTrack = audioTrack {
+                metadataGroup.enter()
+                audioTrack.loadValuesAsynchronously(forKeys: ["estimatedDataRate"]) {
+                    metadataGroup.leave()
+                }
+            }
+
+            // Extract metadata after both tracks are loaded (or immediately if no tracks)
+            metadataGroup.notify(queue: DispatchQueue.global(qos: .utility)) { [weak self] in
+                self?.extractAndSendVideoMetadata()
+            }
 
             if subtitlesEnabled {
                 notifySubtitleTracks()
@@ -1343,16 +1442,30 @@ class SharedVideoPlayer: NSObject {
     }
 
     func enterPip() -> Bool {
-        guard allowPip else { return false }
+        verboseLog("enterPip called - allowPip=\(allowPip)", tag: "PiP")
+        guard allowPip else {
+            verboseLog("PiP not allowed in options", tag: "PiP")
+            return false
+        }
 
         if !isPipControllerReady {
+            verboseLog("PiP controller not ready, setting up...", tag: "PiP")
             setupPipController()
         }
 
-        guard let controller = pipController else { return false }
-        guard controller.isPictureInPicturePossible else { return false }
+        guard let controller = pipController else {
+            verboseLog("PiP controller is nil after setup", tag: "PiP")
+            return false
+        }
+
+        // Note: isPictureInPicturePossible is unreliable on macOS (and sometimes iOS)
+        // and often returns false even when PiP is available. We log it for debugging
+        // but don't block PiP from starting.
+        let isPossible = controller.isPictureInPicturePossible
+        verboseLog("isPictureInPicturePossible=\(isPossible) - attempting to start anyway", tag: "PiP")
 
         controller.startPictureInPicture()
+        verboseLog("startPictureInPicture() called", tag: "PiP")
         return true
     }
 
@@ -1788,7 +1901,8 @@ class SharedVideoPlayer: NSObject {
 
     // MARK: - Casting (AirPlay)
 
-    private func setupCasting() {
+    /// Sets up casting without checking routes (to avoid blocking on AVAudioSession access)
+    private func setupCastingWithoutRouteCheck() {
         guard allowCasting, let player = player else { return }
 
         // Enable external playback (AirPlay)
@@ -1806,7 +1920,12 @@ class SharedVideoPlayer: NSObject {
         )
         #endif
 
-        // Update available routes initially
+        // Don't call updateAvailableRoutes() here - it accesses AVAudioSession which blocks
+        // Caller should defer that call
+    }
+
+    private func setupCasting() {
+        setupCastingWithoutRouteCheck()
         updateAvailableRoutes()
     }
 
@@ -1988,13 +2107,18 @@ class SharedVideoPlayer: NSObject {
 
         if let observer = timeObserver {
             player?.removeTimeObserver(observer)
+            timeObserver = nil
         }
 
-        playerItem?.removeObserver(self, forKeyPath: "status")
-        playerItem?.removeObserver(self, forKeyPath: "loadedTimeRanges")
-        playerItem?.removeObserver(self, forKeyPath: "playbackBufferEmpty")
-        playerItem?.removeObserver(self, forKeyPath: "playbackLikelyToKeepUp")
-        playerItem?.removeObserver(self, forKeyPath: "playbackBufferFull")
+        // Safe KVO observer removal - only remove if we added them
+        if kvoObserversAdded {
+            playerItem?.removeObserver(self, forKeyPath: "status")
+            playerItem?.removeObserver(self, forKeyPath: "loadedTimeRanges")
+            playerItem?.removeObserver(self, forKeyPath: "playbackBufferEmpty")
+            playerItem?.removeObserver(self, forKeyPath: "playbackLikelyToKeepUp")
+            playerItem?.removeObserver(self, forKeyPath: "playbackBufferFull")
+            kvoObserversAdded = false
+        }
         NotificationCenter.default.removeObserver(self)
 
         // Cleanup remote command center

@@ -80,41 +80,42 @@ void main() {
     });
   });
 
-  group('PlatformCapabilitiesMessage', () {
-    test('encodes and decodes capabilities correctly', () {
-      final capabilities = PlatformCapabilitiesMessage(
-        supportsPictureInPicture: true,
-        supportsFullscreen: true,
-        supportsBackgroundPlayback: true,
-        supportsCasting: false,
-        supportsAirPlay: false,
-        supportsChromecast: false,
-        supportsRemotePlayback: false,
-        supportsQualitySelection: true,
-        supportsPlaybackSpeedControl: true,
-        supportsSubtitles: true,
-        supportsExternalSubtitles: true,
-        supportsAudioTrackSelection: true,
-        supportsChapters: false,
-        supportsVideoMetadataExtraction: true,
-        supportsNetworkMonitoring: false,
-        supportsBandwidthEstimation: false,
-        supportsAdaptiveBitrate: true,
-        supportsHLS: true,
-        supportsDASH: false,
-        supportsDeviceVolumeControl: true,
-        supportsScreenBrightnessControl: true,
+  group('PlatformInfoMessage', () {
+    test('encodes and decodes platform info correctly', () {
+      final info = PlatformInfoMessage(
         platformName: 'iOS',
         nativePlayerType: 'AVPlayer',
+        additionalInfo: {'osVersion': '17.0', 'pipAvailable': true},
       );
 
-      final encoded = capabilities.encode();
+      final encoded = info.encode();
       expect(encoded, isA<List<Object?>>());
 
-      final decoded = PlatformCapabilitiesMessage.decode(encoded);
-      expect(decoded.supportsPictureInPicture, true);
-      expect(decoded.supportsBackgroundPlayback, true);
-      expect(decoded.supportsCasting, false);
+      final decoded = PlatformInfoMessage.decode(encoded);
+      expect(decoded.platformName, 'iOS');
+      expect(decoded.nativePlayerType, 'AVPlayer');
+      expect(decoded.additionalInfo, isNotNull);
+      expect(decoded.additionalInfo!['osVersion'], '17.0');
+      expect(decoded.additionalInfo!['pipAvailable'], true);
+    });
+
+    test('encodes and decodes platform info without additionalInfo', () {
+      final info = PlatformInfoMessage(platformName: 'Android', nativePlayerType: 'ExoPlayer');
+
+      final encoded = info.encode();
+      final decoded = PlatformInfoMessage.decode(encoded);
+
+      expect(decoded.platformName, 'Android');
+      expect(decoded.nativePlayerType, 'ExoPlayer');
+      expect(decoded.additionalInfo, isNull);
+    });
+  });
+
+  group('Individual Capability Methods', () {
+    test('ProVideoPlayerHostApi can be instantiated', () {
+      final api = ProVideoPlayerHostApi();
+      expect(api, isNotNull);
+      expect(api, isA<ProVideoPlayerHostApi>());
     });
   });
 

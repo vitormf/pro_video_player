@@ -245,17 +245,23 @@ class _HomeScreenState extends State<HomeScreen> {
     appBar: AppBar(title: const Text('Pro Video Player')),
     body: Row(
       children: [
-        // Master pane (list)
-        SizedBox(
-          width: 360,
-          child: Column(
-            children: [
-              Padding(padding: const EdgeInsets.all(16), child: _buildCompactHeader(context)),
-              const Divider(height: 1),
-              Expanded(
-                child: ListView(padding: const EdgeInsets.symmetric(vertical: 8), children: _buildMasterList(context)),
-              ),
-            ],
+        // Master pane (list) - constrained to prevent layout overflow during disposal
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 360, minWidth: 360),
+          child: SizedBox(
+            width: 360,
+            child: Column(
+              children: [
+                Padding(padding: const EdgeInsets.all(16), child: _buildCompactHeader(context)),
+                const Divider(height: 1),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    children: _buildMasterList(context),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         // Divider
@@ -344,19 +350,23 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
+              SizedBox(
                 width: 40,
                 height: 40,
-                decoration: BoxDecoration(
-                  color: demo.color.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: demo.color.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(demo.icon, color: demo.color, size: 20),
                 ),
-                child: Icon(demo.icon, color: demo.color, size: 20),
               ),
               const SizedBox(width: 12),
-              Expanded(
+              Flexible(
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
@@ -364,6 +374,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: Theme.of(
                         context,
                       ).textTheme.titleSmall?.copyWith(fontWeight: isSelected ? FontWeight.bold : FontWeight.w600),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     Text(
                       demo.description,
@@ -452,11 +464,17 @@ class _HomeScreenState extends State<HomeScreen> {
         const SizedBox(height: 12),
         Text(_getDetailDescription(demo.title), style: Theme.of(context).textTheme.bodyLarge),
         const SizedBox(height: 32),
-        FilledButton.icon(
-          onPressed: () => Navigator.pushNamed(context, demo.route),
-          icon: const Icon(Icons.play_arrow),
-          label: const Text('Open Demo'),
-          style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16)),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 200),
+            child: FilledButton.icon(
+              onPressed: () => Navigator.pushNamed(context, demo.route),
+              icon: const Icon(Icons.play_arrow),
+              label: const Text('Open Demo', overflow: TextOverflow.ellipsis),
+              style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16)),
+            ),
+          ),
         ),
       ],
     ),
@@ -631,33 +649,53 @@ class _DemoItem extends StatelessWidget {
             border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
           ),
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
+              SizedBox(
                 width: 48,
                 height: 48,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: color, size: 24),
                 ),
-                child: Icon(icon, color: color, size: 24),
               ),
               const SizedBox(width: 16),
-              Expanded(
+              Flexible(
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     const SizedBox(height: 4),
                     Text(
                       description,
                       style: Theme.of(
                         context,
                       ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
-              Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant),
+              const SizedBox(width: 8),
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
             ],
           ),
         ),

@@ -195,51 +195,12 @@ open class SharedPluginBase: NSObject, FlutterStreamHandler {
             handleGetCurrentCastDevice(call: call, result: result)
         case "setWindowFullscreen":
             handleSetWindowFullscreen(call: call, result: result)
-        case "getPlatformCapabilities":
-            handleGetPlatformCapabilities(result: result)
         default:
             result(FlutterMethodNotImplemented)
         }
     }
 
     // MARK: - Method Handlers
-
-    private func handleGetPlatformCapabilities(result: @escaping FlutterResult) {
-        verboseLog("Getting platform capabilities", tag: "Plugin")
-
-        let capabilities: [String: Any] = [
-            "supportsPictureInPicture": true,  // iOS always supports PiP via AVPictureInPictureController
-            "supportsFullscreen": true,  // iOS supports fullscreen via UIWindowScene
-            "supportsBackgroundPlayback": platformBehavior.isBackgroundPlaybackSupported(),  // Depends on Info.plist configuration
-            "supportsCasting": true,  // iOS supports AirPlay
-            "supportsAirPlay": true,  // iOS has built-in AirPlay support
-            "supportsChromecast": false,  // Chromecast SDK not integrated (future enhancement)
-            "supportsRemotePlayback": false,  // Remote Playback API is Web-only
-            "supportsQualitySelection": true,  // iOS supports quality selection for HLS streams
-            "supportsPlaybackSpeedControl": true,  // AVPlayer supports playback speed
-            "supportsSubtitles": true,  // iOS supports subtitles via AVMediaSelectionGroup
-            "supportsExternalSubtitles": true,  // iOS supports external subtitle loading
-            "supportsAudioTrackSelection": true,  // iOS supports audio track selection
-            "supportsChapters": true,  // iOS supports chapters via AVTimedMetadataGroup
-            "supportsVideoMetadataExtraction": true,  // iOS supports metadata via AVAssetTrack
-            "supportsNetworkMonitoring": true,  // iOS has NWPathMonitor for network monitoring
-            "supportsBandwidthEstimation": true,  // iOS provides bandwidth via AVPlayerItemAccessLog
-            "supportsAdaptiveBitrate": true,  // iOS supports ABR (maxBitrate only)
-            "supportsHLS": true,  // AVPlayer has native HLS support
-            "supportsDASH": false,  // AVPlayer does not support DASH
-            "supportsDeviceVolumeControl": true,  // iOS supports volume control via AVAudioSession
-            "supportsScreenBrightnessControl": true,  // iOS supports brightness via UIScreen
-            "platformName": "iOS",
-            "nativePlayerType": "AVPlayer",
-            "additionalInfo": [
-                "osVersion": ProcessInfo.processInfo.operatingSystemVersionString,
-                "pipSupported": platformBehavior.isPipSupported(),
-                "backgroundPlaybackSupported": platformBehavior.isBackgroundPlaybackSupported(),
-            ],
-        ]
-
-        result(capabilities)
-    }
 
     private func handleSetVerboseLogging(call: FlutterMethodCall, result: @escaping FlutterResult) {
         if let args = call.arguments as? [String: Any],

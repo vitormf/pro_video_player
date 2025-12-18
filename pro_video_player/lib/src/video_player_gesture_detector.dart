@@ -1,4 +1,4 @@
-import 'dart:async' show unawaited;
+import 'dart:async' show Timer, unawaited;
 import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -15,6 +15,12 @@ import 'gestures/tap_gesture_manager.dart';
 import 'gestures/volume_gesture_manager.dart';
 import 'pro_video_player_controller.dart';
 import 'video_player_theme.dart';
+
+/// Callback for controls visibility changes.
+///
+/// The [visible] parameter indicates whether controls should be shown or hidden.
+/// The [instantly] parameter indicates whether the change should happen without animation.
+typedef ControlsVisibilityCallback = void Function(bool visible, {bool instantly});
 
 /// A widget that provides gesture-based controls for video playback.
 ///
@@ -33,7 +39,7 @@ import 'video_player_theme.dart';
 /// VideoPlayerGestureDetector(
 ///   controller: controller,
 ///   seekDuration: Duration(seconds: 10),
-///   onControlsVisibilityChanged: (visible) {
+///   onControlsVisibilityChanged: (visible, {instantly = false}) {
 ///     setState(() => _controlsVisible = visible);
 ///   },
 ///   child: ProVideoPlayer(controller: controller),
@@ -56,7 +62,7 @@ class VideoPlayerGestureDetector extends StatefulWidget {
     this.autoHideControls = true,
     this.autoHideDelay = const Duration(seconds: 2),
     this.verticalGestureThreshold = 30.0,
-    this.sideGestureAreaFraction = 0.3,
+    this.sideGestureAreaFraction = 0.4,
     this.bottomExclusionHeight = 100.0,
     this.onControlsVisibilityChanged,
     this.onBrightnessChanged,
@@ -137,7 +143,7 @@ class VideoPlayerGestureDetector extends StatefulWidget {
   /// This threshold helps prevent accidental volume/brightness changes when
   /// the user intends to tap or perform horizontal seek gestures.
   ///
-  /// Defaults to 30 pixels.
+  /// Defaults to 20 pixels.
   final double verticalGestureThreshold;
 
   /// The width fraction from each edge where volume/brightness gestures are active.
@@ -145,10 +151,10 @@ class VideoPlayerGestureDetector extends StatefulWidget {
   /// Volume gestures work on the right edge (within this fraction of screen width),
   /// and brightness gestures work on the left edge.
   ///
-  /// For example, 0.3 means gestures are active in the leftmost/rightmost 30%
+  /// For example, 0.4 means gestures are active in the leftmost/rightmost 40%
   /// of the screen width.
   ///
-  /// Defaults to 0.3 (30% from each edge).
+  /// Defaults to 0.4 (40% from each edge).
   final double sideGestureAreaFraction;
 
   /// The height in logical pixels from the bottom to exclude from volume/brightness gestures.
@@ -160,7 +166,10 @@ class VideoPlayerGestureDetector extends StatefulWidget {
   final double bottomExclusionHeight;
 
   /// Called when controls visibility changes.
-  final ValueChanged<bool>? onControlsVisibilityChanged;
+  ///
+  /// The first parameter indicates whether controls should be shown.
+  /// The optional `instantly` parameter indicates whether to skip animation (used during gestures).
+  final ControlsVisibilityCallback? onControlsVisibilityChanged;
 
   /// Called when brightness is changed via gesture.
   final ValueChanged<double>? onBrightnessChanged;
@@ -183,6 +192,7 @@ class _VideoPlayerGestureDetectorState extends State<VideoPlayerGestureDetector>
   IconData? _feedbackIcon;
   String? _feedbackText;
   late AnimationController _feedbackController;
+  Timer? _feedbackHoldTimer;
   double? _currentVolume;
   double? _currentBrightness;
   double? _currentPlaybackSpeed;
@@ -210,18 +220,48 @@ class _VideoPlayerGestureDetectorState extends State<VideoPlayerGestureDetector>
   double get bottomGestureExclusionHeight => widget.bottomExclusionHeight;
   @override
   double get verticalGestureThreshold => widget.verticalGestureThreshold;
+  @override
+  bool getControlsVisible() => _controlsVisible;
+  @override
+  void setControlsVisible({required bool visible, bool instantly = false}) {
+    setState(() => _controlsVisible = visible);
+    widget.onControlsVisibilityChanged?.call(visible, instantly: instantly);
+  }
 
   @override
   void initState() {
     super.initState();
-    _feedbackController = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
+    _feedbackController = AnimationController(vsync: this, duration: const Duration(milliseconds: 200));
+
+    // Handle feedback lifecycle: fade in -> hold -> fade out -> clear
+    _feedbackController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        // Cancel any existing timer
+        _feedbackHoldTimer?.cancel();
+        // Hold the feedback visible for a moment, then fade out
+        _feedbackHoldTimer = Timer(const Duration(milliseconds: 400), () {
+          if (mounted) {
+            unawaited(
+              _feedbackController.reverse().then((_) {
+                if (mounted) {
+                  setState(() {
+                    _feedbackIcon = null;
+                    _feedbackText = null;
+                  });
+                }
+              }),
+            );
+          }
+        });
+      }
+    });
 
     // Initialize gesture managers
     _tapManager = TapGestureManager(
       getControlsVisible: () => _controlsVisible,
-      setControlsVisible: ({required visible}) {
+      setControlsVisible: ({required bool visible, bool instantly = false}) {
         setState(() => _controlsVisible = visible);
-        widget.onControlsVisibilityChanged?.call(visible);
+        widget.onControlsVisibilityChanged?.call(visible, instantly: instantly);
       },
       getIsPlaying: () => widget.controller.value.isPlaying,
       onSingleTap: () {}, // Single tap just toggles controls (handled by setControlsVisible)
@@ -238,7 +278,7 @@ class _VideoPlayerGestureDetectorState extends State<VideoPlayerGestureDetector>
       getCurrentPosition: () => widget.controller.value.position,
       getDuration: () => widget.controller.value.duration,
       getIsPlaying: () => widget.controller.value.isPlaying,
-      seekSecondsPerInch: 10,
+      seekSecondsPerInch: 15, // Increased from 10 for faster seeking
       setSeekTarget: (target) {
         setState(() {
           if (target != null && _dragStartPlaybackPosition == null) {
@@ -298,6 +338,7 @@ class _VideoPlayerGestureDetectorState extends State<VideoPlayerGestureDetector>
 
   @override
   void dispose() {
+    _feedbackHoldTimer?.cancel();
     widget.controller.removeListener(_onControllerChanged);
     _gestureCoordinator.dispose();
     _feedbackController.dispose();
@@ -365,39 +406,26 @@ class _VideoPlayerGestureDetectorState extends State<VideoPlayerGestureDetector>
   @override
   Widget build(BuildContext context) => Stack(
     children: [
-      // Content layer (child)
-      widget.child,
-
-      // Gesture detection layer covering ONLY the video area (not bottom controls)
-      Positioned(
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: widget.bottomExclusionHeight,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            // Get the actual rendered size of this gesture area
-            final gestureAreaSize = constraints.biggest;
-            // Calculate full screen size including the excluded bottom area
-            final fullScreenHeight = gestureAreaSize.height + widget.bottomExclusionHeight;
-            final fullScreenSize = Size(gestureAreaSize.width, fullScreenHeight);
-
-            return Listener(
-              onPointerDown: (event) => _gestureCoordinator.onPointerDown(),
-              onPointerUp: (event) => _gestureCoordinator.onPointerUp(),
-              onPointerCancel: (event) => _gestureCoordinator.onPointerUp(),
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onScaleStart: (details) {
-                  _gestureCoordinator.onGestureStart(details.localFocalPoint, fullScreenSize);
-                },
-                onScaleUpdate: (details) {
-                  _gestureCoordinator.onGestureUpdate(details.localFocalPoint, fullScreenSize);
-                },
-                onScaleEnd: (details) => _gestureCoordinator.onGestureEnd(),
-              ),
-            );
+      Listener(
+        onPointerDown: (event) => _gestureCoordinator.onPointerDown(),
+        onPointerUp: (event) => _gestureCoordinator.onPointerUp(),
+        onPointerCancel: (event) => _gestureCoordinator.onPointerUp(),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onScaleStart: (details) {
+            final renderBox = context.findRenderObject() as RenderBox?;
+            if (renderBox != null) {
+              _gestureCoordinator.onGestureStart(details.localFocalPoint, renderBox.size);
+            }
           },
+          onScaleUpdate: (details) {
+            final renderBox = context.findRenderObject() as RenderBox?;
+            if (renderBox != null) {
+              _gestureCoordinator.onGestureUpdate(details.localFocalPoint, renderBox.size);
+            }
+          },
+          onScaleEnd: (details) => _gestureCoordinator.onGestureEnd(),
+          child: widget.child,
         ),
       ),
       // Feedback overlay on top
@@ -424,7 +452,23 @@ class _VideoPlayerGestureDetectorState extends State<VideoPlayerGestureDetector>
       return IgnorePointer(
         child: Align(
           alignment: Alignment.centerLeft,
-          child: Padding(padding: const EdgeInsets.only(left: 48), child: _buildVolumeOverlay(theme)),
+          child: Padding(
+            padding: const EdgeInsets.only(left: 32, top: 32, bottom: 32),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                // Constrain bar height to fit available space (accounting for icon)
+                final maxBarHeight = (constraints.maxHeight - 100).clamp(80.0, 180.0);
+                return ValueIndicatorOverlay(
+                  value: _currentVolume!,
+                  icon: _currentVolume! > 0.5
+                      ? Icons.volume_up
+                      : (_currentVolume! > 0 ? Icons.volume_down : Icons.volume_off),
+                  theme: theme,
+                  barHeight: maxBarHeight,
+                );
+              },
+            ),
+          ),
         ),
       );
     }
@@ -434,7 +478,21 @@ class _VideoPlayerGestureDetectorState extends State<VideoPlayerGestureDetector>
       return IgnorePointer(
         child: Align(
           alignment: Alignment.centerRight,
-          child: Padding(padding: const EdgeInsets.only(right: 48), child: _buildBrightnessOverlay(theme)),
+          child: Padding(
+            padding: const EdgeInsets.only(right: 32, top: 32, bottom: 32),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                // Constrain bar height to fit available space (accounting for icon)
+                final maxBarHeight = (constraints.maxHeight - 100).clamp(80.0, 180.0);
+                return ValueIndicatorOverlay(
+                  value: _currentBrightness!,
+                  icon: _currentBrightness! > 0.5 ? Icons.brightness_high : Icons.brightness_low,
+                  theme: theme,
+                  barHeight: maxBarHeight,
+                );
+              },
+            ),
+          ),
         ),
       );
     }
@@ -502,18 +560,6 @@ class _VideoPlayerGestureDetectorState extends State<VideoPlayerGestureDetector>
         ),
       ],
     );
-  }
-
-  Widget _buildVolumeOverlay(VideoPlayerTheme theme) {
-    final volumeIcon = _currentVolume! > 0.5
-        ? Icons.volume_up
-        : (_currentVolume! > 0 ? Icons.volume_down : Icons.volume_off);
-    return ValueIndicatorOverlay(value: _currentVolume!, icon: volumeIcon, theme: theme);
-  }
-
-  Widget _buildBrightnessOverlay(VideoPlayerTheme theme) {
-    final brightnessIcon = _currentBrightness! > 0.5 ? Icons.brightness_high : Icons.brightness_low;
-    return ValueIndicatorOverlay(value: _currentBrightness!, icon: brightnessIcon, theme: theme);
   }
 
   Widget _buildPlaybackSpeedOverlay(VideoPlayerTheme theme) => Column(

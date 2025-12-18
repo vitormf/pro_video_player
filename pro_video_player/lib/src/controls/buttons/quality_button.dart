@@ -36,6 +36,7 @@ class QualityButton extends StatelessWidget {
   Widget build(BuildContext context) => Tooltip(
     message: 'Video quality',
     child: TextButton(
+      key: const Key('toolbar_quality_button'),
       onPressed: onPressed,
       style: TextButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 8),

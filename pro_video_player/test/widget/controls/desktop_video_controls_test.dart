@@ -12,6 +12,9 @@ class MockVideoControlsState {
   bool isDragging = false;
   double? dragProgress;
   bool showRemainingTime = false;
+  bool? isPipAvailable;
+  bool? isBackgroundPlaybackSupported;
+  bool? isCastingSupported;
 }
 
 void main() {

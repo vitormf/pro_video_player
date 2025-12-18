@@ -69,19 +69,35 @@ class VideoControlsController extends ChangeNotifier {
     if (testIsPipAvailable != null) {
       _controlsState.setIsPipAvailable(available: testIsPipAvailable);
     } else if (enablePipCheck) {
-      unawaited(_checkPipAvailability());
+      // If cached, use immediately; otherwise start async check
+      if (_cachedPipSupported != null) {
+        _controlsState.setIsPipAvailable(available: _cachedPipSupported!);
+      } else {
+        // Start async check without blocking constructor
+        unawaited(_checkPipAvailability());
+      }
     }
 
     if (testIsBackgroundPlaybackSupported != null) {
       _controlsState.setIsBackgroundPlaybackSupported(supported: testIsBackgroundPlaybackSupported);
     } else if (enableBackgroundCheck) {
-      unawaited(_checkBackgroundPlaybackSupport());
+      // If cached, use immediately; otherwise start async check
+      if (_cachedBackgroundPlaybackSupported != null) {
+        _controlsState.setIsBackgroundPlaybackSupported(supported: _cachedBackgroundPlaybackSupported!);
+      } else {
+        unawaited(_checkBackgroundPlaybackSupport());
+      }
     }
 
     if (testIsCastingSupported != null) {
       _controlsState.setIsCastingSupported(supported: testIsCastingSupported);
     } else if (enableCastingCheck) {
-      unawaited(_checkCastingSupport());
+      // If cached, use immediately; otherwise start async check
+      if (_cachedCastingSupported != null) {
+        _controlsState.setIsCastingSupported(supported: _cachedCastingSupported!);
+      } else {
+        unawaited(_checkCastingSupport());
+      }
     }
   }
 
@@ -207,20 +223,48 @@ class VideoControlsController extends ChangeNotifier {
   bool get shouldShowVolumeButton =>
       VideoToolbarManager.shouldShowVolumeButton(isWeb: kIsWeb, isMacOS: !kIsWeb && Platform.isMacOS);
 
+  // Static cache for capability checks (platform-level, doesn't change)
+  static bool? _cachedPipSupported;
+  static bool? _cachedBackgroundPlaybackSupported;
+  static bool? _cachedCastingSupported;
+
   Future<void> _checkPipAvailability() async {
     if (!showPipButton) return;
+
+    // Use cached value if available
+    if (_cachedPipSupported != null) {
+      _controlsState.setIsPipAvailable(available: _cachedPipSupported!);
+      return;
+    }
+
     final available = await _videoController.isPipAvailable();
+    _cachedPipSupported = available; // Cache for future controllers
     _controlsState.setIsPipAvailable(available: available);
   }
 
   Future<void> _checkBackgroundPlaybackSupport() async {
     if (!showBackgroundPlaybackButton) return;
+
+    // Use cached value if available
+    if (_cachedBackgroundPlaybackSupported != null) {
+      _controlsState.setIsBackgroundPlaybackSupported(supported: _cachedBackgroundPlaybackSupported!);
+      return;
+    }
+
     final supported = await _videoController.isBackgroundPlaybackSupported();
+    _cachedBackgroundPlaybackSupported = supported; // Cache for future controllers
     _controlsState.setIsBackgroundPlaybackSupported(supported: supported);
   }
 
   Future<void> _checkCastingSupport() async {
+    // Use cached value if available
+    if (_cachedCastingSupported != null) {
+      _controlsState.setIsCastingSupported(supported: _cachedCastingSupported!);
+      return;
+    }
+
     final supported = await _videoController.isCastingSupported();
+    _cachedCastingSupported = supported; // Cache for future controllers
     _controlsState.setIsCastingSupported(supported: supported);
   }
 
@@ -318,8 +362,11 @@ class VideoControlsController extends ChangeNotifier {
   }
 
   /// Hides controls.
-  void hideControls() {
-    _controlsState.hideControls();
+  ///
+  /// If [instantly] is true, controls will hide without animation.
+  /// This is used during gestures to hide controls immediately.
+  void hideControls({bool instantly = false}) {
+    _controlsState.hideControls(instantly: instantly);
     notifyListeners();
   }
 
@@ -683,9 +730,9 @@ class VideoControlsController extends ChangeNotifier {
         ),
 
         // PiP and Fullscreen
-        if (isMinimalMode && _controlsState.isPipAvailable && showPipButton || showFullscreenButton) ...[
+        if (isMinimalMode && (_controlsState.isPipAvailable ?? false) && showPipButton || showFullscreenButton) ...[
           const PopupMenuDivider(),
-          if (isMinimalMode && _controlsState.isPipAvailable && showPipButton)
+          if (isMinimalMode && (_controlsState.isPipAvailable ?? false) && showPipButton)
             PopupMenuItem<String>(
               value: 'pip',
               child: Row(

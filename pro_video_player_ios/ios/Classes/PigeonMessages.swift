@@ -331,109 +331,33 @@ struct VideoPlayerOptionsMessage {
   }
 }
 
-/// Platform capabilities returned by the platform.
+/// Platform information returned by the platform.
+///
+/// Contains static platform metadata that doesn't require async checks.
 ///
 /// Generated class from Pigeon that represents data sent in messages.
-struct PlatformCapabilitiesMessage {
-  /// Whether Picture-in-Picture is supported.
-  var supportsPictureInPicture: Bool
-  /// Whether fullscreen is supported.
-  var supportsFullscreen: Bool
-  /// Whether background playback is supported.
-  var supportsBackgroundPlayback: Bool
-  /// Whether casting is supported.
-  var supportsCasting: Bool
-  /// Whether AirPlay is supported.
-  var supportsAirPlay: Bool
-  /// Whether Chromecast is supported.
-  var supportsChromecast: Bool
-  /// Whether Remote Playback API is supported.
-  var supportsRemotePlayback: Bool
-  /// Whether quality selection is supported.
-  var supportsQualitySelection: Bool
-  /// Whether playback speed control is supported.
-  var supportsPlaybackSpeedControl: Bool
-  /// Whether subtitles are supported.
-  var supportsSubtitles: Bool
-  /// Whether external subtitles are supported.
-  var supportsExternalSubtitles: Bool
-  /// Whether audio track selection is supported.
-  var supportsAudioTrackSelection: Bool
-  /// Whether chapters are supported.
-  var supportsChapters: Bool
-  /// Whether video metadata extraction is supported.
-  var supportsVideoMetadataExtraction: Bool
-  /// Whether network monitoring is supported.
-  var supportsNetworkMonitoring: Bool
-  /// Whether bandwidth estimation is supported.
-  var supportsBandwidthEstimation: Bool
-  /// Whether adaptive bitrate streaming is supported.
-  var supportsAdaptiveBitrate: Bool
-  /// Whether HLS is supported.
-  var supportsHLS: Bool
-  /// Whether DASH is supported.
-  var supportsDASH: Bool
-  /// Whether device volume control is supported.
-  var supportsDeviceVolumeControl: Bool
-  /// Whether screen brightness control is supported.
-  var supportsScreenBrightnessControl: Bool
-  /// Platform name.
+struct PlatformInfoMessage {
+  /// Platform name (e.g., "iOS", "Android", "Web").
   var platformName: String
-  /// Native player type.
+  /// Native player type (e.g., "AVPlayer", "ExoPlayer", "HTML5").
   var nativePlayerType: String
-  /// Additional platform-specific info.
+  /// Additional platform-specific information as key-value pairs.
+  ///
+  /// May include:
+  /// - OS version
+  /// - SDK version
+  /// - Browser user agent
+  /// - Hardware capabilities
   var additionalInfo: [String?: Any?]? = nil
 
 
   // swift-format-ignore: AlwaysUseLowerCamelCase
-  static func fromList(_ pigeonVar_list: [Any?]) -> PlatformCapabilitiesMessage? {
-    let supportsPictureInPicture = pigeonVar_list[0] as! Bool
-    let supportsFullscreen = pigeonVar_list[1] as! Bool
-    let supportsBackgroundPlayback = pigeonVar_list[2] as! Bool
-    let supportsCasting = pigeonVar_list[3] as! Bool
-    let supportsAirPlay = pigeonVar_list[4] as! Bool
-    let supportsChromecast = pigeonVar_list[5] as! Bool
-    let supportsRemotePlayback = pigeonVar_list[6] as! Bool
-    let supportsQualitySelection = pigeonVar_list[7] as! Bool
-    let supportsPlaybackSpeedControl = pigeonVar_list[8] as! Bool
-    let supportsSubtitles = pigeonVar_list[9] as! Bool
-    let supportsExternalSubtitles = pigeonVar_list[10] as! Bool
-    let supportsAudioTrackSelection = pigeonVar_list[11] as! Bool
-    let supportsChapters = pigeonVar_list[12] as! Bool
-    let supportsVideoMetadataExtraction = pigeonVar_list[13] as! Bool
-    let supportsNetworkMonitoring = pigeonVar_list[14] as! Bool
-    let supportsBandwidthEstimation = pigeonVar_list[15] as! Bool
-    let supportsAdaptiveBitrate = pigeonVar_list[16] as! Bool
-    let supportsHLS = pigeonVar_list[17] as! Bool
-    let supportsDASH = pigeonVar_list[18] as! Bool
-    let supportsDeviceVolumeControl = pigeonVar_list[19] as! Bool
-    let supportsScreenBrightnessControl = pigeonVar_list[20] as! Bool
-    let platformName = pigeonVar_list[21] as! String
-    let nativePlayerType = pigeonVar_list[22] as! String
-    let additionalInfo: [String?: Any?]? = nilOrValue(pigeonVar_list[23])
+  static func fromList(_ pigeonVar_list: [Any?]) -> PlatformInfoMessage? {
+    let platformName = pigeonVar_list[0] as! String
+    let nativePlayerType = pigeonVar_list[1] as! String
+    let additionalInfo: [String?: Any?]? = nilOrValue(pigeonVar_list[2])
 
-    return PlatformCapabilitiesMessage(
-      supportsPictureInPicture: supportsPictureInPicture,
-      supportsFullscreen: supportsFullscreen,
-      supportsBackgroundPlayback: supportsBackgroundPlayback,
-      supportsCasting: supportsCasting,
-      supportsAirPlay: supportsAirPlay,
-      supportsChromecast: supportsChromecast,
-      supportsRemotePlayback: supportsRemotePlayback,
-      supportsQualitySelection: supportsQualitySelection,
-      supportsPlaybackSpeedControl: supportsPlaybackSpeedControl,
-      supportsSubtitles: supportsSubtitles,
-      supportsExternalSubtitles: supportsExternalSubtitles,
-      supportsAudioTrackSelection: supportsAudioTrackSelection,
-      supportsChapters: supportsChapters,
-      supportsVideoMetadataExtraction: supportsVideoMetadataExtraction,
-      supportsNetworkMonitoring: supportsNetworkMonitoring,
-      supportsBandwidthEstimation: supportsBandwidthEstimation,
-      supportsAdaptiveBitrate: supportsAdaptiveBitrate,
-      supportsHLS: supportsHLS,
-      supportsDASH: supportsDASH,
-      supportsDeviceVolumeControl: supportsDeviceVolumeControl,
-      supportsScreenBrightnessControl: supportsScreenBrightnessControl,
+    return PlatformInfoMessage(
       platformName: platformName,
       nativePlayerType: nativePlayerType,
       additionalInfo: additionalInfo
@@ -441,27 +365,6 @@ struct PlatformCapabilitiesMessage {
   }
   func toList() -> [Any?] {
     return [
-      supportsPictureInPicture,
-      supportsFullscreen,
-      supportsBackgroundPlayback,
-      supportsCasting,
-      supportsAirPlay,
-      supportsChromecast,
-      supportsRemotePlayback,
-      supportsQualitySelection,
-      supportsPlaybackSpeedControl,
-      supportsSubtitles,
-      supportsExternalSubtitles,
-      supportsAudioTrackSelection,
-      supportsChapters,
-      supportsVideoMetadataExtraction,
-      supportsNetworkMonitoring,
-      supportsBandwidthEstimation,
-      supportsAdaptiveBitrate,
-      supportsHLS,
-      supportsDASH,
-      supportsDeviceVolumeControl,
-      supportsScreenBrightnessControl,
       platformName,
       nativePlayerType,
       additionalInfo,
@@ -1065,7 +968,7 @@ private class PigeonMessagesPigeonCodecReader: FlutterStandardReader {
     case 139:
       return VideoPlayerOptionsMessage.fromList(self.readValue() as! [Any?])
     case 140:
-      return PlatformCapabilitiesMessage.fromList(self.readValue() as! [Any?])
+      return PlatformInfoMessage.fromList(self.readValue() as! [Any?])
     case 141:
       return BatteryInfoMessage.fromList(self.readValue() as! [Any?])
     case 142:
@@ -1131,7 +1034,7 @@ private class PigeonMessagesPigeonCodecWriter: FlutterStandardWriter {
     } else if let value = value as? VideoPlayerOptionsMessage {
       super.writeByte(139)
       super.writeValue(value.toList())
-    } else if let value = value as? PlatformCapabilitiesMessage {
+    } else if let value = value as? PlatformInfoMessage {
       super.writeByte(140)
       super.writeValue(value.toList())
     } else if let value = value as? BatteryInfoMessage {
@@ -1222,10 +1125,52 @@ protocol ProVideoPlayerHostApi {
   func getPosition(playerId: Int64, completion: @escaping (Result<Int64, Error>) -> Void)
   /// Gets the video duration in milliseconds.
   func getDuration(playerId: Int64, completion: @escaping (Result<Int64, Error>) -> Void)
-  /// Gets the platform capabilities.
-  func getPlatformCapabilities(completion: @escaping (Result<PlatformCapabilitiesMessage, Error>) -> Void)
+  /// Gets static platform information.
+  func getPlatformInfo(completion: @escaping (Result<PlatformInfoMessage, Error>) -> Void)
   /// Enables or disables verbose logging.
   func setVerboseLogging(enabled: Bool, completion: @escaping (Result<Void, Error>) -> Void)
+  /// Checks if Picture-in-Picture mode is supported.
+  func supportsPictureInPicture(completion: @escaping (Result<Bool, Error>) -> Void)
+  /// Checks if fullscreen mode is supported.
+  func supportsFullscreen(completion: @escaping (Result<Bool, Error>) -> Void)
+  /// Checks if background playback is supported.
+  func supportsBackgroundPlayback(completion: @escaping (Result<Bool, Error>) -> Void)
+  /// Checks if any form of casting is supported.
+  func supportsCasting(completion: @escaping (Result<Bool, Error>) -> Void)
+  /// Checks if AirPlay is supported.
+  func supportsAirPlay(completion: @escaping (Result<Bool, Error>) -> Void)
+  /// Checks if Chromecast is supported.
+  func supportsChromecast(completion: @escaping (Result<Bool, Error>) -> Void)
+  /// Checks if Remote Playback API is supported.
+  func supportsRemotePlayback(completion: @escaping (Result<Bool, Error>) -> Void)
+  /// Checks if quality selection is supported.
+  func supportsQualitySelection(completion: @escaping (Result<Bool, Error>) -> Void)
+  /// Checks if playback speed control is supported.
+  func supportsPlaybackSpeedControl(completion: @escaping (Result<Bool, Error>) -> Void)
+  /// Checks if subtitles are supported.
+  func supportsSubtitles(completion: @escaping (Result<Bool, Error>) -> Void)
+  /// Checks if external subtitles are supported.
+  func supportsExternalSubtitles(completion: @escaping (Result<Bool, Error>) -> Void)
+  /// Checks if audio track selection is supported.
+  func supportsAudioTrackSelection(completion: @escaping (Result<Bool, Error>) -> Void)
+  /// Checks if chapters are supported.
+  func supportsChapters(completion: @escaping (Result<Bool, Error>) -> Void)
+  /// Checks if video metadata extraction is supported.
+  func supportsVideoMetadataExtraction(completion: @escaping (Result<Bool, Error>) -> Void)
+  /// Checks if network monitoring is supported.
+  func supportsNetworkMonitoring(completion: @escaping (Result<Bool, Error>) -> Void)
+  /// Checks if bandwidth estimation is supported.
+  func supportsBandwidthEstimation(completion: @escaping (Result<Bool, Error>) -> Void)
+  /// Checks if adaptive bitrate streaming is supported.
+  func supportsAdaptiveBitrate(completion: @escaping (Result<Bool, Error>) -> Void)
+  /// Checks if HLS is supported.
+  func supportsHLS(completion: @escaping (Result<Bool, Error>) -> Void)
+  /// Checks if DASH is supported.
+  func supportsDASH(completion: @escaping (Result<Bool, Error>) -> Void)
+  /// Checks if device volume control is supported.
+  func supportsDeviceVolumeControl(completion: @escaping (Result<Bool, Error>) -> Void)
+  /// Checks if screen brightness control is supported.
+  func supportsScreenBrightnessControl(completion: @escaping (Result<Bool, Error>) -> Void)
   /// Gets the device volume (0.0 to 1.0).
   func getDeviceVolume(completion: @escaping (Result<Double, Error>) -> Void)
   /// Sets the device volume (0.0 to 1.0).
@@ -1492,11 +1437,11 @@ class ProVideoPlayerHostApiSetup {
     } else {
       getDurationChannel.setMessageHandler(nil)
     }
-    /// Gets the platform capabilities.
-    let getPlatformCapabilitiesChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getPlatformCapabilities\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    /// Gets static platform information.
+    let getPlatformInfoChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getPlatformInfo\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {
-      getPlatformCapabilitiesChannel.setMessageHandler { _, reply in
-        api.getPlatformCapabilities { result in
+      getPlatformInfoChannel.setMessageHandler { _, reply in
+        api.getPlatformInfo { result in
           switch result {
           case .success(let res):
             reply(wrapResult(res))
@@ -1506,7 +1451,7 @@ class ProVideoPlayerHostApiSetup {
         }
       }
     } else {
-      getPlatformCapabilitiesChannel.setMessageHandler(nil)
+      getPlatformInfoChannel.setMessageHandler(nil)
     }
     /// Enables or disables verbose logging.
     let setVerboseLoggingChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.setVerboseLogging\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
@@ -1525,6 +1470,342 @@ class ProVideoPlayerHostApiSetup {
       }
     } else {
       setVerboseLoggingChannel.setMessageHandler(nil)
+    }
+    /// Checks if Picture-in-Picture mode is supported.
+    let supportsPictureInPictureChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsPictureInPicture\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      supportsPictureInPictureChannel.setMessageHandler { _, reply in
+        api.supportsPictureInPicture { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      supportsPictureInPictureChannel.setMessageHandler(nil)
+    }
+    /// Checks if fullscreen mode is supported.
+    let supportsFullscreenChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsFullscreen\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      supportsFullscreenChannel.setMessageHandler { _, reply in
+        api.supportsFullscreen { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      supportsFullscreenChannel.setMessageHandler(nil)
+    }
+    /// Checks if background playback is supported.
+    let supportsBackgroundPlaybackChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsBackgroundPlayback\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      supportsBackgroundPlaybackChannel.setMessageHandler { _, reply in
+        api.supportsBackgroundPlayback { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      supportsBackgroundPlaybackChannel.setMessageHandler(nil)
+    }
+    /// Checks if any form of casting is supported.
+    let supportsCastingChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsCasting\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      supportsCastingChannel.setMessageHandler { _, reply in
+        api.supportsCasting { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      supportsCastingChannel.setMessageHandler(nil)
+    }
+    /// Checks if AirPlay is supported.
+    let supportsAirPlayChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsAirPlay\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      supportsAirPlayChannel.setMessageHandler { _, reply in
+        api.supportsAirPlay { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      supportsAirPlayChannel.setMessageHandler(nil)
+    }
+    /// Checks if Chromecast is supported.
+    let supportsChromecastChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsChromecast\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      supportsChromecastChannel.setMessageHandler { _, reply in
+        api.supportsChromecast { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      supportsChromecastChannel.setMessageHandler(nil)
+    }
+    /// Checks if Remote Playback API is supported.
+    let supportsRemotePlaybackChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsRemotePlayback\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      supportsRemotePlaybackChannel.setMessageHandler { _, reply in
+        api.supportsRemotePlayback { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      supportsRemotePlaybackChannel.setMessageHandler(nil)
+    }
+    /// Checks if quality selection is supported.
+    let supportsQualitySelectionChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsQualitySelection\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      supportsQualitySelectionChannel.setMessageHandler { _, reply in
+        api.supportsQualitySelection { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      supportsQualitySelectionChannel.setMessageHandler(nil)
+    }
+    /// Checks if playback speed control is supported.
+    let supportsPlaybackSpeedControlChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsPlaybackSpeedControl\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      supportsPlaybackSpeedControlChannel.setMessageHandler { _, reply in
+        api.supportsPlaybackSpeedControl { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      supportsPlaybackSpeedControlChannel.setMessageHandler(nil)
+    }
+    /// Checks if subtitles are supported.
+    let supportsSubtitlesChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsSubtitles\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      supportsSubtitlesChannel.setMessageHandler { _, reply in
+        api.supportsSubtitles { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      supportsSubtitlesChannel.setMessageHandler(nil)
+    }
+    /// Checks if external subtitles are supported.
+    let supportsExternalSubtitlesChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsExternalSubtitles\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      supportsExternalSubtitlesChannel.setMessageHandler { _, reply in
+        api.supportsExternalSubtitles { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      supportsExternalSubtitlesChannel.setMessageHandler(nil)
+    }
+    /// Checks if audio track selection is supported.
+    let supportsAudioTrackSelectionChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsAudioTrackSelection\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      supportsAudioTrackSelectionChannel.setMessageHandler { _, reply in
+        api.supportsAudioTrackSelection { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      supportsAudioTrackSelectionChannel.setMessageHandler(nil)
+    }
+    /// Checks if chapters are supported.
+    let supportsChaptersChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsChapters\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      supportsChaptersChannel.setMessageHandler { _, reply in
+        api.supportsChapters { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      supportsChaptersChannel.setMessageHandler(nil)
+    }
+    /// Checks if video metadata extraction is supported.
+    let supportsVideoMetadataExtractionChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsVideoMetadataExtraction\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      supportsVideoMetadataExtractionChannel.setMessageHandler { _, reply in
+        api.supportsVideoMetadataExtraction { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      supportsVideoMetadataExtractionChannel.setMessageHandler(nil)
+    }
+    /// Checks if network monitoring is supported.
+    let supportsNetworkMonitoringChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsNetworkMonitoring\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      supportsNetworkMonitoringChannel.setMessageHandler { _, reply in
+        api.supportsNetworkMonitoring { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      supportsNetworkMonitoringChannel.setMessageHandler(nil)
+    }
+    /// Checks if bandwidth estimation is supported.
+    let supportsBandwidthEstimationChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsBandwidthEstimation\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      supportsBandwidthEstimationChannel.setMessageHandler { _, reply in
+        api.supportsBandwidthEstimation { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      supportsBandwidthEstimationChannel.setMessageHandler(nil)
+    }
+    /// Checks if adaptive bitrate streaming is supported.
+    let supportsAdaptiveBitrateChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsAdaptiveBitrate\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      supportsAdaptiveBitrateChannel.setMessageHandler { _, reply in
+        api.supportsAdaptiveBitrate { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      supportsAdaptiveBitrateChannel.setMessageHandler(nil)
+    }
+    /// Checks if HLS is supported.
+    let supportsHLSChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsHLS\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      supportsHLSChannel.setMessageHandler { _, reply in
+        api.supportsHLS { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      supportsHLSChannel.setMessageHandler(nil)
+    }
+    /// Checks if DASH is supported.
+    let supportsDASHChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsDASH\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      supportsDASHChannel.setMessageHandler { _, reply in
+        api.supportsDASH { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      supportsDASHChannel.setMessageHandler(nil)
+    }
+    /// Checks if device volume control is supported.
+    let supportsDeviceVolumeControlChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsDeviceVolumeControl\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      supportsDeviceVolumeControlChannel.setMessageHandler { _, reply in
+        api.supportsDeviceVolumeControl { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      supportsDeviceVolumeControlChannel.setMessageHandler(nil)
+    }
+    /// Checks if screen brightness control is supported.
+    let supportsScreenBrightnessControlChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.supportsScreenBrightnessControl\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      supportsScreenBrightnessControlChannel.setMessageHandler { _, reply in
+        api.supportsScreenBrightnessControl { result in
+          switch result {
+          case .success(let res):
+            reply(wrapResult(res))
+          case .failure(let error):
+            reply(wrapError(error))
+          }
+        }
+      }
+    } else {
+      supportsScreenBrightnessControlChannel.setMessageHandler(nil)
     }
     /// Gets the device volume (0.0 to 1.0).
     let getDeviceVolumeChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerHostApi.getDeviceVolume\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)

@@ -40,6 +40,15 @@ class E2EPlatform {
   /// These platforms don't allow video autoplay in automated tests without
   /// real user gestures. E2E tests should skip playback verification on these platforms.
   static bool get hasAutoplayRestrictions => kIsWeb || isMacOS;
+
+  /// Returns true if volume controls can be tested on this platform.
+  ///
+  /// Web E2E tests require muted videos for autoplay bypass, so volume changes
+  /// don't work/make sense. Volume controls should be skipped on web.
+  ///
+  /// Note: This applies to ALL web browsers (Chrome, Safari, Firefox) due to
+  /// WebDriver autoplay restrictions requiring muted videos.
+  static bool get canTestVolumeControls => !kIsWeb;
 }
 
 /// Standard delays for E2E tests with platform-aware timing.

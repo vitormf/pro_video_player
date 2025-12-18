@@ -14,7 +14,7 @@ export 'external_subtitle_track.dart';
 export 'media_metadata.dart';
 export 'pip_action.dart';
 export 'pip_options.dart';
-export 'platform_capabilities.dart';
+export 'platform_info.dart';
 export 'playback_state.dart';
 export 'playlist.dart';
 export 'playlist_mode.dart';

@@ -176,7 +176,7 @@ class PigeonHostApiHandler: NSObject, ProVideoPlayerHostApi {
         }
     }
 
-    func getPlatformCapabilities(completion: @escaping (Result<PlatformCapabilitiesMessage, Error>) -> Void) {
+    func getPlatformInfo(completion: @escaping (Result<PlatformInfoMessage, Error>) -> Void) {
         #if os(iOS)
         let platformName = "iOS"
         #elseif os(macOS)
@@ -185,38 +185,107 @@ class PigeonHostApiHandler: NSObject, ProVideoPlayerHostApi {
         let platformName = "Unknown"
         #endif
 
-        let capabilities = PlatformCapabilitiesMessage(
-            supportsPictureInPicture: platformBehavior.isPipSupported(),
-            supportsFullscreen: true,
-            supportsBackgroundPlayback: platformBehavior.isBackgroundPlaybackSupported(),
-            supportsCasting: true,
-            supportsAirPlay: true,
-            supportsChromecast: false,
-            supportsRemotePlayback: true,
-            supportsQualitySelection: true,
-            supportsPlaybackSpeedControl: true,
-            supportsSubtitles: true,
-            supportsExternalSubtitles: true,
-            supportsAudioTrackSelection: true,
-            supportsChapters: true,
-            supportsVideoMetadataExtraction: true,
-            supportsNetworkMonitoring: true,
-            supportsBandwidthEstimation: true,
-            supportsAdaptiveBitrate: true,
-            supportsHLS: true,
-            supportsDASH: false,
-            supportsDeviceVolumeControl: true,
-            supportsScreenBrightnessControl: true,
+        let info = PlatformInfoMessage(
             platformName: platformName,
             nativePlayerType: "AVPlayer",
             additionalInfo: nil
         )
-        completion(.success(capabilities))
+        completion(.success(info))
     }
 
     func setVerboseLogging(enabled: Bool, completion: @escaping (Result<Void, Error>) -> Void) {
         VerboseLogger.shared.setEnabled(enabled)
         completion(.success(()))
+    }
+
+    // MARK: - Platform Capabilities
+
+    func supportsPictureInPicture(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(platformBehavior.isPipSupported()))
+    }
+
+    func supportsFullscreen(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(true))
+    }
+
+    func supportsBackgroundPlayback(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(platformBehavior.isBackgroundPlaybackSupported()))
+    }
+
+    func supportsCasting(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(true))
+    }
+
+    func supportsAirPlay(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(true))
+    }
+
+    func supportsChromecast(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(false))
+    }
+
+    func supportsRemotePlayback(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(false))
+    }
+
+    func supportsQualitySelection(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(true))
+    }
+
+    func supportsPlaybackSpeedControl(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(true))
+    }
+
+    func supportsSubtitles(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(true))
+    }
+
+    func supportsExternalSubtitles(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(true))
+    }
+
+    func supportsAudioTrackSelection(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(true))
+    }
+
+    func supportsChapters(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(true))
+    }
+
+    func supportsVideoMetadataExtraction(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(true))
+    }
+
+    func supportsNetworkMonitoring(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(true))
+    }
+
+    func supportsBandwidthEstimation(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(true))
+    }
+
+    func supportsAdaptiveBitrate(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(true))
+    }
+
+    func supportsHLS(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(true))
+    }
+
+    func supportsDASH(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(false))
+    }
+
+    func supportsDeviceVolumeControl(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(true))
+    }
+
+    func supportsScreenBrightnessControl(completion: @escaping (Result<Bool, Error>) -> Void) {
+        #if os(iOS)
+        completion(.success(true))
+        #else
+        completion(.success(false))
+        #endif
     }
 
     // MARK: - Device Controls
@@ -300,10 +369,9 @@ class PigeonHostApiHandler: NSObject, ProVideoPlayerHostApi {
             if let error = result as? FlutterError {
                 completion(.failure(PigeonError(code: error.code, message: error.message, details: error.details)))
             } else if let batteryDict = result as? [String: Any] {
-                let level = batteryDict["level"] as? Double ?? 0.0
-                let percentage = Int64(level * 100)
+                let percentage = batteryDict["percentage"] as? Int ?? 0
                 let isCharging = batteryDict["isCharging"] as? Bool ?? false
-                let batteryInfo = BatteryInfoMessage(percentage: percentage, isCharging: isCharging)
+                let batteryInfo = BatteryInfoMessage(percentage: Int64(percentage), isCharging: isCharging)
                 completion(.success(batteryInfo))
             } else {
                 completion(.success(nil))

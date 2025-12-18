@@ -83,14 +83,14 @@ class GestureControlsWrapper extends StatelessWidget {
     enablePlaybackSpeedGesture: enablePlaybackSpeedGesture,
     autoHideControls: autoHide,
     autoHideDelay: autoHideDuration,
-    onControlsVisibilityChanged: (visible) {
+    onControlsVisibilityChanged: (visible, {instantly = false}) {
       final isCasting = controller.value.isCasting;
       if (isCasting && !visible) return;
 
       if (visible) {
         controlsController.showControls();
       } else {
-        controlsController.hideControls();
+        controlsController.hideControls(instantly: instantly);
       }
 
       if (visible) {

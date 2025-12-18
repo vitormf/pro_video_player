@@ -132,10 +132,8 @@ while true; do
 			"⚙️  Setup & Clean")
 				task=$(printf "%s\n" \
 					"← Back to categories" \
-					"setup | 🚀 Setup project (FVM + dependencies + shared links)" \
+					"setup | 🚀 Setup project (FVM + dependencies + git hooks)" \
 					"install | 📦 Install dependencies for all packages" \
-					"setup-shared-links | 🔗 Create hard links for shared iOS/macOS sources" \
-					"verify-shared-links | ✅ Verify shared sources are in sync" \
 					"clean | 🧹 Clean all packages" \
 					"format | 🎨 Format Dart code" \
 					"format-check | 🔍 Check code format" \

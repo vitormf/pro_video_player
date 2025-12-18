@@ -8,7 +8,11 @@ import '../../shared/test_helpers.dart';
 import '../../shared/test_setup.dart';
 
 // Mock for VideoControlsState
-class MockVideoControlsState {}
+class MockVideoControlsState {
+  bool? isPipAvailable;
+  bool? isBackgroundPlaybackSupported;
+  bool? isCastingSupported;
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

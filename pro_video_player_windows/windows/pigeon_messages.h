@@ -370,189 +370,50 @@ class VideoPlayerOptionsMessage {
 };
 
 
-// Platform capabilities returned by the platform.
+// Platform information returned by the platform.
+//
+// Contains static platform metadata that doesn't require async checks.
 //
 // Generated class from Pigeon that represents data sent in messages.
-class PlatformCapabilitiesMessage {
+class PlatformInfoMessage {
  public:
   // Constructs an object setting all non-nullable fields.
-  explicit PlatformCapabilitiesMessage(
-    bool supports_picture_in_picture,
-    bool supports_fullscreen,
-    bool supports_background_playback,
-    bool supports_casting,
-    bool supports_air_play,
-    bool supports_chromecast,
-    bool supports_remote_playback,
-    bool supports_quality_selection,
-    bool supports_playback_speed_control,
-    bool supports_subtitles,
-    bool supports_external_subtitles,
-    bool supports_audio_track_selection,
-    bool supports_chapters,
-    bool supports_video_metadata_extraction,
-    bool supports_network_monitoring,
-    bool supports_bandwidth_estimation,
-    bool supports_adaptive_bitrate,
-    bool supports_h_l_s,
-    bool supports_d_a_s_h,
-    bool supports_device_volume_control,
-    bool supports_screen_brightness_control,
+  explicit PlatformInfoMessage(
     const std::string& platform_name,
     const std::string& native_player_type);
 
   // Constructs an object setting all fields.
-  explicit PlatformCapabilitiesMessage(
-    bool supports_picture_in_picture,
-    bool supports_fullscreen,
-    bool supports_background_playback,
-    bool supports_casting,
-    bool supports_air_play,
-    bool supports_chromecast,
-    bool supports_remote_playback,
-    bool supports_quality_selection,
-    bool supports_playback_speed_control,
-    bool supports_subtitles,
-    bool supports_external_subtitles,
-    bool supports_audio_track_selection,
-    bool supports_chapters,
-    bool supports_video_metadata_extraction,
-    bool supports_network_monitoring,
-    bool supports_bandwidth_estimation,
-    bool supports_adaptive_bitrate,
-    bool supports_h_l_s,
-    bool supports_d_a_s_h,
-    bool supports_device_volume_control,
-    bool supports_screen_brightness_control,
+  explicit PlatformInfoMessage(
     const std::string& platform_name,
     const std::string& native_player_type,
     const flutter::EncodableMap* additional_info);
 
-  // Whether Picture-in-Picture is supported.
-  bool supports_picture_in_picture() const;
-  void set_supports_picture_in_picture(bool value_arg);
-
-  // Whether fullscreen is supported.
-  bool supports_fullscreen() const;
-  void set_supports_fullscreen(bool value_arg);
-
-  // Whether background playback is supported.
-  bool supports_background_playback() const;
-  void set_supports_background_playback(bool value_arg);
-
-  // Whether casting is supported.
-  bool supports_casting() const;
-  void set_supports_casting(bool value_arg);
-
-  // Whether AirPlay is supported.
-  bool supports_air_play() const;
-  void set_supports_air_play(bool value_arg);
-
-  // Whether Chromecast is supported.
-  bool supports_chromecast() const;
-  void set_supports_chromecast(bool value_arg);
-
-  // Whether Remote Playback API is supported.
-  bool supports_remote_playback() const;
-  void set_supports_remote_playback(bool value_arg);
-
-  // Whether quality selection is supported.
-  bool supports_quality_selection() const;
-  void set_supports_quality_selection(bool value_arg);
-
-  // Whether playback speed control is supported.
-  bool supports_playback_speed_control() const;
-  void set_supports_playback_speed_control(bool value_arg);
-
-  // Whether subtitles are supported.
-  bool supports_subtitles() const;
-  void set_supports_subtitles(bool value_arg);
-
-  // Whether external subtitles are supported.
-  bool supports_external_subtitles() const;
-  void set_supports_external_subtitles(bool value_arg);
-
-  // Whether audio track selection is supported.
-  bool supports_audio_track_selection() const;
-  void set_supports_audio_track_selection(bool value_arg);
-
-  // Whether chapters are supported.
-  bool supports_chapters() const;
-  void set_supports_chapters(bool value_arg);
-
-  // Whether video metadata extraction is supported.
-  bool supports_video_metadata_extraction() const;
-  void set_supports_video_metadata_extraction(bool value_arg);
-
-  // Whether network monitoring is supported.
-  bool supports_network_monitoring() const;
-  void set_supports_network_monitoring(bool value_arg);
-
-  // Whether bandwidth estimation is supported.
-  bool supports_bandwidth_estimation() const;
-  void set_supports_bandwidth_estimation(bool value_arg);
-
-  // Whether adaptive bitrate streaming is supported.
-  bool supports_adaptive_bitrate() const;
-  void set_supports_adaptive_bitrate(bool value_arg);
-
-  // Whether HLS is supported.
-  bool supports_h_l_s() const;
-  void set_supports_h_l_s(bool value_arg);
-
-  // Whether DASH is supported.
-  bool supports_d_a_s_h() const;
-  void set_supports_d_a_s_h(bool value_arg);
-
-  // Whether device volume control is supported.
-  bool supports_device_volume_control() const;
-  void set_supports_device_volume_control(bool value_arg);
-
-  // Whether screen brightness control is supported.
-  bool supports_screen_brightness_control() const;
-  void set_supports_screen_brightness_control(bool value_arg);
-
-  // Platform name.
+  // Platform name (e.g., "iOS", "Android", "Web").
   const std::string& platform_name() const;
   void set_platform_name(std::string_view value_arg);
 
-  // Native player type.
+  // Native player type (e.g., "AVPlayer", "ExoPlayer", "HTML5").
   const std::string& native_player_type() const;
   void set_native_player_type(std::string_view value_arg);
 
-  // Additional platform-specific info.
+  // Additional platform-specific information as key-value pairs.
+  //
+  // May include:
+  // - OS version
+  // - SDK version
+  // - Browser user agent
+  // - Hardware capabilities
   const flutter::EncodableMap* additional_info() const;
   void set_additional_info(const flutter::EncodableMap* value_arg);
   void set_additional_info(const flutter::EncodableMap& value_arg);
 
 
  private:
-  static PlatformCapabilitiesMessage FromEncodableList(const flutter::EncodableList& list);
+  static PlatformInfoMessage FromEncodableList(const flutter::EncodableList& list);
   flutter::EncodableList ToEncodableList() const;
   friend class ProVideoPlayerHostApi;
   friend class ProVideoPlayerFlutterApi;
   friend class PigeonInternalCodecSerializer;
-  bool supports_picture_in_picture_;
-  bool supports_fullscreen_;
-  bool supports_background_playback_;
-  bool supports_casting_;
-  bool supports_air_play_;
-  bool supports_chromecast_;
-  bool supports_remote_playback_;
-  bool supports_quality_selection_;
-  bool supports_playback_speed_control_;
-  bool supports_subtitles_;
-  bool supports_external_subtitles_;
-  bool supports_audio_track_selection_;
-  bool supports_chapters_;
-  bool supports_video_metadata_extraction_;
-  bool supports_network_monitoring_;
-  bool supports_bandwidth_estimation_;
-  bool supports_adaptive_bitrate_;
-  bool supports_h_l_s_;
-  bool supports_d_a_s_h_;
-  bool supports_device_volume_control_;
-  bool supports_screen_brightness_control_;
   std::string platform_name_;
   std::string native_player_type_;
   std::optional<flutter::EncodableMap> additional_info_;
@@ -1329,12 +1190,54 @@ class ProVideoPlayerHostApi {
   virtual void GetDuration(
     int64_t player_id,
     std::function<void(ErrorOr<int64_t> reply)> result) = 0;
-  // Gets the platform capabilities.
-  virtual void GetPlatformCapabilities(std::function<void(ErrorOr<PlatformCapabilitiesMessage> reply)> result) = 0;
+  // Gets static platform information.
+  virtual void GetPlatformInfo(std::function<void(ErrorOr<PlatformInfoMessage> reply)> result) = 0;
   // Enables or disables verbose logging.
   virtual void SetVerboseLogging(
     bool enabled,
     std::function<void(std::optional<FlutterError> reply)> result) = 0;
+  // Checks if Picture-in-Picture mode is supported.
+  virtual void SupportsPictureInPicture(std::function<void(ErrorOr<bool> reply)> result) = 0;
+  // Checks if fullscreen mode is supported.
+  virtual void SupportsFullscreen(std::function<void(ErrorOr<bool> reply)> result) = 0;
+  // Checks if background playback is supported.
+  virtual void SupportsBackgroundPlayback(std::function<void(ErrorOr<bool> reply)> result) = 0;
+  // Checks if any form of casting is supported.
+  virtual void SupportsCasting(std::function<void(ErrorOr<bool> reply)> result) = 0;
+  // Checks if AirPlay is supported.
+  virtual void SupportsAirPlay(std::function<void(ErrorOr<bool> reply)> result) = 0;
+  // Checks if Chromecast is supported.
+  virtual void SupportsChromecast(std::function<void(ErrorOr<bool> reply)> result) = 0;
+  // Checks if Remote Playback API is supported.
+  virtual void SupportsRemotePlayback(std::function<void(ErrorOr<bool> reply)> result) = 0;
+  // Checks if quality selection is supported.
+  virtual void SupportsQualitySelection(std::function<void(ErrorOr<bool> reply)> result) = 0;
+  // Checks if playback speed control is supported.
+  virtual void SupportsPlaybackSpeedControl(std::function<void(ErrorOr<bool> reply)> result) = 0;
+  // Checks if subtitles are supported.
+  virtual void SupportsSubtitles(std::function<void(ErrorOr<bool> reply)> result) = 0;
+  // Checks if external subtitles are supported.
+  virtual void SupportsExternalSubtitles(std::function<void(ErrorOr<bool> reply)> result) = 0;
+  // Checks if audio track selection is supported.
+  virtual void SupportsAudioTrackSelection(std::function<void(ErrorOr<bool> reply)> result) = 0;
+  // Checks if chapters are supported.
+  virtual void SupportsChapters(std::function<void(ErrorOr<bool> reply)> result) = 0;
+  // Checks if video metadata extraction is supported.
+  virtual void SupportsVideoMetadataExtraction(std::function<void(ErrorOr<bool> reply)> result) = 0;
+  // Checks if network monitoring is supported.
+  virtual void SupportsNetworkMonitoring(std::function<void(ErrorOr<bool> reply)> result) = 0;
+  // Checks if bandwidth estimation is supported.
+  virtual void SupportsBandwidthEstimation(std::function<void(ErrorOr<bool> reply)> result) = 0;
+  // Checks if adaptive bitrate streaming is supported.
+  virtual void SupportsAdaptiveBitrate(std::function<void(ErrorOr<bool> reply)> result) = 0;
+  // Checks if HLS is supported.
+  virtual void SupportsHLS(std::function<void(ErrorOr<bool> reply)> result) = 0;
+  // Checks if DASH is supported.
+  virtual void SupportsDASH(std::function<void(ErrorOr<bool> reply)> result) = 0;
+  // Checks if device volume control is supported.
+  virtual void SupportsDeviceVolumeControl(std::function<void(ErrorOr<bool> reply)> result) = 0;
+  // Checks if screen brightness control is supported.
+  virtual void SupportsScreenBrightnessControl(std::function<void(ErrorOr<bool> reply)> result) = 0;
   // Gets the device volume (0.0 to 1.0).
   virtual void GetDeviceVolume(std::function<void(ErrorOr<double> reply)> result) = 0;
   // Sets the device volume (0.0 to 1.0).

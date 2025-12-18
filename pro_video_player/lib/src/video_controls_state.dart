@@ -45,6 +45,7 @@ class VideoControlsState extends ChangeNotifier {
 
   bool _visible = true;
   bool _isFullyVisible = true;
+  bool _hideInstantly = false;
 
   /// Whether the controls are currently visible.
   bool get visible => _visible;
@@ -54,17 +55,28 @@ class VideoControlsState extends ChangeNotifier {
   /// This tracks if the show/hide animation is fully finished.
   bool get isFullyVisible => _isFullyVisible;
 
+  /// Whether controls should hide instantly without animation.
+  ///
+  /// This is used during gestures to hide controls immediately,
+  /// preventing the black overlay from being visible during seek/volume/brightness gestures.
+  bool get hideInstantly => _hideInstantly;
+
   /// Shows the controls and notifies listeners.
   void showControls() {
     _visible = true;
     _isFullyVisible = true; // Immediately mark as fully visible for tests/instant show
+    _hideInstantly = false; // Reset instant hide flag when showing
     notifyListeners();
   }
 
   /// Hides the controls and notifies listeners.
-  void hideControls() {
+  ///
+  /// If [instantly] is true, the controls will hide without animation.
+  /// This is useful during gestures where controls should disappear immediately.
+  void hideControls({bool instantly = false}) {
     _visible = false;
     _isFullyVisible = false;
+    _hideInstantly = instantly;
     notifyListeners();
   }
 
@@ -111,18 +123,25 @@ class VideoControlsState extends ChangeNotifier {
 
   // ========== Feature Support ==========
 
-  bool _isPipAvailable = false;
-  bool _isBackgroundPlaybackSupported = false;
-  bool _isCastingSupported = false;
+  // Nullable booleans to track loading state:
+  // - null: capability check in progress (loading)
+  // - true: feature supported
+  // - false: feature not supported
+  bool? _isPipAvailable;
+  bool? _isBackgroundPlaybackSupported;
+  bool? _isCastingSupported;
 
   /// Whether Picture-in-Picture is available on this device.
-  bool get isPipAvailable => _isPipAvailable;
+  /// Returns `null` while capability check is in progress.
+  bool? get isPipAvailable => _isPipAvailable;
 
   /// Whether background playback is supported on this platform.
-  bool get isBackgroundPlaybackSupported => _isBackgroundPlaybackSupported;
+  /// Returns `null` while capability check is in progress.
+  bool? get isBackgroundPlaybackSupported => _isBackgroundPlaybackSupported;
 
   /// Whether casting is supported on this device.
-  bool get isCastingSupported => _isCastingSupported;
+  /// Returns `null` while capability check is in progress.
+  bool? get isCastingSupported => _isCastingSupported;
 
   /// Sets whether PiP is available.
   void setIsPipAvailable({required bool available}) {

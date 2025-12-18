@@ -687,7 +687,10 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
         final controlsOverlay = Positioned.fill(
           child: AnimatedOpacity(
             opacity: _controlsController.controlsState.visible ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 100),
+            // Hide instantly (no animation) during gestures, normal animation otherwise
+            duration: _controlsController.controlsState.hideInstantly
+                ? Duration.zero
+                : const Duration(milliseconds: 100),
             onEnd: () {
               if (mounted) {
                 setState(() {

@@ -15,10 +15,14 @@
 
 # test: Run all Dart/Flutter tests in parallel
 # Use when: Verifying code works correctly
+# Note: Set TEST_TIMEOUT_MINS to override default 5 minute per-package timeout
 test: verify-setup
 	@start_time=$$(date +%s); \
-	printf "$(TEST) Running all tests in parallel...\n\n"; \
-	$(call run-parallel-packages,$(PACKAGES),${FLUTTER} test,--platform chrome,passed,Some tests failed); \
+	pkg_count=$$(echo $(PACKAGES) | wc -w | tr -d ' '); \
+	printf "$(TEST) Running tests on $$pkg_count packages in parallel...\n"; \
+	printf "$(INFO) Packages: $(PACKAGES)\n"; \
+	printf "$(INFO) Timeout: $${TEST_TIMEOUT_MINS:-5} minutes per package\n\n"; \
+	$(call run-parallel-packages,$(PACKAGES),timeout $$(($${TEST_TIMEOUT_MINS:-5} * 60)) ${FLUTTER} test,--platform chrome,passed,Some tests failed); \
 	elapsed=$$(( $$(date +%s) - $$start_time )); \
 	echo "$(CHECK) All tests passed ($${elapsed}s)"
 
@@ -71,9 +75,9 @@ check-duplicates:
 		echo "$(WARN)  Code duplication detected - must refactor (see output above)"; \
 	fi
 
-# check: Run all checks (format, analyze, test, shared sources, duplicates)
+# check: Run all checks (format, analyze, test, duplicates)
 # Use when: Pre-commit or PR validation
-check: verify-shared-links format-check analyze check-duplicates test
+check: format-check analyze check-duplicates test
 	@echo "$(CHECK) All checks passed!"
 
 # quick-check: Fast parallel compilation check for Dart, Kotlin, Swift, formatting, shared links, logging, and duplicates
@@ -96,7 +100,7 @@ quick-check:
 	}; \
 	\
 	dart_log=$$(mktemp); kotlin_log=$$(mktemp); ios_log=$$(mktemp); macos_log=$$(mktemp); \
-	format_log=$$(mktemp); links_log=$$(mktemp); logging_log=$$(mktemp); duplicates_log=$$(mktemp); \
+	format_log=$$(mktemp); logging_log=$$(mktemp); duplicates_log=$$(mktemp); \
 	\
 	( \
 		start=$$(date +%s); dart_pids=""; dart_pkg_logs=""; \
@@ -122,7 +126,6 @@ quick-check:
 	( run_timed $$ios_log "cd example-showcase/ios && xcodebuild build -workspace Runner.xcworkspace -scheme Runner -destination 'generic/platform=iOS Simulator' CODE_SIGN_IDENTITY='' CODE_SIGNING_REQUIRED=NO -quiet" ) & \
 	( run_timed $$macos_log "cd example-showcase/macos && xcodebuild build -workspace Runner.xcworkspace -scheme Runner -destination 'platform=macOS' CODE_SIGN_IDENTITY='' CODE_SIGNING_REQUIRED=NO -quiet" ) & \
 	( run_timed $$format_log "${DART} format . -l 120 --set-exit-if-changed --output=none" ) & \
-	( run_timed $$links_log "./makefiles/scripts/verify-shared-links.sh" ) & \
 	( run_timed $$logging_log "./makefiles/scripts/check-verbose-logging.sh" ) & \
 	( \
 		start=$$(date +%s); \
@@ -155,26 +158,25 @@ quick-check:
 		result=$$(parse_result "$$log"); time=$$(parse_time "$$log"); error_log=$$(parse_error_log "$$log"); \
 		[ -z "$$result" ] && return 1; \
 		case "$$id:$$result" in \
-			*:OK) printf "%d/8 $(CHECK) $$name: passed ($${time}s)\n" "$$count" ;; \
+			*:OK) printf "%d/7 $(CHECK) $$name: passed ($${time}s)\n" "$$count" ;; \
 			dart:FAILED) \
 				failed=$$(cat $$log | cut -d: -f2); \
-				printf "%d/8 $(CROSS) $$name: failed ($${time}s) - $$failed\n" "$$count"; \
+				printf "%d/7 $(CROSS) $$name: failed ($${time}s) - $$failed\n" "$$count"; \
 				if [ -f "$$error_log" ]; then \
 					echo "$$error_log" >> "$$collected_errors"; \
 				fi; \
 				ret=2 ;; \
-			format:FAILED) printf "%d/8 $(CROSS) $$name: failed ($${time}s) - run 'make format' to fix\n" "$$count"; ret=2 ;; \
-			links:FAILED) printf "%d/8 $(CROSS) $$name: iOS/macOS sources out of sync ($${time}s) - run 'make setup-shared-links'\n" "$$count"; ret=2 ;; \
-			logging:FAILED) printf "%d/8 $(CROSS) $$name: found unconditional log statements ($${time}s) - run ./makefiles/scripts/check-verbose-logging.sh for details\n" "$$count"; ret=2 ;; \
-			duplicates:SKIPPED) printf "%d/8 $(INFO) $$name: skipped ($${time}s) - jscpd not installed\n" "$$count" ;; \
+			format:FAILED) printf "%d/7 $(CROSS) $$name: failed ($${time}s) - run 'make format' to fix\n" "$$count"; ret=2 ;; \
+			logging:FAILED) printf "%d/7 $(CROSS) $$name: found unconditional log statements ($${time}s) - run ./makefiles/scripts/check-verbose-logging.sh for details\n" "$$count"; ret=2 ;; \
+			duplicates:SKIPPED) printf "%d/7 $(INFO) $$name: skipped ($${time}s) - jscpd not installed\n" "$$count" ;; \
 			duplicates:FAILED) \
-				printf "%d/8 $(CROSS) $$name: code duplication detected ($${time}s)\n" "$$count"; \
+				printf "%d/7 $(CROSS) $$name: code duplication detected ($${time}s)\n" "$$count"; \
 				if [ -f "$$error_log" ]; then \
 					echo "$$error_log" >> "$$collected_errors"; \
 				fi; \
 				ret=2 ;; \
 			*:FAILED) \
-				printf "%d/8 $(CROSS) $$name: failed ($${time}s)\n" "$$count"; \
+				printf "%d/7 $(CROSS) $$name: failed ($${time}s)\n" "$$count"; \
 				if [ -f "$$error_log" ]; then \
 					echo "$$error_log" >> "$$collected_errors"; \
 				fi; \
@@ -186,7 +188,7 @@ quick-check:
 	has_failures=0; completed=""; count=0; collected_errors=$$(mktemp); \
 	while true; do \
 		all_done=1; \
-		for check in "dart|Dart|$$dart_log" "kotlin|Kotlin|$$kotlin_log" "ios|iOS (Swift)|$$ios_log" "macos|macOS (Swift)|$$macos_log" "format|Format|$$format_log" "links|Shared Links|$$links_log" "logging|Logging|$$logging_log" "duplicates|Duplicates|$$duplicates_log"; do \
+		for check in "dart|Dart|$$dart_log" "kotlin|Kotlin|$$kotlin_log" "ios|iOS (Swift)|$$ios_log" "macos|macOS (Swift)|$$macos_log" "format|Format|$$format_log" "logging|Logging|$$logging_log" "duplicates|Duplicates|$$duplicates_log"; do \
 			id=$$(echo "$$check" | cut -d'|' -f1); \
 			case "$$completed" in *"$$id"*) continue ;; esac; \
 			name=$$(echo "$$check" | cut -d'|' -f2); log=$$(echo "$$check" | cut -d'|' -f3-); \
@@ -448,7 +450,7 @@ test-ios-native: verify-setup
 	@xcrun simctl boot $(IOS_SIMULATOR_ID) 2>/dev/null || true
 	@sleep 2
 	@echo "$(TOOLS) Building and testing..."
-	@cd example-showcase/ios && set -o pipefail && xcodebuild test \
+	@output=$$(cd example-showcase/ios && set -o pipefail && xcodebuild test \
 		-workspace Runner.xcworkspace \
 		-scheme Runner \
 		-destination 'platform=iOS Simulator,id=$(IOS_SIMULATOR_ID)' \
@@ -458,9 +460,15 @@ test-ios-native: verify-setup
 		CODE_SIGN_IDENTITY="" \
 		CODE_SIGNING_REQUIRED=NO 2>&1 | \
 		grep -v "^[[:space:]]*export " | \
-		grep -E "(Test Suite '(All tests|RunnerTests|VideoPlayer|VideoPlayerView)'|Executed [0-9]+ tests|BUILD SUCCEEDED|BUILD FAILED|\*\* TEST)" || true
-	@echo ""
-	@echo "$(CHECK) iOS native tests complete!"
+		grep -E "(Test Suite '(All tests|RunnerTests|VideoPlayer|VideoPlayerView)'|Executed [0-9]+ tests|BUILD SUCCEEDED|BUILD FAILED|\*\* TEST)" || true); \
+	echo "$$output"; \
+	echo ""; \
+	if echo "$$output" | grep -q "BUILD FAILED\|\*\* TEST FAILED"; then \
+		echo "$(CROSS) iOS native tests failed!"; \
+		exit 1; \
+	else \
+		echo "$(CHECK) iOS native tests complete!"; \
+	fi
 
 # test-ios-native-coverage: Run iOS native tests with coverage
 test-ios-native-coverage:
@@ -489,21 +497,27 @@ test-ios-native-coverage:
 # test-macos-native: Run macOS native tests
 test-macos-native: verify-setup
 	@echo "$(TEST) Running macOS native tests..."
-	@cd example-showcase/macos && set -o pipefail && xcodebuild test \
+	@output=$$(cd example-showcase/macos && set -o pipefail && xcodebuild test \
 		-workspace Runner.xcworkspace \
 		-scheme Runner \
 		-destination 'platform=macOS' \
 		CODE_SIGN_IDENTITY="" \
 		CODE_SIGNING_REQUIRED=NO 2>&1 | \
 		grep -v "^[[:space:]]*export " | \
-		grep -E "(Test Suite '(All tests|RunnerTests|VideoPlayer|VideoPlayerView)'|Executed [0-9]+ tests|BUILD SUCCEEDED|BUILD FAILED|\*\* TEST)" || true
-	@echo ""
-	@echo "$(CHECK) macOS native tests complete!"
+		grep -E "(Test Suite '(All tests|RunnerTests|VideoPlayer|VideoPlayerView)'|Executed [0-9]+ tests|BUILD SUCCEEDED|BUILD FAILED|\*\* TEST)" || true); \
+	echo "$$output"; \
+	echo ""; \
+	if echo "$$output" | grep -q "BUILD FAILED\|\*\* TEST FAILED"; then \
+		echo "$(CROSS) macOS native tests failed!"; \
+		exit 1; \
+	else \
+		echo "$(CHECK) macOS native tests complete!"; \
+	fi
 
 # test-macos-native-coverage: Run macOS native tests with coverage
 test-macos-native-coverage:
 	@echo "$(TEST) Running macOS native tests with coverage..."
-	@cd example-showcase/macos && set -o pipefail && xcodebuild test \
+	@output=$$(cd example-showcase/macos && set -o pipefail && xcodebuild test \
 		-workspace Runner.xcworkspace \
 		-scheme Runner \
 		-destination 'platform=macOS' \
@@ -511,11 +525,16 @@ test-macos-native-coverage:
 		CODE_SIGN_IDENTITY="" \
 		CODE_SIGNING_REQUIRED=NO 2>&1 | \
 		grep -v "^[[:space:]]*export " | \
-		grep -E "(Test Suite '(All tests|RunnerTests|VideoPlayer|VideoPlayerView)'|Executed [0-9]+ tests|BUILD SUCCEEDED|BUILD FAILED|\*\* TEST)" || true
-	@echo ""
-	@$(SCRIPTS_DIR)/macos-coverage-report.sh "pro_video_player_macos.framework"
-	@echo ""
-	@echo "$(CHECK) macOS native coverage complete!"
+		grep -E "(Test Suite '(All tests|RunnerTests|VideoPlayer|VideoPlayerView)'|Executed [0-9]+ tests|BUILD SUCCEEDED|BUILD FAILED|\*\* TEST)" || true); \
+	echo "$$output"; \
+	echo ""; \
+	if echo "$$output" | grep -q "BUILD FAILED\|\*\* TEST FAILED"; then \
+		echo "$(CROSS) macOS native tests failed!"; \
+		exit 1; \
+	fi; \
+	$(SCRIPTS_DIR)/macos-coverage-report.sh "pro_video_player_macos.framework"; \
+	echo ""; \
+	echo "$(CHECK) macOS native coverage complete!"
 
 # test-native: Run all native tests
 test-native: test-android-native test-ios-native test-macos-native
@@ -607,8 +626,9 @@ test-e2e-macos: verify-setup
 	@echo "$(CHECK) E2E UI tests on macOS complete!"
 
 # test-e2e-web: Run E2E UI tests on Chrome (web)
-# Note: Uses custom Chrome wrapper to bypass autoplay restrictions for video testing
-# Note: chrome-no-autoplay.sh launches Chrome with --autoplay-policy=no-user-gesture-required
+# Note: ChromeDriver runs on port 4444 (required by flutter drive)
+# Note: Videos are muted for autoplay (WebDriver autoplay restrictions)
+# Note: Volume tests are skipped on web (see canTestVolumeControls in E2E test helpers)
 test-e2e-web: verify-setup
 	@echo "$(TEST) Running E2E UI tests on Chrome (web)..."
 	@# Check if chromedriver is installed
@@ -616,27 +636,94 @@ test-e2e-web: verify-setup
 		echo "$(INFO) chromedriver not found. Installing via Homebrew..."; \
 		brew install --cask chromedriver 2>/dev/null || brew upgrade --cask chromedriver 2>/dev/null || true; \
 	fi
-	@# Kill any existing chromedriver processes
-	@pkill -f chromedriver 2>/dev/null || true
-	@# Start chromedriver in background
-	@echo "$(INFO) Starting chromedriver on port 4444..."
+	@# Force kill any existing chromedriver processes to ensure clean state
+	@pkill -9 -f chromedriver 2>/dev/null || true
+	@sleep 1
+	@# Start chromedriver manually on port 4444 (required by flutter drive)
+	@echo "$(INFO) Starting ChromeDriver on port 4444..."
 	@chromedriver --port=4444 > /dev/null 2>&1 & \
 		CHROMEDRIVER_PID=$$!; \
 		sleep 2; \
-		echo "$(INFO) chromedriver started (PID: $$CHROMEDRIVER_PID)"; \
-		echo "$(INFO) Using Chrome with autoplay restrictions disabled"; \
-		CHROME_WRAPPER="$$(pwd)/example-showcase/chrome-no-autoplay.sh"; \
+		echo "$(INFO) ChromeDriver started (PID: $$CHROMEDRIVER_PID)"; \
 		cd example-showcase && ${FLUTTER} drive \
 			--driver=test_driver/integration_test.dart \
 			--target=integration_test/e2e_ui_test.dart \
 			-d chrome \
-			--chrome-binary="$$CHROME_WRAPPER"; \
+			--no-headless; \
 		EXIT_CODE=$$?; \
-		echo "$(INFO) Stopping chromedriver..."; \
-		pkill -f chromedriver 2>/dev/null || true; \
+		echo "$(INFO) Force stopping ChromeDriver..."; \
+		pkill -9 -f chromedriver 2>/dev/null || true; \
 		if [ $$EXIT_CODE -ne 0 ]; then exit $$EXIT_CODE; fi
 	@echo ""
 	@echo "$(CHECK) E2E UI tests on Chrome complete!"
+
+# test-e2e-safari: Run E2E UI tests on Safari (web)
+# Note: SafariDriver runs on port 4445 (to avoid conflicts with ChromeDriver on 4444)
+# Note: Requires safaridriver to be enabled (Safari → Develop → Allow Remote Automation)
+# Note: Videos may not autoplay in WebDriver environment (browser autoplay restrictions)
+test-e2e-safari: verify-setup
+	@echo "$(TEST) Running E2E UI tests on Safari (web)..."
+	@# Check if safaridriver is available
+	@if ! command -v safaridriver >/dev/null 2>&1; then \
+		echo "$(ERROR) safaridriver not found. Safari WebDriver is only available on macOS."; \
+		exit 1; \
+	fi
+	@# Force kill any existing safaridriver processes
+	@pkill -9 -f safaridriver 2>/dev/null || true
+	@sleep 1
+	@# Start safaridriver in background on port 4445
+	@echo "$(INFO) Starting SafariDriver on port 4445..."
+	@safaridriver --port=4445 > /dev/null 2>&1 & \
+		SAFARIDRIVER_PID=$$!; \
+		sleep 2; \
+		echo "$(INFO) SafariDriver started (PID: $$SAFARIDRIVER_PID)"; \
+		cd example-showcase && ${FLUTTER} drive \
+			--driver=test_driver/integration_test.dart \
+			--target=integration_test/e2e_ui_test.dart \
+			-d web-server \
+			--browser-name=safari \
+			--driver-port=4445 \
+			--no-headless; \
+		EXIT_CODE=$$?; \
+		echo "$(INFO) Force stopping SafariDriver..."; \
+		pkill -9 -f safaridriver 2>/dev/null || true; \
+		if [ $$EXIT_CODE -ne 0 ]; then exit $$EXIT_CODE; fi
+	@echo ""
+	@echo "$(CHECK) E2E UI tests on Safari complete!"
+
+# test-e2e-firefox: Run E2E UI tests on Firefox (web)
+# Note: GeckoDriver runs on port 4446 (to avoid conflicts with ChromeDriver on 4444 and SafariDriver on 4445)
+# Note: Requires geckodriver to be installed (brew install geckodriver)
+# Note: Videos may not autoplay in WebDriver environment (browser autoplay restrictions)
+test-e2e-firefox: verify-setup
+	@echo "$(TEST) Running E2E UI tests on Firefox (web)..."
+	@# Check if geckodriver is installed
+	@if ! command -v geckodriver >/dev/null 2>&1; then \
+		echo "$(INFO) geckodriver not found. Installing via Homebrew..."; \
+		brew install geckodriver 2>/dev/null || brew upgrade geckodriver 2>/dev/null || true; \
+	fi
+	@# Force kill any existing geckodriver processes
+	@pkill -9 -f geckodriver 2>/dev/null || true
+	@sleep 1
+	@# Start geckodriver in background on port 4446
+	@echo "$(INFO) Starting GeckoDriver on port 4446..."
+	@geckodriver --port=4446 > /dev/null 2>&1 & \
+		GECKODRIVER_PID=$$!; \
+		sleep 2; \
+		echo "$(INFO) GeckoDriver started (PID: $$GECKODRIVER_PID)"; \
+		cd example-showcase && ${FLUTTER} drive \
+			--driver=test_driver/integration_test.dart \
+			--target=integration_test/e2e_ui_test.dart \
+			-d web-server \
+			--browser-name=firefox \
+			--driver-port=4446 \
+			--no-headless; \
+		EXIT_CODE=$$?; \
+		echo "$(INFO) Force stopping GeckoDriver..."; \
+		pkill -9 -f geckodriver 2>/dev/null || true; \
+		if [ $$EXIT_CODE -ne 0 ]; then exit $$EXIT_CODE; fi
+	@echo ""
+	@echo "$(CHECK) E2E UI tests on Firefox complete!"
 
 # test-e2e-sequential: Run E2E UI tests on ALL platforms SEQUENTIALLY
 test-e2e-sequential: verify-setup

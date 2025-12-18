@@ -35,6 +35,7 @@ class SubtitleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => IconButton(
+    key: const Key('toolbar_subtitle_button'),
     icon: Icon(hasSelectedSubtitle ? Icons.closed_caption : Icons.closed_caption_off, color: theme.primaryColor),
     iconSize: 20,
     tooltip: 'Subtitles',

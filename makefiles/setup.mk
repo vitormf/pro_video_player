@@ -1,7 +1,7 @@
 # Setup and initialization tasks
 # Includes development environment setup and project initialization
 
-.PHONY: setup install clean format format-check fix setup-shared-links verify-shared-links setup-git-hooks
+.PHONY: setup install clean format format-check fix setup-git-hooks
 
 # Helper function to signal completion with audible alert
 # Usage: $(call done_signal,message,emoji,suffix)
@@ -14,13 +14,13 @@ define done_signal
 	echo "$(if $(2),$(2),$(CHECK)) $(1)$(if $(3), $(3))" && ([ -z "$$CI" ] && say "$(1)" || true)
 endef
 
-# setup: Complete project setup (FVM + dependencies + shared links + git hooks)
+# setup: Complete project setup (FVM + dependencies + git hooks)
 # Use when: First setup or after cloning the repository
+# Note: Swift sources are automatically handled by CocoaPods during pod install
 setup: verify-tools
 	@echo "$(TOOLS) Setting up FVM..."
 	@fvm install $(OUTPUT_REDIRECT)
 	@echo "$(CHECK) FVM setup complete"
-	@$(MAKE) setup-shared-links
 	@$(MAKE) setup-git-hooks
 	@$(MAKE) install
 	@$(call done_signal,Setup complete)
@@ -93,16 +93,6 @@ fix:
 	elapsed=$$(( $$(date +%s) - $$start_time )); \
 	printf "\r$(CHECK) Fixes applied ($${elapsed}s)\n"
 
-# setup-shared-links: Create hard links for shared iOS/macOS Swift sources
-# Use when: After cloning, or if shared files become out of sync
-# Note: Hard links ensure editing any copy updates all - single source of truth
-setup-shared-links:
-	@./makefiles/scripts/setup-shared-links.sh
-
-# verify-shared-links: Verify shared iOS/macOS Swift sources are in sync
-# Use when: CI validation, pre-commit check, or debugging sync issues
-verify-shared-links:
-	@./makefiles/scripts/verify-shared-links.sh
 
 # setup-git-hooks: Configure git to use project hooks
 # Use when: After cloning, ensures pre-commit hook runs automatically

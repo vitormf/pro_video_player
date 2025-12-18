@@ -126,30 +126,9 @@ class PigeonHostApiHandler(
 
     // MARK: - Configuration Methods
 
-    override fun getPlatformCapabilities(callback: (Result<PlatformCapabilitiesMessage>) -> Unit) {
+    override fun getPlatformInfo(callback: (Result<PlatformInfoMessage>) -> Unit) {
         try {
-            val message = PlatformCapabilitiesMessage(
-                supportsPictureInPicture = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O,
-                supportsFullscreen = true,
-                supportsBackgroundPlayback = true,
-                supportsCasting = true,
-                supportsAirPlay = false,
-                supportsChromecast = true,
-                supportsRemotePlayback = false,
-                supportsQualitySelection = true,
-                supportsPlaybackSpeedControl = true,
-                supportsSubtitles = true,
-                supportsExternalSubtitles = true,
-                supportsAudioTrackSelection = true,
-                supportsChapters = true,
-                supportsVideoMetadataExtraction = true,
-                supportsNetworkMonitoring = true,
-                supportsBandwidthEstimation = true,
-                supportsAdaptiveBitrate = true,
-                supportsHLS = true,
-                supportsDASH = true,
-                supportsDeviceVolumeControl = true,
-                supportsScreenBrightnessControl = true,
+            val message = PlatformInfoMessage(
                 platformName = "Android",
                 nativePlayerType = "ExoPlayer",
                 additionalInfo = mapOf(
@@ -160,7 +139,7 @@ class PigeonHostApiHandler(
             )
             callback(Result.success(message))
         } catch (e: Exception) {
-            callback(Result.failure(FlutterError("CAPABILITIES_ERROR", e.message, null)))
+            callback(Result.failure(FlutterError("PLATFORM_INFO_ERROR", e.message, null)))
         }
     }
 
@@ -171,6 +150,92 @@ class PigeonHostApiHandler(
         } catch (e: Exception) {
             callback(Result.failure(FlutterError("LOGGING_ERROR", e.message, null)))
         }
+    }
+
+    // MARK: - Platform Capabilities
+
+    override fun supportsPictureInPicture(callback: (Result<Boolean>) -> Unit) {
+        callback(Result.success(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O))
+    }
+
+    override fun supportsFullscreen(callback: (Result<Boolean>) -> Unit) {
+        callback(Result.success(true))
+    }
+
+    override fun supportsBackgroundPlayback(callback: (Result<Boolean>) -> Unit) {
+        callback(Result.success(true))
+    }
+
+    override fun supportsCasting(callback: (Result<Boolean>) -> Unit) {
+        callback(Result.success(true))
+    }
+
+    override fun supportsAirPlay(callback: (Result<Boolean>) -> Unit) {
+        callback(Result.success(false))
+    }
+
+    override fun supportsChromecast(callback: (Result<Boolean>) -> Unit) {
+        callback(Result.success(true))
+    }
+
+    override fun supportsRemotePlayback(callback: (Result<Boolean>) -> Unit) {
+        callback(Result.success(false))
+    }
+
+    override fun supportsQualitySelection(callback: (Result<Boolean>) -> Unit) {
+        callback(Result.success(true))
+    }
+
+    override fun supportsPlaybackSpeedControl(callback: (Result<Boolean>) -> Unit) {
+        callback(Result.success(true))
+    }
+
+    override fun supportsSubtitles(callback: (Result<Boolean>) -> Unit) {
+        callback(Result.success(true))
+    }
+
+    override fun supportsExternalSubtitles(callback: (Result<Boolean>) -> Unit) {
+        callback(Result.success(true))
+    }
+
+    override fun supportsAudioTrackSelection(callback: (Result<Boolean>) -> Unit) {
+        callback(Result.success(true))
+    }
+
+    override fun supportsChapters(callback: (Result<Boolean>) -> Unit) {
+        callback(Result.success(true))
+    }
+
+    override fun supportsVideoMetadataExtraction(callback: (Result<Boolean>) -> Unit) {
+        callback(Result.success(true))
+    }
+
+    override fun supportsNetworkMonitoring(callback: (Result<Boolean>) -> Unit) {
+        callback(Result.success(true))
+    }
+
+    override fun supportsBandwidthEstimation(callback: (Result<Boolean>) -> Unit) {
+        callback(Result.success(true))
+    }
+
+    override fun supportsAdaptiveBitrate(callback: (Result<Boolean>) -> Unit) {
+        callback(Result.success(true))
+    }
+
+    override fun supportsHLS(callback: (Result<Boolean>) -> Unit) {
+        callback(Result.success(true))
+    }
+
+    override fun supportsDASH(callback: (Result<Boolean>) -> Unit) {
+        callback(Result.success(true))
+    }
+
+    override fun supportsDeviceVolumeControl(callback: (Result<Boolean>) -> Unit) {
+        callback(Result.success(true))
+    }
+
+    override fun supportsScreenBrightnessControl(callback: (Result<Boolean>) -> Unit) {
+        callback(Result.success(true))
     }
 
     override fun setLooping(playerId: Long, looping: Boolean, callback: (Result<Unit>) -> Unit) {

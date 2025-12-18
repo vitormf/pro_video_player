@@ -116,7 +116,9 @@ void main() {
           child: VideoPlayerGestureDetector(
             key: const Key('test_gesture_detector'),
             controller: controller,
-            onControlsVisibilityChanged: onControlsVisibilityChanged,
+            onControlsVisibilityChanged: onControlsVisibilityChanged != null
+                ? (visible, {instantly = false}) => onControlsVisibilityChanged(visible)
+                : null,
             child: ProVideoPlayer(controller: controller),
           ),
         ),

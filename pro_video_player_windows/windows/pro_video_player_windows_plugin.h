@@ -1,7 +1,6 @@
 #ifndef FLUTTER_PLUGIN_PRO_VIDEO_PLAYER_WINDOWS_PLUGIN_H_
 #define FLUTTER_PLUGIN_PRO_VIDEO_PLAYER_WINDOWS_PLUGIN_H_
 
-#include <flutter/method_channel.h>
 #include <flutter/plugin_registrar_windows.h>
 
 #include <memory>
@@ -19,12 +18,6 @@ class ProVideoPlayerWindowsPlugin : public flutter::Plugin {
   // Disallow copy and assign.
   ProVideoPlayerWindowsPlugin(const ProVideoPlayerWindowsPlugin&) = delete;
   ProVideoPlayerWindowsPlugin& operator=(const ProVideoPlayerWindowsPlugin&) = delete;
-
- private:
-  // Called when a method is called on this plugin's channel from Dart.
-  void HandleMethodCall(
-      const flutter::MethodCall<flutter::EncodableValue> &method_call,
-      std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
 };
 
 }  // namespace pro_video_player_windows
