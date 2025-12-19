@@ -340,6 +340,10 @@ void main() {
         manager.resetHideTimer();
         await Future<void>.delayed(const Duration(seconds: 1));
         manager.dispose(); // Dispose after 1 second
+
+        // Flush microtasks to ensure dispose completes and timers are cancelled
+        await Future<void>.delayed(Duration.zero);
+
         await Future<void>.delayed(const Duration(seconds: 1, milliseconds: 100));
 
         // Assert - Timer was cancelled, should not fire
@@ -354,6 +358,10 @@ void main() {
         manager.handleTap(position); // Start single tap timer
         await Future<void>.delayed(TestDelays.stateUpdate);
         manager.dispose(); // Dispose before timer completes
+
+        // Flush microtasks to ensure dispose completes and timers are cancelled
+        await Future<void>.delayed(Duration.zero);
+
         await Future<void>.delayed(TestDelays.doubleTap);
 
         // Assert - Timer was cancelled, should not fire

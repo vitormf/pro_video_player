@@ -153,6 +153,11 @@ This document tracks the development progress and planned features for the Pro V
   - 13 button components, 7 picker dialogs
   - MobileVideoControls + DesktopVideoControls
   - 120 tests (116 passing)
+- Dependency Injection Container (ControllerServices)
+  - Simplified InitializationCoordinator (~185 lines removed)
+  - Reduced ProVideoPlayerController from 12 manager fields to 1 services field
+  - 4-phase dependency wiring handles cross-manager and circular dependencies
+  - All 131 tests passing
 
 ### Package Rename
 - Renamed package from `platform_video_player` to `pro_video_player`
@@ -461,9 +466,177 @@ This document tracks the development progress and planned features for the Pro V
 
 (No tasks currently in progress)
 
+### Recently Completed
+
+- **VideoPlayerControls Parameter Grouping** - Reduced constructor parameters from 67 to 21 by introducing 5 configuration objects (ButtonsConfig, GestureConfig, ControlsBehaviorConfig, PlaybackOptionsConfig, FullscreenConfig). VideoControlsController reduced from 26 to 12 parameters. Main code compiles successfully. Test suite requires mechanical updates to use new config objects (test updates in progress).
+
+- **Dependency Injection Container** - Simplified controller architecture with ControllerServices container (~185 lines reduced from InitializationCoordinator, 12 manager fields → 1 services field in ProVideoPlayerController, all tests passing)
+
 ---
 
 ## Planned (High Priority) 🔥
+
+<details>
+<summary><strong>video_player Drop-in Replacement Compatibility Layer</strong></summary>
+
+- [ ] **video_player Drop-in Replacement Compatibility Layer**
+  - **Rationale:** Enable using pro_video_player as a true drop-in replacement for Flutter's video_player library, allowing consumers to swap imports without code changes
+  - **Current State Analysis:**
+    - ✅ ProVideoPlayerController extends ValueNotifier<VideoPlayerValue>
+    - ✅ Named constructors: .network(), .file(), .asset()
+    - ✅ Compatibility properties: dataSource, dataSourceType, httpHeaders, position (async)
+    - ✅ Caption, ClosedCaptionFile, DurationRange classes exist
+    - ✅ setClosedCaptionFile() and setCaptionOffset() exist (partial implementation)
+    - ✅ VideoPlayerValue has most required properties
+    - ❌ Missing: closedCaptionFile constructor parameter, .networkUrl() constructor, UI widgets
+  - **Implementation Approach - Wrapper Layer:**
+    - Create `lib/video_player_compat.dart` export file with video_player API
+    - Wrapper classes delegate to Pro equivalents internally
+    - Preserves full Pro API while exposing exact video_player API
+
+  - **Phase 1: Core Controller Compatibility (P0)**
+    - [ ] Add `VideoPlayerController` wrapper class that delegates to `ProVideoPlayerController`
+    - [ ] Implement `VideoPlayerController.networkUrl(Uri url, {...})` constructor
+    - [ ] Implement `VideoPlayerController.network(String dataSource, {...})` (deprecated)
+    - [ ] Implement `VideoPlayerController.asset(String dataSource, {String? package, ...})`
+    - [ ] Implement `VideoPlayerController.file(File file, {...})`
+    - [ ] Implement `VideoPlayerController.contentUri(Uri contentUri, {...})`
+    - [ ] Add `closedCaptionFile` parameter to all constructors
+    - [ ] Add `formatHint` parameter to network constructors
+    - [ ] Add `viewType` parameter to all constructors
+    - [ ] Ensure all methods return exact video_player signatures
+
+  - **Phase 2: VideoPlayerValue Compatibility (P0)**
+    - [ ] Create `VideoPlayerValue` wrapper/adapter with exact video_player signature
+    - [ ] Ensure `size` returns Flutter `Size` type (not record)
+    - [ ] Add `rotationCorrection` property (default 0)
+    - [ ] Ensure `errorDescription` is String? only (no error object)
+    - [ ] Add `Caption caption` property with auto-update from position
+    - [ ] Add `Duration captionOffset` property
+    - [ ] Add `VideoPlayerValue.uninitialized()` named constructor
+    - [ ] Add `VideoPlayerValue.erroneous(String)` named constructor
+
+  - **Phase 3: Caption System Compatibility (P0)**
+    - [ ] Add `number` property to `Caption` class
+    - [ ] Ensure `Caption.none` static constant exists
+    - [ ] Create `SubRipCaptionFile` class extending ClosedCaptionFile
+      - Parser for SRT format (can delegate to existing SubtitleParser)
+    - [ ] Create `WebVTTCaptionFile` class extending ClosedCaptionFile
+      - Parser for WebVTT format (can delegate to existing SubtitleParser)
+    - [ ] Implement automatic `value.caption` updates based on playback position
+    - [ ] Implement `closedCaptionFile` getter on controller
+
+  - **Phase 4: DurationRange Enhancement (P1)**
+    - [ ] Add `startFraction(Duration duration)` method to DurationRange
+    - [ ] Add `endFraction(Duration duration)` method to DurationRange
+    - [ ] Ensure `buffered` returns List<DurationRange> (currently does)
+
+  - **Phase 5: VideoPlayerOptions Compatibility (P1)**
+    - [ ] Create `VideoPlayerOptions` wrapper with minimal video_player signature:
+      - `mixWithOthers` (default: false)
+      - `allowBackgroundPlayback` (default: false)
+      - `webOptions` (VideoPlayerWebOptions?)
+    - [ ] Create `VideoPlayerWebOptions` class
+    - [ ] Create `VideoPlayerWebOptionsControls` class
+
+  - **Phase 6: UI Widgets (P1-P2)**
+    - [ ] **VideoPlayer widget** (P1) - Simple widget taking only controller
+      ```dart
+      class VideoPlayer extends StatefulWidget {
+        const VideoPlayer(this.controller, {super.key});
+        final VideoPlayerController controller;
+      }
+      ```
+    - [ ] **VideoProgressIndicator widget** (P1)
+      ```dart
+      VideoProgressIndicator(controller, {
+        colors: VideoProgressColors(),
+        required allowScrubbing,
+        padding: EdgeInsets.only(top: 5.0),
+      })
+      ```
+    - [ ] **VideoProgressColors class** (P1)
+      ```dart
+      VideoProgressColors({
+        playedColor: Color.fromRGBO(255, 0, 0, 0.7),
+        bufferedColor: Color.fromRGBO(50, 50, 200, 0.2),
+        backgroundColor: Color.fromRGBO(200, 200, 200, 0.5),
+      })
+      ```
+    - [ ] **VideoScrubber widget** (P2)
+      ```dart
+      VideoScrubber({required child, required controller})
+      ```
+    - [ ] **ClosedCaption widget** (P2)
+      ```dart
+      ClosedCaption({text, textStyle})
+      ```
+
+  - **Phase 7: Enums and Types (P1)**
+    - [ ] Add/export `DataSourceType` enum (network, file, asset, contentUri)
+    - [ ] Add `VideoFormat` enum (dash, hls, ss, other)
+    - [ ] Add `VideoViewType` enum (textureView, platformView)
+
+  - **Phase 8: Export File and Documentation (P1)**
+    - [ ] Create `lib/video_player_compat.dart` with all compatibility exports:
+      ```dart
+      export 'VideoPlayerController';
+      export 'VideoPlayer';
+      export 'VideoPlayerValue';
+      export 'VideoPlayerOptions';
+      export 'VideoProgressIndicator';
+      export 'VideoProgressColors';
+      export 'VideoScrubber';
+      export 'ClosedCaption';
+      export 'Caption';
+      export 'ClosedCaptionFile';
+      export 'SubRipCaptionFile';
+      export 'WebVTTCaptionFile';
+      export 'DataSourceType';
+      export 'DurationRange';
+      export 'VideoFormat';
+      export 'VideoPlayerWebOptions';
+      export 'VideoPlayerWebOptionsControls';
+      export 'VideoViewType';
+      ```
+    - [ ] Update migration guide with compatibility layer usage
+    - [ ] Add usage example in README
+
+  - **Phase 9: Testing and Validation (P0)**
+    - [ ] Create comprehensive test suite for compatibility layer
+    - [ ] Test all constructor signatures match video_player exactly
+    - [ ] Test VideoPlayerValue properties match exactly
+    - [ ] Test caption auto-update functionality
+    - [ ] Test UI widgets render correctly
+    - [ ] Validate against real video_player usage patterns
+
+  - **Priority Summary:**
+    | Priority | Requirement | Reason |
+    |----------|-------------|--------|
+    | P0 | VideoPlayerController constructors | Most common usage pattern |
+    | P0 | closedCaptionFile parameter | Caption support essential |
+    | P0 | value.caption + Caption class | Runtime caption access |
+    | P0 | ValueNotifier base class | Listener pattern (already done) |
+    | P0 | VideoPlayerValue exact properties | State compatibility |
+    | P1 | VideoPlayerOptions exact signature | Options compatibility |
+    | P1 | VideoProgressIndicator widget | Common UI component |
+    | P1 | List<DurationRange> buffered | Buffering display |
+    | P2 | VideoScrubber widget | Progress bar interaction |
+    | P2 | ClosedCaption widget | Caption display |
+
+  - **Benefits:**
+    - True drop-in replacement: change import only, no code changes needed
+    - Users can migrate incrementally to Pro features
+    - Maintains both APIs (Pro and video_player compatible)
+    - Reduces migration friction for existing video_player users
+
+  - **Testing Requirements:**
+    - Unit tests for all wrapper classes
+    - Integration tests for caption auto-update
+    - Widget tests for UI components
+    - Compatibility validation against video_player test suite patterns
+
+</details>
 
 <details>
 <summary><strong>Multi-Browser Test Execution (Parallel)</strong></summary>
@@ -628,84 +801,6 @@ This document tracks the development progress and planned features for the Pro V
     - All existing widget tests must continue passing
     - Add unit tests for navigation and layout logic
     - Maintain test coverage levels
-
-</details>
-
-<details>
-<summary><strong>Dependency Injection Container - Service Locator Pattern</strong></summary>
-
-- [ ] **Introduce Dependency Injection Container**
-  - **Rationale:** Reduce complexity of manual dependency wiring (13 callback parameters in InitializationCoordinator)
-  - **Current Pain Points:**
-    - Deep constructor parameter lists (10-15 parameters common)
-    - Manual dependency graph management
-    - Circular dependency wiring complexity
-    - Difficult to test with different configurations
-  - **Implementation Approach:**
-    - [ ] Phase 1: Create `ControllerServices` container class
-      - Encapsulate all manager instances
-      - Factory methods for common configurations
-      - Internal dependency wiring (hidden from users)
-    - [ ] Phase 2: Update `ProVideoPlayerController` to use services
-      - Accept `ControllerServices` in constructor
-      - Simplify initialization code
-      - Reduce callback parameter count
-    - [ ] Phase 3: Create test fixture helpers
-      - Mock service configurations
-      - Easy test setup with different dependencies
-    - [ ] Phase 4: Update all controller tests
-    - [ ] Phase 5: Update documentation with new pattern
-  - **Implementation Pattern:**
-    ```dart
-    // Simple service locator pattern (no external dependencies)
-    class ControllerServices {
-      final PlaybackManager playback;
-      final TrackManager tracks;
-      final SubtitleManager subtitles;
-      final PipManager pip;
-      // ... other managers
-
-      // Factory for common configurations
-      factory ControllerServices.create({
-        required ProVideoPlayerPlatform platform,
-        required int playerId,
-        VideoPlayerOptions? options,
-      }) {
-        // Wire up dependencies internally
-        final playback = PlaybackManager(...);
-        final tracks = TrackManager(...);
-        // ... dependency graph construction
-        return ControllerServices._internal(
-          playback: playback,
-          tracks: tracks,
-          ...
-        );
-      }
-
-      ControllerServices._internal({...});
-    }
-
-    // Simplified controller constructor
-    ProVideoPlayerController({
-      required ControllerServices services,
-    }) {
-      _playback = services.playback;
-      _tracks = services.tracks;
-      // No complex wiring needed
-    }
-    ```
-  - **Benefits:**
-    - Reduced constructor complexity (1 parameter vs 15)
-    - Centralized dependency wiring (easier to maintain)
-    - Easier to test with mock services
-    - Maintains "no external dependencies" principle (uses only Dart)
-    - Follows dependency injection best practices
-    - Makes controller initialization code much cleaner
-  - **Testing Requirements:**
-    - Create `MockControllerServices` test fixture
-    - Update all controller tests to use service pattern
-    - Verify no regression in functionality
-  - **Note:** Prerequisite for ProVideoPlayerController domain split (simplifies extracted controller construction)
 
 </details>
 

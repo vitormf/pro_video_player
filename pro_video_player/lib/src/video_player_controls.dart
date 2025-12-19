@@ -15,6 +15,7 @@ import 'controls/wrappers/gesture_controls_wrapper.dart';
 import 'controls/wrappers/simple_tap_wrapper.dart';
 import 'pro_video_player_controller.dart';
 import 'subtitle_overlay.dart';
+import 'video_controls_config.dart';
 import 'video_controls_controller.dart';
 import 'video_player_theme.dart';
 
@@ -70,44 +71,17 @@ class VideoPlayerControls extends StatefulWidget {
     this.theme,
     this.subtitleStyle,
     this.renderSubtitlesInternally = true,
-    this.showFullscreenButton = true,
-    this.showOrientationLockButton = true,
-    this.showSkipButtons = true,
-    this.skipDuration = const Duration(seconds: 10),
-    this.seekSecondsPerInch = 20.0,
-    this.showSpeedButton = true,
-    this.speedOptions = const [0.5, 0.75, 1.0, 1.25, 1.5, 2.0],
-    this.showSubtitleButton = true,
-    this.showAudioButton = true,
-    this.showPipButton = true,
-    this.showScalingModeButton = true,
-    this.scalingModeOptions = const [VideoScalingMode.fit, VideoScalingMode.fill, VideoScalingMode.stretch],
-    this.showQualityButton = true,
-    this.showBackgroundPlaybackButton = true,
-    this.enableGestures = true,
-    this.enableDoubleTapSeek = true,
-    this.enableVolumeGesture = true,
-    this.enableBrightnessGesture = true,
-    this.enableSeekGesture = true,
-    this.enablePlaybackSpeedGesture = true,
-    this.autoHide = true,
-    this.autoHideDuration = const Duration(seconds: 2),
-    this.liveScrubbingMode = LiveScrubbingMode.adaptive,
-    this.onBrightnessChanged,
+    this.buttonsConfig = const ButtonsConfig(),
+    this.gestureConfig = const GestureConfig(),
+    this.behaviorConfig = const ControlsBehaviorConfig(),
+    this.playbackOptionsConfig = const PlaybackOptionsConfig(),
+    this.fullscreenConfig = const FullscreenConfig(),
     this.compactMode = CompactMode.auto,
     // 250x180 threshold accommodates narrow screens like Z Fold 3 front display (~260dp)
     this.compactThreshold = const Size(250, 180),
     this.playerToolbarActions,
     this.maxPlayerToolbarActions,
     this.autoOverflowActions = true,
-    this.onEnterFullscreen,
-    this.onExitFullscreen,
-    this.fullscreenOrientation = FullscreenOrientation.landscapeBoth,
-    this.enableKeyboardShortcuts = true,
-    this.keyboardSeekDuration = const Duration(seconds: 5),
-    this.enableSeekBarHoverPreview = true,
-    this.enableContextMenu = true,
-    this.minimalToolbarOnDesktop = true,
     this.onDismiss,
     this.forceMobileLayout = false, // Test-only: force mobile layout even on desktop
     this.testIsPipAvailable,
@@ -143,155 +117,20 @@ class VideoPlayerControls extends StatefulWidget {
   /// Defaults to `true` for backwards compatibility.
   final bool renderSubtitlesInternally;
 
-  /// Whether to show the fullscreen button.
-  ///
-  /// Defaults to `true`.
-  final bool showFullscreenButton;
+  /// Configuration for button visibility in controls.
+  final ButtonsConfig buttonsConfig;
 
-  /// Whether to show the orientation lock button in fullscreen mode.
-  ///
-  /// When enabled, a button appears in the fullscreen toolbar that opens
-  /// a bottom sheet allowing users to lock the screen orientation
-  /// (Auto-rotate, Landscape, Landscape Left, or Landscape Right).
-  ///
-  /// Defaults to `true`.
-  final bool showOrientationLockButton;
+  /// Configuration for gesture controls.
+  final GestureConfig gestureConfig;
 
-  /// Whether to show skip forward/backward buttons.
-  ///
-  /// Defaults to `true`.
-  final bool showSkipButtons;
+  /// Configuration for controls behavior (auto-hide, keyboard shortcuts, etc.).
+  final ControlsBehaviorConfig behaviorConfig;
 
-  /// Duration to skip when skip buttons are tapped.
-  ///
-  /// Defaults to 10 seconds. Common values are 5, 10, or 30 seconds.
-  /// The button icons will change based on this value (e.g., replay_5,
-  /// replay_10, replay_30).
-  final Duration skipDuration;
+  /// Configuration for playback options (speed, scaling mode, live scrubbing).
+  final PlaybackOptionsConfig playbackOptionsConfig;
 
-  /// How many seconds to seek per inch of horizontal swipe gesture.
-  ///
-  /// This controls the sensitivity of the horizontal swipe seek gesture
-  /// based on physical distance, ensuring consistent behavior across
-  /// devices with different screen densities.
-  ///
-  /// For example, with the default of 20 seconds per inch, swiping
-  /// 0.5 inches will seek 10 seconds, regardless of video duration.
-  ///
-  /// Defaults to 20 seconds per inch.
-  final double seekSecondsPerInch;
-
-  /// Whether to show the playback speed button.
-  ///
-  /// Defaults to `true`.
-  final bool showSpeedButton;
-
-  /// Available playback speed options.
-  ///
-  /// Defaults to `[0.5, 0.75, 1.0, 1.25, 1.5, 2.0]`.
-  final List<double> speedOptions;
-
-  /// Whether to show the subtitle selection button.
-  ///
-  /// The button only appears when subtitle tracks are available.
-  /// Defaults to `true`.
-  final bool showSubtitleButton;
-
-  /// Whether to show the audio track selection button.
-  ///
-  /// The button only appears when multiple audio tracks are available.
-  /// Defaults to `true`.
-  final bool showAudioButton;
-
-  /// Whether to show the Picture-in-Picture button.
-  ///
-  /// The button only appears when PiP is supported on the device and
-  /// [VideoPlayerOptions.allowPip] is `true`.
-  /// Defaults to `true`.
-  final bool showPipButton;
-
-  /// Whether to show the scaling mode button.
-  ///
-  /// Allows users to change how the video fills the viewport (fit, fill, stretch).
-  /// Defaults to `true`.
-  final bool showScalingModeButton;
-
-  /// Available scaling mode options.
-  ///
-  /// Defaults to `[VideoScalingMode.fit, VideoScalingMode.fill, VideoScalingMode.stretch]`.
-  final List<VideoScalingMode> scalingModeOptions;
-
-  /// Whether to show the video quality selection button.
-  ///
-  /// The button only appears when quality tracks are available (for adaptive streams).
-  /// Defaults to `true`.
-  final bool showQualityButton;
-
-  /// Whether to show the background playback toggle button.
-  ///
-  /// The button only appears when background playback is configured in [VideoPlayerOptions]
-  /// and the platform supports it (iOS, Android).
-  ///
-  /// **Note:** This button is always hidden on:
-  /// - **macOS**: Background playback is enabled by default and cannot be toggled.
-  /// - **Web**: Background playback is not supported.
-  ///
-  /// Defaults to `true`.
-  final bool showBackgroundPlaybackButton;
-
-  /// Whether to enable gesture controls.
-  ///
-  /// Defaults to `true`.
-  final bool enableGestures;
-
-  /// Whether to enable double-tap to seek gestures.
-  ///
-  /// Defaults to `true`.
-  final bool enableDoubleTapSeek;
-
-  /// Whether to enable volume control gestures (vertical swipe on right).
-  ///
-  /// Defaults to `true`.
-  final bool enableVolumeGesture;
-
-  /// Whether to enable brightness control gestures (vertical swipe on left).
-  ///
-  /// Defaults to `true`.
-  final bool enableBrightnessGesture;
-
-  /// Whether to enable seek gestures (horizontal swipe).
-  ///
-  /// Defaults to `true`.
-  final bool enableSeekGesture;
-
-  /// Whether to enable playback speed gestures (two-finger vertical swipe).
-  ///
-  /// Defaults to `true`.
-  final bool enablePlaybackSpeedGesture;
-
-  /// Whether to automatically hide controls when playing.
-  ///
-  /// Defaults to `true`.
-  final bool autoHide;
-
-  /// Duration before controls are hidden when [autoHide] is enabled.
-  ///
-  /// Defaults to 3 seconds.
-  final Duration autoHideDuration;
-
-  /// Controls when live scrubbing is enabled for the seek bar.
-  ///
-  /// Live scrubbing updates the video position immediately as the user drags
-  /// the progress bar, providing real-time feedback. Different modes optimize
-  /// performance based on the video source type and buffering state.
-  ///
-  /// See [LiveScrubbingMode] for available modes and their behavior.
-  ///
-  /// Defaults to [LiveScrubbingMode.adaptive] (recommended for most apps).
-  final LiveScrubbingMode liveScrubbingMode;
-
-  /// Callback when brightness is changed via gesture.
-  final ValueChanged<double>? onBrightnessChanged;
+  /// Configuration for fullscreen behavior.
+  final FullscreenConfig fullscreenConfig;
 
   /// Controls when compact mode is enabled.
   ///
@@ -370,32 +209,6 @@ class VideoPlayerControls extends StatefulWidget {
   /// This is ignored when [maxPlayerToolbarActions] is explicitly set.
   final bool autoOverflowActions;
 
-  /// Callback invoked when fullscreen mode is entered.
-  ///
-  /// If provided, this callback is responsible for showing the fullscreen UI.
-  /// If not provided, the controls will automatically push a fullscreen route.
-  ///
-  /// Example for custom fullscreen handling:
-  /// ```dart
-  /// VideoPlayerControls(
-  ///   controller: controller,
-  ///   onEnterFullscreen: () {
-  ///     Navigator.of(context).push(
-  ///       MaterialPageRoute(
-  ///         builder: (_) => MyFullscreenPlayer(controller: controller),
-  ///       ),
-  ///     );
-  ///   },
-  /// )
-  /// ```
-  final VoidCallback? onEnterFullscreen;
-
-  /// Callback invoked when fullscreen mode is exited.
-  ///
-  /// If provided, this callback is responsible for closing the fullscreen UI.
-  /// If not provided, the controls will automatically pop the fullscreen route.
-  final VoidCallback? onExitFullscreen;
-
   /// Callback invoked when the dismiss button is tapped in fullscreen-only mode.
   ///
   /// When [VideoPlayerOptions.fullscreenOnly] is `true` and this callback is
@@ -431,63 +244,6 @@ class VideoPlayerControls extends StatefulWidget {
   /// This is not @visibleForTesting because it's passed to VideoControlsController.
   final bool? testIsCastingSupported;
 
-  /// Preferred screen orientation when entering fullscreen.
-  ///
-  /// Defaults to [FullscreenOrientation.landscapeBoth].
-  final FullscreenOrientation fullscreenOrientation;
-
-  /// Whether to enable keyboard shortcuts on desktop and web platforms.
-  ///
-  /// When enabled, the following shortcuts are available:
-  /// - **Space**: Toggle play/pause
-  /// - **Left Arrow**: Seek backward by [keyboardSeekDuration]
-  /// - **Right Arrow**: Seek forward by [keyboardSeekDuration]
-  /// - **Up Arrow**: Increase volume by 10%
-  /// - **Down Arrow**: Decrease volume by 10%
-  /// - **M**: Toggle mute
-  /// - **F**: Toggle fullscreen
-  ///
-  /// Defaults to `true`.
-  final bool enableKeyboardShortcuts;
-
-  /// Duration to seek when using keyboard arrow keys.
-  ///
-  /// Defaults to 5 seconds.
-  final Duration keyboardSeekDuration;
-
-  /// Whether to show time preview on seek bar hover (desktop/web only).
-  ///
-  /// When enabled, hovering over the seek bar shows a tooltip with the
-  /// time at that position. This only applies to desktop and web platforms
-  /// where mouse hover is available.
-  ///
-  /// Defaults to `true`.
-  final bool enableSeekBarHoverPreview;
-
-  /// Whether to enable right-click context menu on desktop and web platforms.
-  ///
-  /// When enabled, right-clicking on the video shows a context menu with
-  /// quick actions like play/pause, mute, fullscreen, and playback speed.
-  ///
-  /// Defaults to `true`.
-  final bool enableContextMenu;
-
-  /// Whether to use minimal toolbar on desktop and web platforms.
-  ///
-  /// When enabled, the toolbar shows only essential controls:
-  /// - Play/pause button
-  /// - Progress bar with time display
-  /// - Volume slider (on the right)
-  ///
-  /// All other options (subtitles, audio, quality, speed, PiP, fullscreen,
-  /// etc.) are available via right-click context menu.
-  ///
-  /// This provides a cleaner interface common in desktop video players.
-  /// Mobile platforms are not affected by this setting.
-  ///
-  /// Defaults to `true`.
-  final bool minimalToolbarOnDesktop;
-
   @override
   State<VideoPlayerControls> createState() => _VideoPlayerControlsState();
 }
@@ -502,24 +258,11 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
     // Create the controller with all configuration
     _controlsController = VideoControlsController(
       videoController: widget.controller,
-      autoHide: widget.autoHide,
-      autoHideDuration: widget.autoHideDuration,
-      enableKeyboardShortcuts: widget.enableKeyboardShortcuts,
-      keyboardSeekDuration: widget.keyboardSeekDuration,
-      enableContextMenu: widget.enableContextMenu,
-      minimalToolbarOnDesktop: widget.minimalToolbarOnDesktop,
-      showFullscreenButton: widget.showFullscreenButton,
-      showPipButton: widget.showPipButton,
-      showBackgroundPlaybackButton: widget.showBackgroundPlaybackButton,
-      showSubtitleButton: widget.showSubtitleButton,
-      showAudioButton: widget.showAudioButton,
-      showQualityButton: widget.showQualityButton,
-      showSpeedButton: widget.showSpeedButton,
-      speedOptions: widget.speedOptions,
-      scalingModeOptions: widget.scalingModeOptions,
-      onEnterFullscreen: widget.onEnterFullscreen,
-      onExitFullscreen: widget.onExitFullscreen,
-      fullscreenOrientation: widget.fullscreenOrientation,
+      buttonsConfig: widget.buttonsConfig,
+      gestureConfig: widget.gestureConfig,
+      behaviorConfig: widget.behaviorConfig,
+      playbackOptionsConfig: widget.playbackOptionsConfig,
+      fullscreenConfig: widget.fullscreenConfig,
       testIsPipAvailable: widget.testIsPipAvailable,
       testIsBackgroundPlaybackSupported: widget.testIsBackgroundPlaybackSupported,
       testIsCastingSupported: widget.testIsCastingSupported,
@@ -586,9 +329,9 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
   }
 
   void _enterFullscreen() {
-    if (widget.onEnterFullscreen != null) {
+    if (widget.fullscreenConfig.onEnterFullscreen != null) {
       // Use custom fullscreen handler
-      widget.onEnterFullscreen!();
+      widget.fullscreenConfig.onEnterFullscreen!();
     } else {
       // Default: push fullscreen route
       _pushFullscreenRoute();
@@ -599,9 +342,9 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
     // Block exit if fullscreenOnly mode is enabled
     if (widget.controller.options.fullscreenOnly) return;
 
-    if (widget.onExitFullscreen != null) {
+    if (widget.fullscreenConfig.onExitFullscreen != null) {
       // Use custom fullscreen exit handler
-      widget.onExitFullscreen!();
+      widget.fullscreenConfig.onExitFullscreen!();
     } else {
       // Default: pop fullscreen route and exit fullscreen
       if (_isDesktopPlatform) {
@@ -647,7 +390,7 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
       widget.controller.setFlutterFullscreenState(isFullscreen: true);
       unawaited(ProVideoPlayerPlatform.instance.setWindowFullscreen(fullscreen: true));
     } else {
-      unawaited(widget.controller.enterFullscreen(orientation: widget.fullscreenOrientation));
+      unawaited(widget.controller.enterFullscreen(orientation: widget.fullscreenConfig.orientation));
     }
   }
 
@@ -722,27 +465,27 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
             controller: widget.controller,
             controlsController: _controlsController,
             theme: theme,
-            showFullscreenButton: widget.showFullscreenButton,
+            showFullscreenButton: widget.buttonsConfig.showFullscreenButton,
             onEnterFullscreen: _enterFullscreen,
             onExitFullscreen: _exitFullscreen,
             child: stackContent,
           );
         }
 
-        if (widget.enableGestures && !isCompact) {
+        if (widget.gestureConfig.enableGestures && !isCompact) {
           return GestureControlsWrapper(
             controller: widget.controller,
             controlsController: _controlsController,
-            skipDuration: widget.skipDuration,
-            seekSecondsPerInch: widget.seekSecondsPerInch,
-            enableDoubleTapSeek: widget.enableDoubleTapSeek,
-            enableVolumeGesture: widget.enableVolumeGesture,
-            enableBrightnessGesture: widget.enableBrightnessGesture,
-            enableSeekGesture: widget.enableSeekGesture,
-            enablePlaybackSpeedGesture: widget.enablePlaybackSpeedGesture,
-            autoHide: widget.autoHide,
-            autoHideDuration: widget.autoHideDuration,
-            onBrightnessChanged: widget.onBrightnessChanged,
+            skipDuration: widget.gestureConfig.skipDuration,
+            seekSecondsPerInch: widget.gestureConfig.seekSecondsPerInch,
+            enableDoubleTapSeek: widget.gestureConfig.enableDoubleTapSeek,
+            enableVolumeGesture: widget.gestureConfig.enableVolumeGesture,
+            enableBrightnessGesture: widget.gestureConfig.enableBrightnessGesture,
+            enableSeekGesture: widget.gestureConfig.enableSeekGesture,
+            enablePlaybackSpeedGesture: widget.gestureConfig.enablePlaybackSpeedGesture,
+            autoHide: widget.behaviorConfig.autoHide,
+            autoHideDuration: widget.behaviorConfig.autoHideDuration,
+            onBrightnessChanged: widget.gestureConfig.onBrightnessChanged,
             child: stackContent,
           );
         }
@@ -765,11 +508,11 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
         controlsState: _controlsController.controlsState,
         gestureSeekPosition: _controlsController.gestureSeekPosition.value,
         dragStartPosition: _controlsController.dragStartPosition.value,
-        minimalToolbarOnDesktop: widget.minimalToolbarOnDesktop,
+        minimalToolbarOnDesktop: widget.behaviorConfig.minimalToolbarOnDesktop,
         shouldShowVolumeButton: _controlsController.shouldShowVolumeButton,
-        liveScrubbingMode: widget.liveScrubbingMode,
-        enableSeekBarHoverPreview: widget.enableSeekBarHoverPreview,
-        showFullscreenButton: widget.showFullscreenButton,
+        liveScrubbingMode: widget.playbackOptionsConfig.liveScrubbingMode,
+        enableSeekBarHoverPreview: widget.behaviorConfig.enableSeekBarHoverPreview,
+        showFullscreenButton: widget.buttonsConfig.showFullscreenButton,
         onDragStart: () => setState(_controlsController.startDragging),
         onDragEnd: () => setState(_controlsController.endDragging),
         onToggleTimeDisplay: () => setState(_controlsController.toggleTimeDisplay),
@@ -787,19 +530,19 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
       theme: theme,
       controlsState: _controlsController.controlsState,
       gestureSeekPosition: _controlsController.gestureSeekPosition.value,
-      showSkipButtons: widget.showSkipButtons,
-      skipDuration: widget.skipDuration,
-      liveScrubbingMode: widget.liveScrubbingMode,
-      showSeekBarHoverPreview: widget.enableSeekBarHoverPreview,
-      showSubtitleButton: widget.showSubtitleButton,
-      showAudioButton: widget.showAudioButton,
-      showQualityButton: widget.showQualityButton,
-      showSpeedButton: widget.showSpeedButton,
-      showScalingModeButton: widget.showScalingModeButton,
-      showBackgroundPlaybackButton: widget.showBackgroundPlaybackButton,
-      showPipButton: widget.showPipButton,
-      showOrientationLockButton: widget.showOrientationLockButton,
-      showFullscreenButton: widget.showFullscreenButton,
+      showSkipButtons: widget.buttonsConfig.showSkipButtons,
+      skipDuration: widget.gestureConfig.skipDuration,
+      liveScrubbingMode: widget.playbackOptionsConfig.liveScrubbingMode,
+      showSeekBarHoverPreview: widget.behaviorConfig.enableSeekBarHoverPreview,
+      showSubtitleButton: widget.buttonsConfig.showSubtitleButton,
+      showAudioButton: widget.buttonsConfig.showAudioButton,
+      showQualityButton: widget.buttonsConfig.showQualityButton,
+      showSpeedButton: widget.buttonsConfig.showSpeedButton,
+      showScalingModeButton: widget.buttonsConfig.showScalingModeButton,
+      showBackgroundPlaybackButton: widget.buttonsConfig.showBackgroundPlaybackButton,
+      showPipButton: widget.buttonsConfig.showPipButton,
+      showOrientationLockButton: widget.buttonsConfig.showOrientationLockButton,
+      showFullscreenButton: widget.buttonsConfig.showFullscreenButton,
       playerToolbarActions: widget.playerToolbarActions,
       maxPlayerToolbarActions: widget.maxPlayerToolbarActions,
       autoOverflowActions: widget.autoOverflowActions,

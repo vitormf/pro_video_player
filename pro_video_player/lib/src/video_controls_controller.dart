@@ -17,6 +17,7 @@ import 'controls/dialogs/speed_picker_dialog.dart';
 import 'controls/dialogs/subtitle_picker_dialog.dart';
 import 'controls/video_controls_utils.dart';
 import 'pro_video_player_controller.dart';
+import 'video_controls_config.dart';
 import 'video_controls_state.dart';
 import 'video_player_theme.dart';
 import 'video_toolbar_manager.dart';
@@ -36,24 +37,11 @@ class VideoControlsController extends ChangeNotifier {
   /// Creates a video controls controller.
   VideoControlsController({
     required ProVideoPlayerController videoController,
-    required this.autoHide,
-    required this.autoHideDuration,
-    required this.enableKeyboardShortcuts,
-    required this.keyboardSeekDuration,
-    required this.enableContextMenu,
-    required this.minimalToolbarOnDesktop,
-    required this.showFullscreenButton,
-    required this.showPipButton,
-    required this.showBackgroundPlaybackButton,
-    required this.showSubtitleButton,
-    required this.showAudioButton,
-    required this.showQualityButton,
-    required this.showSpeedButton,
-    required this.speedOptions,
-    required this.scalingModeOptions,
-    required this.onEnterFullscreen,
-    required this.onExitFullscreen,
-    required this.fullscreenOrientation,
+    this.buttonsConfig = const ButtonsConfig(),
+    this.gestureConfig = const GestureConfig(),
+    this.behaviorConfig = const ControlsBehaviorConfig(),
+    this.playbackOptionsConfig = const PlaybackOptionsConfig(),
+    this.fullscreenConfig = const FullscreenConfig(),
     this.onShowKeyboardShortcuts,
     this.enablePipCheck = true,
     this.enableBackgroundCheck = true,
@@ -103,59 +91,20 @@ class VideoControlsController extends ChangeNotifier {
 
   final ProVideoPlayerController _videoController;
 
-  /// Whether to automatically hide controls when playing.
-  final bool autoHide;
+  /// Configuration for button visibility in controls.
+  final ButtonsConfig buttonsConfig;
 
-  /// Duration before controls are hidden when [autoHide] is enabled.
-  final Duration autoHideDuration;
+  /// Configuration for gesture controls.
+  final GestureConfig gestureConfig;
 
-  /// Whether to enable keyboard shortcuts on desktop platforms.
-  final bool enableKeyboardShortcuts;
+  /// Configuration for controls behavior (auto-hide, keyboard shortcuts, etc.).
+  final ControlsBehaviorConfig behaviorConfig;
 
-  /// Duration to seek when using keyboard arrow keys.
-  final Duration keyboardSeekDuration;
+  /// Configuration for playback options (speed, scaling mode, live scrubbing).
+  final PlaybackOptionsConfig playbackOptionsConfig;
 
-  /// Whether to enable right-click context menu.
-  final bool enableContextMenu;
-
-  /// Whether to use minimal toolbar on desktop platforms.
-  final bool minimalToolbarOnDesktop;
-
-  /// Whether to show the fullscreen button.
-  final bool showFullscreenButton;
-
-  /// Whether to show the Picture-in-Picture button.
-  final bool showPipButton;
-
-  /// Whether to show the background playback toggle button.
-  final bool showBackgroundPlaybackButton;
-
-  /// Whether to show the subtitle selection button.
-  final bool showSubtitleButton;
-
-  /// Whether to show the audio track selection button.
-  final bool showAudioButton;
-
-  /// Whether to show the video quality selection button.
-  final bool showQualityButton;
-
-  /// Whether to show the playback speed button.
-  final bool showSpeedButton;
-
-  /// Available playback speed options.
-  final List<double> speedOptions;
-
-  /// Available scaling mode options.
-  final List<VideoScalingMode> scalingModeOptions;
-
-  /// Callback invoked when fullscreen mode is entered.
-  final VoidCallback? onEnterFullscreen;
-
-  /// Callback invoked when fullscreen mode is exited.
-  final VoidCallback? onExitFullscreen;
-
-  /// Preferred screen orientation when entering fullscreen.
-  final FullscreenOrientation fullscreenOrientation;
+  /// Configuration for fullscreen behavior.
+  final FullscreenConfig fullscreenConfig;
 
   /// Callback invoked when the user presses the "?" key to show keyboard shortcuts.
   final VoidCallback? onShowKeyboardShortcuts;
@@ -229,7 +178,7 @@ class VideoControlsController extends ChangeNotifier {
   static bool? _cachedCastingSupported;
 
   Future<void> _checkPipAvailability() async {
-    if (!showPipButton) return;
+    if (!buttonsConfig.showPipButton) return;
 
     // Use cached value if available
     if (_cachedPipSupported != null) {
@@ -243,7 +192,7 @@ class VideoControlsController extends ChangeNotifier {
   }
 
   Future<void> _checkBackgroundPlaybackSupport() async {
-    if (!showBackgroundPlaybackButton) return;
+    if (!buttonsConfig.showBackgroundPlaybackButton) return;
 
     // Use cached value if available
     if (_cachedBackgroundPlaybackSupported != null) {
@@ -329,8 +278,8 @@ class VideoControlsController extends ChangeNotifier {
       return;
     }
 
-    if (autoHide && _videoController.value.isPlaying && !_controlsState.isDragging) {
-      _controlsState.startHideTimer(autoHideDuration, () {
+    if (behaviorConfig.autoHide && _videoController.value.isPlaying && !_controlsState.isDragging) {
+      _controlsState.startHideTimer(behaviorConfig.autoHideDuration, () {
         if (_videoController.value.isPlaying &&
             !_videoController.value.isCasting &&
             !_controlsState.isMouseOverControls &&
@@ -459,7 +408,7 @@ class VideoControlsController extends ChangeNotifier {
   /// Works on all platforms including mobile devices with keyboards
   /// (tablets with keyboard cases, Bluetooth keyboards, etc.).
   KeyEventResult handleKeyEvent(FocusNode node, KeyEvent event) {
-    if (!enableKeyboardShortcuts) {
+    if (!behaviorConfig.enableKeyboardShortcuts) {
       return KeyEventResult.ignored;
     }
 
@@ -472,7 +421,9 @@ class VideoControlsController extends ChangeNotifier {
     if (isKeyDown || isKeyRepeat) {
       // Left Arrow: Seek backward (Shift = longer jump)
       if (key == LogicalKeyboardKey.arrowLeft) {
-        final seekAmount = isShiftPressed ? keyboardSeekDuration * 3 : keyboardSeekDuration;
+        final seekAmount = isShiftPressed
+            ? behaviorConfig.keyboardSeekDuration * 3
+            : behaviorConfig.keyboardSeekDuration;
         final position = _videoController.value.position;
         final newPosition = position - seekAmount;
         unawaited(_videoController.seekTo(newPosition.isNegative ? Duration.zero : newPosition));
@@ -483,7 +434,9 @@ class VideoControlsController extends ChangeNotifier {
 
       // Right Arrow: Seek forward (Shift = longer jump)
       if (key == LogicalKeyboardKey.arrowRight) {
-        final seekAmount = isShiftPressed ? keyboardSeekDuration * 3 : keyboardSeekDuration;
+        final seekAmount = isShiftPressed
+            ? behaviorConfig.keyboardSeekDuration * 3
+            : behaviorConfig.keyboardSeekDuration;
         final position = _videoController.value.position;
         final duration = _videoController.value.duration;
         final newPosition = position + seekAmount;
@@ -617,7 +570,7 @@ class VideoControlsController extends ChangeNotifier {
     required VoidCallback onEnterFullscreenCallback,
     required VoidCallback onExitFullscreenCallback,
   }) async {
-    if (!enableContextMenu || !isDesktopPlatform) return;
+    if (!behaviorConfig.enableContextMenu || !isDesktopPlatform) return;
 
     _controlsState.lastContextMenuPosition = position;
     final value = _videoController.value;
@@ -629,7 +582,7 @@ class VideoControlsController extends ChangeNotifier {
     final hasQualityTracks = value.qualityTracks.length > 1;
     final hasChapters = value.chapters.isNotEmpty;
     final hasPlaylist = value.playlist != null;
-    final isMinimalMode = minimalToolbarOnDesktop;
+    final isMinimalMode = behaviorConfig.minimalToolbarOnDesktop;
 
     final selectedValue = await showMenu<String>(
       context: context,
@@ -660,7 +613,7 @@ class VideoControlsController extends ChangeNotifier {
         // Track selection options (when in minimal mode or tracks available)
         if (isMinimalMode && (hasSubtitles || hasAudioTracks || hasQualityTracks || hasChapters)) ...[
           const PopupMenuDivider(),
-          if (hasSubtitles && showSubtitleButton)
+          if (hasSubtitles && buttonsConfig.showSubtitleButton)
             PopupMenuItem<String>(
               value: 'subtitles',
               child: Row(
@@ -673,7 +626,7 @@ class VideoControlsController extends ChangeNotifier {
                 ],
               ),
             ),
-          if (hasAudioTracks && showAudioButton)
+          if (hasAudioTracks && buttonsConfig.showAudioButton)
             const PopupMenuItem<String>(
               value: 'audio',
               child: Row(
@@ -686,7 +639,7 @@ class VideoControlsController extends ChangeNotifier {
                 ],
               ),
             ),
-          if (hasQualityTracks && showQualityButton)
+          if (hasQualityTracks && buttonsConfig.showQualityButton)
             const PopupMenuItem<String>(
               value: 'quality',
               child: Row(
@@ -730,9 +683,10 @@ class VideoControlsController extends ChangeNotifier {
         ),
 
         // PiP and Fullscreen
-        if (isMinimalMode && (_controlsState.isPipAvailable ?? false) && showPipButton || showFullscreenButton) ...[
+        if (isMinimalMode && (_controlsState.isPipAvailable ?? false) && buttonsConfig.showPipButton ||
+            buttonsConfig.showFullscreenButton) ...[
           const PopupMenuDivider(),
-          if (isMinimalMode && (_controlsState.isPipAvailable ?? false) && showPipButton)
+          if (isMinimalMode && (_controlsState.isPipAvailable ?? false) && buttonsConfig.showPipButton)
             PopupMenuItem<String>(
               value: 'pip',
               child: Row(
@@ -743,7 +697,7 @@ class VideoControlsController extends ChangeNotifier {
                 ],
               ),
             ),
-          if (showFullscreenButton)
+          if (buttonsConfig.showFullscreenButton)
             PopupMenuItem<String>(
               value: 'fullscreen',
               child: Row(
@@ -905,7 +859,7 @@ class VideoControlsController extends ChangeNotifier {
       context: context,
       controller: _videoController,
       theme: theme,
-      scalingModeOptions: scalingModeOptions,
+      scalingModeOptions: playbackOptionsConfig.scalingModeOptions,
       onDismiss: _resetHideTimer,
     );
   }
@@ -927,7 +881,7 @@ class VideoControlsController extends ChangeNotifier {
       context: context,
       controller: _videoController,
       theme: theme,
-      speedOptions: speedOptions,
+      speedOptions: playbackOptionsConfig.speedOptions,
       lastContextMenuPosition: _controlsState.lastContextMenuPosition,
       onDismiss: _resetHideTimer,
     );

@@ -3,6 +3,7 @@ import 'package:pro_video_player_platform_interface/pro_video_player_platform_in
 
 import '../pro_video_player.dart';
 import '../pro_video_player_controller.dart';
+import '../video_controls_config.dart';
 import '../video_player_controls.dart';
 import '../video_player_theme.dart';
 import 'fullscreen_status_bar.dart';
@@ -66,8 +67,10 @@ class FullscreenVideoPage extends StatelessWidget {
               theme: effectiveTheme,
               subtitleStyle: subtitleStyle,
               // Prevent recursive fullscreen - use custom handlers
-              onEnterFullscreen: () {}, // Already in fullscreen
-              onExitFullscreen: onExitFullscreen,
+              fullscreenConfig: FullscreenConfig(
+                onEnterFullscreen: () {}, // Already in fullscreen
+                onExitFullscreen: onExitFullscreen,
+              ),
               onDismiss: onDismiss,
             ),
 

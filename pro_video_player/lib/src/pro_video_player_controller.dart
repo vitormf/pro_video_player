@@ -5,20 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
 import '../pro_video_player.dart' show SubtitleOverlay;
-import 'controller/casting_manager.dart';
-import 'controller/configuration_manager.dart';
-import 'controller/device_controls_manager.dart';
-import 'controller/disposal_coordinator.dart';
-import 'controller/error_recovery_manager.dart';
-import 'controller/event_coordinator.dart';
-import 'controller/fullscreen_manager.dart';
+import 'controller/controller_services.dart';
 import 'controller/initialization_coordinator.dart';
-import 'controller/metadata_manager.dart';
-import 'controller/pip_manager.dart';
-import 'controller/playback_manager.dart';
-import 'controller/playlist_manager.dart';
-import 'controller/subtitle_manager.dart';
-import 'controller/track_manager.dart';
 import 'subtitle_overlay.dart' show SubtitleOverlay;
 
 // Alias for cleaner code
@@ -153,18 +141,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   final ErrorRecoveryOptions _errorRecoveryOptions;
   final VideoSource? _initialSource;
   final VideoPlayerOptions? _initialOptions;
-  late ErrorRecoveryManager _errorRecovery;
-  late TrackManager _trackManager;
-  late PlaylistManager _playlistManager;
-  late PipManager _pipManager;
-  late FullscreenManager _fullscreenManager;
-  late CastingManager _castingManager;
-  late DeviceControlsManager _deviceControlsManager;
-  late MetadataManager _metadataManager;
-  late PlaybackManager _playbackManager;
-  late EventCoordinator _eventCoordinator;
-  late SubtitleManager _subtitleManager;
-  late ConfigurationManager _configurationManager;
+  late ControllerServices _services;
   bool _isDisposed = false;
   bool _isRetrying = false;
 
@@ -317,22 +294,11 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
       return initializeWithPlaylist(playlist: result.playlist!, options: result.options!);
     }
 
-    // Complete initialization - store managers
-    _errorRecovery = result.managers!.errorRecovery;
-    _trackManager = result.managers!.trackManager;
-    _playbackManager = result.managers!.playbackManager;
-    _metadataManager = result.managers!.metadataManager;
-    _pipManager = result.managers!.pipManager;
-    _fullscreenManager = result.managers!.fullscreenManager;
-    _castingManager = result.managers!.castingManager;
-    _deviceControlsManager = result.managers!.deviceControlsManager;
-    _subtitleManager = result.managers!.subtitleManager;
-    _configurationManager = result.managers!.configurationManager;
-    _playlistManager = result.circularManagers!.playlistManager;
-    _eventCoordinator = result.circularManagers!.eventCoordinator;
+    // Complete initialization - store services
+    _services = result.services!;
 
     // Subscribe to platform events
-    _eventCoordinator.subscribeToEvents();
+    _services.eventCoordinator.subscribeToEvents();
 
     // Auto-play if requested (after managers are stored)
     if (result.autoPlay) {
@@ -345,37 +311,37 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// Starts or resumes video playback.
   Future<void> play() async {
     _ensureInitialized();
-    return _playbackManager.play();
+    return _services.playbackManager.play();
   }
 
   /// Pauses video playback.
   Future<void> pause() async {
     _ensureInitialized();
-    return _playbackManager.pause();
+    return _services.playbackManager.pause();
   }
 
   /// Stops playback and resets position to the beginning.
   Future<void> stop() async {
     _ensureInitialized();
-    return _playbackManager.stop();
+    return _services.playbackManager.stop();
   }
 
   /// Seeks to the specified [position].
   Future<void> seekTo(Duration position) async {
     _ensureInitialized();
-    return _playbackManager.seekTo(position);
+    return _services.playbackManager.seekTo(position);
   }
 
   /// Seeks forward by [duration].
   Future<void> seekForward(Duration duration) async {
     _ensureInitialized();
-    return _playbackManager.seekForward(duration);
+    return _services.playbackManager.seekForward(duration);
   }
 
   /// Seeks backward by [duration].
   Future<void> seekBackward(Duration duration) async {
     _ensureInitialized();
-    return _playbackManager.seekBackward(duration);
+    return _services.playbackManager.seekBackward(duration);
   }
 
   /// Sets the playback speed.
@@ -383,7 +349,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// [speed] must be greater than 0.
   Future<void> setPlaybackSpeed(double speed) async {
     _ensureInitialized();
-    return _playbackManager.setPlaybackSpeed(speed);
+    return _services.playbackManager.setPlaybackSpeed(speed);
   }
 
   /// Sets the player volume.
@@ -393,7 +359,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// Use [setDeviceVolume] to control the device's media volume.
   Future<void> setVolume(double volume) async {
     _ensureInitialized();
-    return _playbackManager.setVolume(volume);
+    return _services.playbackManager.setVolume(volume);
   }
 
   /// Gets the current device media volume.
@@ -402,7 +368,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// This is the device's media/music stream volume, not the player's internal volume.
   Future<double> getDeviceVolume() {
     _ensureInitialized();
-    return _deviceControlsManager.getDeviceVolume();
+    return _services.deviceControlsManager.getDeviceVolume();
   }
 
   /// Sets the device media volume.
@@ -417,7 +383,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// Note: The system volume UI may be shown briefly when changing volume.
   Future<void> setDeviceVolume(double volume) async {
     _ensureInitialized();
-    await _deviceControlsManager.setDeviceVolume(volume);
+    await _services.deviceControlsManager.setDeviceVolume(volume);
   }
 
   /// Gets the current screen brightness.
@@ -427,7 +393,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// On other platforms, returns 1.0 as a default.
   Future<double> getScreenBrightness() {
     _ensureInitialized();
-    return _deviceControlsManager.getScreenBrightness();
+    return _services.deviceControlsManager.getScreenBrightness();
   }
 
   /// Sets the screen brightness.
@@ -440,13 +406,13 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// when fullscreen mode is exited.
   Future<void> setScreenBrightness(double brightness) async {
     _ensureInitialized();
-    await _deviceControlsManager.setScreenBrightness(brightness);
+    await _services.deviceControlsManager.setScreenBrightness(brightness);
   }
 
   /// Sets whether the video should loop.
   Future<void> setLooping(bool looping) async {
     _ensureInitialized();
-    return _configurationManager.setLooping(looping);
+    return _services.configurationManager.setLooping(looping);
   }
 
   /// Sets the video scaling mode.
@@ -457,7 +423,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// - [VideoScalingMode.stretch]: Stretch mode, ignores aspect ratio
   Future<void> setScalingMode(VideoScalingMode mode) async {
     _ensureInitialized();
-    return _configurationManager.setScalingMode(mode);
+    return _services.configurationManager.setScalingMode(mode);
   }
 
   /// Selects a subtitle track.
@@ -468,7 +434,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// was set to `false` during initialization.
   Future<void> setSubtitleTrack(SubtitleTrack? track) async {
     _ensureInitialized();
-    await _trackManager.setSubtitleTrack(track);
+    await _services.trackManager.setSubtitleTrack(track);
   }
 
   /// Sets the subtitle rendering mode at runtime.
@@ -502,7 +468,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// ```
   Future<void> setSubtitleRenderMode(SubtitleRenderMode mode) async {
     _ensureInitialized();
-    await _trackManager.setSubtitleRenderMode(mode);
+    await _services.trackManager.setSubtitleRenderMode(mode);
   }
 
   /// Adds an external subtitle track from a [SubtitleSource].
@@ -550,7 +516,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// ```
   Future<ExternalSubtitleTrack?> addExternalSubtitle(SubtitleSource source) async {
     _ensureInitialized();
-    return _subtitleManager.addExternalSubtitle(source);
+    return _services.subtitleManager.addExternalSubtitle(source);
   }
 
   /// Removes an external subtitle track.
@@ -563,7 +529,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// track was not found.
   Future<bool> removeExternalSubtitle(String trackId) async {
     _ensureInitialized();
-    return _subtitleManager.removeExternalSubtitle(trackId);
+    return _services.subtitleManager.removeExternalSubtitle(trackId);
   }
 
   /// Gets all external subtitle tracks that have been added.
@@ -573,7 +539,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// This does not include embedded subtitle tracks from the video file.
   Future<List<ExternalSubtitleTrack>> getExternalSubtitles() async {
     _ensureInitialized();
-    return _subtitleManager.getExternalSubtitles();
+    return _services.subtitleManager.getExternalSubtitles();
   }
 
   /// Selects an audio track.
@@ -581,7 +547,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// Pass `null` to reset to the default audio track.
   Future<void> setAudioTrack(AudioTrack? track) async {
     _ensureInitialized();
-    await _trackManager.setAudioTrack(track);
+    await _services.trackManager.setAudioTrack(track);
   }
 
   /// Sets the video quality for adaptive streams.
@@ -596,7 +562,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// Returns `true` if the quality was successfully set.
   Future<bool> setVideoQuality(VideoQualityTrack track) async {
     _ensureInitialized();
-    return _trackManager.setVideoQuality(track);
+    return _services.trackManager.setVideoQuality(track);
   }
 
   /// Returns the available video quality tracks.
@@ -608,7 +574,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// For non-adaptive content, returns a list with only [VideoQualityTrack.auto].
   Future<List<VideoQualityTrack>> getVideoQualities() async {
     _ensureInitialized();
-    return _trackManager.getVideoQualities();
+    return _services.trackManager.getVideoQualities();
   }
 
   /// Returns the currently selected video quality track.
@@ -616,7 +582,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// Returns [VideoQualityTrack.auto] if automatic quality selection is active.
   Future<VideoQualityTrack> getCurrentVideoQuality() async {
     _ensureInitialized();
-    return _trackManager.getCurrentVideoQuality();
+    return _services.trackManager.getCurrentVideoQuality();
   }
 
   /// Returns whether manual quality selection is supported for the current content.
@@ -625,7 +591,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// multiple quality levels are available.
   Future<bool> isQualitySelectionSupported() async {
     _ensureInitialized();
-    return _trackManager.isQualitySelectionSupported();
+    return _services.trackManager.isQualitySelectionSupported();
   }
 
   /// Sets whether background playback is enabled.
@@ -656,7 +622,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// ```
   Future<bool> setBackgroundPlayback({required bool enabled}) async {
     _ensureInitialized();
-    return _configurationManager.setBackgroundPlayback(enabled: enabled);
+    return _services.configurationManager.setBackgroundPlayback(enabled: enabled);
   }
 
   /// Returns whether background playback is supported on this platform.
@@ -673,7 +639,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   Future<bool> isBackgroundPlaybackSupported() async {
     // Note: Does NOT call _ensureInitialized() because this is a platform
     // capability check, not a player operation. Can be called before initialization.
-    return _configurationManager.isBackgroundPlaybackSupported();
+    return _services.configurationManager.isBackgroundPlaybackSupported();
   }
 
   /// Returns whether background playback is available for this player.
@@ -848,7 +814,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// - **Windows/Linux**: Returns `false`
   Future<bool> isCastingSupported() async {
     _ensureInitialized();
-    return _castingManager.isCastingSupported();
+    return _services.castingManager.isCastingSupported();
   }
 
   /// Returns the list of available cast devices.
@@ -893,7 +859,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// ```
   Future<bool> startCasting({CastDevice? device}) async {
     _ensureInitialized();
-    return _castingManager.startCasting(device: device);
+    return _services.castingManager.startCasting(device: device);
   }
 
   /// Stops casting and returns playback to the local device.
@@ -905,7 +871,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// currently casting or if the operation failed.
   Future<bool> stopCasting() async {
     _ensureInitialized();
-    return _castingManager.stopCasting();
+    return _services.castingManager.stopCasting();
   }
 
   /// Returns the current casting state.
@@ -940,7 +906,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   ///
   /// Returns `null` if the player is not ready or metadata cannot be extracted.
   Future<VideoMetadata?> fetchVideoMetadata() async {
-    final metadata = await _metadataManager.fetchVideoMetadata();
+    final metadata = await _services.metadataManager.fetchVideoMetadata();
     if (metadata != null) {
       value = value.copyWith(videoMetadata: metadata);
     }
@@ -969,13 +935,13 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// See the package README for detailed setup instructions.
   Future<bool> enterPip({PipOptions options = const PipOptions()}) async {
     _ensureInitialized();
-    return _pipManager.enterPip(options: options);
+    return _services.pipManager.enterPip(options: options);
   }
 
   /// Exits Picture-in-Picture mode.
   Future<void> exitPip() async {
     _ensureInitialized();
-    await _pipManager.exitPip();
+    await _services.pipManager.exitPip();
   }
 
   /// Sets the PiP remote action buttons.
@@ -1011,7 +977,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// can handle them in your app as needed.
   Future<void> setPipActions(List<PipAction>? actions) async {
     _ensureInitialized();
-    await _pipManager.setPipActions(actions);
+    await _services.pipManager.setPipActions(actions);
   }
 
   /// Returns whether Picture-in-Picture is supported on this device.
@@ -1037,7 +1003,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   Future<bool> isPipSupported() {
     // Note: Does NOT call _ensureInitialized() because this is a platform
     // capability check, not a player operation. Can be called before initialization.
-    return _pipManager.isPipSupported();
+    return _services.pipManager.isPipSupported();
   }
 
   /// Returns whether Picture-in-Picture is available for this player.
@@ -1054,7 +1020,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// details on configuring each platform, or check the package README.
   Future<bool> isPipAvailable() {
     _ensureInitialized();
-    return _pipManager.isPipAvailable();
+    return _services.pipManager.isPipAvailable();
   }
 
   /// Returns whether subtitles are enabled for this player.
@@ -1104,7 +1070,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// Returns `true` if fullscreen was entered successfully.
   Future<bool> enterFullscreen({FullscreenOrientation? orientation}) async {
     _ensureInitialized();
-    return _fullscreenManager.enterFullscreen(orientation: orientation);
+    return _services.fullscreenManager.enterFullscreen(orientation: orientation);
   }
 
   /// Exits fullscreen mode.
@@ -1112,13 +1078,13 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// This restores the system UI and orientation to normal.
   Future<void> exitFullscreen() async {
     _ensureInitialized();
-    await _fullscreenManager.exitFullscreen();
+    await _services.fullscreenManager.exitFullscreen();
   }
 
   /// Toggles fullscreen mode.
   Future<void> toggleFullscreen() async {
     _ensureInitialized();
-    await _fullscreenManager.toggleFullscreen();
+    await _services.fullscreenManager.toggleFullscreen();
   }
 
   /// Sets the fullscreen state for Flutter-managed fullscreen (no native call).
@@ -1129,7 +1095,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// This updates the [VideoPlayerValue.isFullscreen] state without triggering
   /// native fullscreen behavior (like creating a separate window on macOS).
   void setFlutterFullscreenState({required bool isFullscreen}) {
-    _fullscreenManager.setFlutterFullscreenState(isFullscreen: isFullscreen);
+    _services.fullscreenManager.setFlutterFullscreenState(isFullscreen: isFullscreen);
   }
 
   // ==================== Orientation Lock API ====================
@@ -1152,7 +1118,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// ```
   Future<void> lockOrientation(FullscreenOrientation orientation) async {
     _ensureInitialized();
-    await _fullscreenManager.lockOrientation(orientation);
+    await _services.fullscreenManager.lockOrientation(orientation);
   }
 
   /// Unlocks the screen orientation.
@@ -1162,7 +1128,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// When unlocked outside fullscreen, all orientations are allowed.
   Future<void> unlockOrientation() async {
     _ensureInitialized();
-    await _fullscreenManager.unlockOrientation();
+    await _services.fullscreenManager.unlockOrientation();
   }
 
   /// Toggles the orientation lock.
@@ -1171,7 +1137,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// If currently locked, unlocks the orientation.
   Future<void> toggleOrientationLock() async {
     _ensureInitialized();
-    await _fullscreenManager.toggleOrientationLock();
+    await _services.fullscreenManager.toggleOrientationLock();
   }
 
   /// Cycles through orientation lock options.
@@ -1181,7 +1147,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// This is useful for a toolbar button that cycles through lock states.
   Future<void> cycleOrientationLock() async {
     _ensureInitialized();
-    await _fullscreenManager.cycleOrientationLock();
+    await _services.fullscreenManager.cycleOrientationLock();
   }
 
   /// Whether the screen orientation is currently locked.
@@ -1193,7 +1159,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// Toggles between play and pause.
   Future<void> togglePlayPause() async {
     _ensureInitialized();
-    return _playbackManager.togglePlayPause();
+    return _services.playbackManager.togglePlayPause();
   }
 
   // ==================== Error Recovery API ====================
@@ -1269,7 +1235,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   ///
   /// This stops any scheduled retry attempts and resets the retrying state.
   void cancelAutoRetry() {
-    _errorRecovery.cancelRetryTimer();
+    _services.errorRecovery.cancelRetryTimer();
     _isRetrying = false;
   }
 
@@ -1293,9 +1259,9 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     _Logger.log('Reinitializing player', tag: 'Controller');
 
     // Clean up existing player
-    _errorRecovery.cancelRetryTimer();
+    _services.errorRecovery.cancelRetryTimer();
     if (_playerId != null) {
-      await _eventCoordinator.dispose();
+      await _services.eventCoordinator.dispose();
     }
 
     if (_playerId != null) {
@@ -1377,33 +1343,28 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
       onSeekTo: seekTo,
     );
 
-    // Initialize all managers
-    final managers = coordinator.initializeManagers();
-    final circularManagers = coordinator.initializeCircularDependencyManagers(
-      playbackManager: managers.playbackManager,
-      trackManager: managers.trackManager,
-      errorRecoveryManager: managers.errorRecovery,
+    // Initialize all managers using the service container
+    _services = ControllerServices.create(
+      platform: _platform,
+      errorRecoveryOptions: _errorRecoveryOptions,
+      getValue: () => value,
+      setValue: (v) => value = v,
+      getPlayerId: () => _playerId,
+      getOptions: () => _options,
+      isDisposed: () => _isDisposed,
+      isRetrying: () => _isRetrying,
+      setRetrying: ({required isRetrying}) => _isRetrying = isRetrying,
       setPlayerId: (id) => _playerId = id,
       setSource: (s) => _source = s,
+      ensureInitialized: _ensureInitialized,
+      onRetry: _performRetryPlayback,
+      onPlay: play,
+      onSeekTo: seekTo,
     );
 
-    // Store managers
-    _errorRecovery = managers.errorRecovery;
-    _trackManager = managers.trackManager;
-    _playbackManager = managers.playbackManager;
-    _metadataManager = managers.metadataManager;
-    _pipManager = managers.pipManager;
-    _fullscreenManager = managers.fullscreenManager;
-    _castingManager = managers.castingManager;
-    _deviceControlsManager = managers.deviceControlsManager;
-    _subtitleManager = managers.subtitleManager;
-    _configurationManager = managers.configurationManager;
-    _playlistManager = circularManagers.playlistManager;
-    _eventCoordinator = circularManagers.eventCoordinator;
-
     // Subscribe to events and initialize playlist
-    _eventCoordinator.subscribeToEvents();
-    await _playlistManager.initializeWithPlaylist(playlist: playlist, options: options);
+    _services.eventCoordinator.subscribeToEvents();
+    await _services.playlistManager.initializeWithPlaylist(playlist: playlist, options: options);
   }
 
   /// Moves to the next track in the playlist.
@@ -1412,7 +1373,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// (and repeat mode is [PlaylistRepeatMode.none]).
   Future<bool> playlistNext() async {
     _ensureInitialized();
-    return _playlistManager.playlistNext();
+    return _services.playlistManager.playlistNext();
   }
 
   /// Moves to the previous track in the playlist.
@@ -1421,19 +1382,19 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// beginning of playlist.
   Future<bool> playlistPrevious() async {
     _ensureInitialized();
-    return _playlistManager.playlistPrevious();
+    return _services.playlistManager.playlistPrevious();
   }
 
   /// Jumps to a specific track in the playlist by index.
   Future<void> playlistJumpTo(int index) async {
     _ensureInitialized();
-    return _playlistManager.playlistJumpTo(index);
+    return _services.playlistManager.playlistJumpTo(index);
   }
 
   /// Sets the playlist repeat mode.
   void setPlaylistRepeatMode(PlaylistRepeatMode mode) {
     _ensureInitialized();
-    _playlistManager.setPlaylistRepeatMode(mode);
+    _services.playlistManager.setPlaylistRepeatMode(mode);
   }
 
   /// Toggles playlist shuffle mode.
@@ -1442,7 +1403,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// When disabled, tracks play in original order.
   void setPlaylistShuffle({required bool enabled}) {
     _ensureInitialized();
-    _playlistManager.setPlaylistShuffle(enabled: enabled);
+    _services.playlistManager.setPlaylistShuffle(enabled: enabled);
   }
 
   /// Sets the media metadata for platform media controls.
@@ -1467,7 +1428,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// ```
   Future<void> setMediaMetadata(MediaMetadata metadata) async {
     _ensureInitialized();
-    await _metadataManager.setMediaMetadata(metadata);
+    await _services.metadataManager.setMediaMetadata(metadata);
   }
 
   // ==================== Chapter Navigation ====================
@@ -1501,7 +1462,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// ```
   Future<void> seekToChapter(Chapter chapter) async {
     _ensureInitialized();
-    await _metadataManager.seekToChapter(chapter);
+    await _services.metadataManager.seekToChapter(chapter);
   }
 
   /// Seeks to the next chapter, if available.
@@ -1510,7 +1471,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// Returns `true` if a seek was performed, `false` otherwise.
   Future<bool> seekToNextChapter() async {
     _ensureInitialized();
-    return _metadataManager.seekToNextChapter();
+    return _services.metadataManager.seekToNextChapter();
   }
 
   /// Seeks to the previous chapter, if available.
@@ -1520,7 +1481,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// Returns `true` if a seek was performed, `false` otherwise.
   Future<bool> seekToPreviousChapter() async {
     _ensureInitialized();
-    return _metadataManager.seekToPreviousChapter();
+    return _services.metadataManager.seekToPreviousChapter();
   }
 
   @override
@@ -1530,16 +1491,11 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
 
     // Only dispose if initialized (managers exist)
     if (_playerId != null) {
-      final coordinator = DisposalCoordinator(
-        getPlayerId: () => _playerId,
-        platform: _platform,
-        eventCoordinator: _eventCoordinator,
-        errorRecovery: _errorRecovery,
-        playlistManager: _playlistManager,
-        playbackManager: _playbackManager,
-      );
+      // Dispose all managers
+      await _services.dispose();
 
-      await coordinator.disposeAll();
+      // Dispose platform player
+      await _platform.dispose(_playerId!);
     }
 
     _playerId = null;

@@ -140,6 +140,7 @@ export 'src/pro_video_player.dart';
 export 'src/pro_video_player_builder.dart';
 export 'src/pro_video_player_controller.dart';
 export 'src/subtitle_overlay.dart';
+export 'src/video_controls_config.dart';
 export 'src/video_controls_controller.dart';
 export 'src/video_controls_state.dart' show KeyboardOverlayType, VideoControlsState;
 export 'src/video_player_controls.dart' show CompactMode, LiveScrubbingMode, PlayerToolbarAction, VideoPlayerControls;

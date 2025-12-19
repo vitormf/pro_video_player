@@ -90,7 +90,7 @@ void main() {
         await tester.pump();
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(controller: controller, enableGestures: false, forceMobileLayout: true)),
+          buildTestWidget(VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true)),
         );
 
         // Should show skip previous and skip next buttons
@@ -120,7 +120,7 @@ void main() {
         await tester.pump();
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(controller: controller, enableGestures: false, forceMobileLayout: true)),
+          buildTestWidget(VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true)),
         );
 
         // Should show shuffle and repeat buttons
@@ -146,7 +146,7 @@ void main() {
 
           await tester.pumpWidget(
             buildTestWidget(
-              VideoPlayerControls(controller: controller, enableGestures: false, forceMobileLayout: true),
+              VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true),
             ),
           );
           await tester.pumpAndSettle();
@@ -163,7 +163,7 @@ void main() {
         await tester.pump();
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(controller: controller, enableGestures: false, forceMobileLayout: true)),
+          buildTestWidget(VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true)),
         );
         await tester.pumpAndSettle();
 
@@ -193,7 +193,7 @@ void main() {
 
           await tester.pumpWidget(
             buildTestWidget(
-              VideoPlayerControls(controller: controller, enableGestures: false, forceMobileLayout: true),
+              VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true),
             ),
           );
           await tester.pumpAndSettle();
@@ -218,7 +218,7 @@ void main() {
 
           await tester.pumpWidget(
             buildTestWidget(
-              VideoPlayerControls(controller: controller, enableGestures: false, forceMobileLayout: true),
+              VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true),
             ),
           );
           await tester.pumpAndSettle();
@@ -251,7 +251,7 @@ void main() {
 
           await tester.pumpWidget(
             buildTestWidget(
-              VideoPlayerControls(controller: controller, enableGestures: false, forceMobileLayout: true),
+              VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true),
             ),
           );
           await tester.pumpAndSettle();
@@ -270,7 +270,7 @@ void main() {
         await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(controller: controller, enableGestures: false, forceMobileLayout: true)),
+          buildTestWidget(VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true)),
         );
 
         // SubtitleOverlay is always present in the stack
@@ -300,7 +300,7 @@ void main() {
         await tester.pump();
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(controller: controller, enableGestures: false, forceMobileLayout: true)),
+          buildTestWidget(VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true)),
         );
 
         expect(find.text('Hello from subtitles!'), findsOneWidget);
@@ -319,7 +319,7 @@ void main() {
         await tester.pump();
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(controller: controller, enableGestures: false, forceMobileLayout: true)),
+          buildTestWidget(VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true)),
         );
 
         // No subtitle text should be rendered for embedded tracks
@@ -349,7 +349,7 @@ void main() {
         await tester.pump();
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(controller: controller, enableGestures: false, forceMobileLayout: true)),
+          buildTestWidget(VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true)),
         );
 
         expect(find.text('First cue'), findsOneWidget);
@@ -384,7 +384,7 @@ void main() {
         await tester.pump();
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(controller: controller, enableGestures: false, forceMobileLayout: true)),
+          buildTestWidget(VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true)),
         );
 
         expect(find.text('Later cue'), findsNothing);
@@ -405,13 +405,13 @@ void main() {
 
         // Build with first controller
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(forceMobileLayout: true, controller: controller1, enableGestures: false)),
+          buildTestWidget(VideoPlayerControls(forceMobileLayout: true, controller: controller1, gestureConfig: const GestureConfig(enableGestures: false))),
         );
         expect(find.byIcon(Icons.play_arrow), findsOneWidget);
 
         // Update with second controller
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(forceMobileLayout: true, controller: controller2, enableGestures: false)),
+          buildTestWidget(VideoPlayerControls(forceMobileLayout: true, controller: controller2, gestureConfig: const GestureConfig(enableGestures: false))),
         );
 
         // Widget should still render correctly
@@ -446,7 +446,7 @@ void main() {
             SizedBox(
               width: 800,
               height: 600,
-              child: VideoPlayerControls(controller: controller, enableGestures: false, forceMobileLayout: true),
+              child: VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true),
             ),
           ),
         );
@@ -461,7 +461,7 @@ void main() {
         await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(controller: controller, enableGestures: false, forceMobileLayout: true)),
+          buildTestWidget(VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true)),
         );
 
         final fullscreenButton = find.byIcon(Icons.fullscreen);
@@ -482,7 +482,7 @@ void main() {
           buildTestWidget(
             VideoPlayerControls(
               controller: controller,
-              enableGestures: false,
+              gestureConfig: const GestureConfig(enableGestures: false),
               forceMobileLayout: true,
               testIsPipAvailable: true, // Inject test value directly
             ),
@@ -507,7 +507,7 @@ void main() {
         await tester.pump();
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(controller: controller, enableGestures: false, forceMobileLayout: true)),
+          buildTestWidget(VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true)),
         );
 
         final subtitleButton = find.byIcon(Icons.closed_caption_off);
@@ -524,7 +524,7 @@ void main() {
         await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(controller: controller, enableGestures: false, forceMobileLayout: true)),
+          buildTestWidget(VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true)),
         );
 
         // Find the speed button (TextButton with '1x')
@@ -544,7 +544,7 @@ void main() {
         await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(controller: controller, enableGestures: false, forceMobileLayout: true)),
+          buildTestWidget(VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true)),
         );
 
         final scalingButton = find.byIcon(Icons.aspect_ratio);
@@ -569,7 +569,7 @@ void main() {
         await tester.pump();
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(controller: controller, enableGestures: false, forceMobileLayout: true)),
+          buildTestWidget(VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true)),
         );
 
         final audioButton = find.byIcon(Icons.audiotrack);
@@ -586,7 +586,7 @@ void main() {
         await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(controller: controller, enableGestures: false, forceMobileLayout: true)),
+          buildTestWidget(VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true)),
         );
 
         // Orientation lock button should not be visible when not in fullscreen
@@ -608,7 +608,7 @@ void main() {
             SizedBox(
               width: 800,
               height: 600,
-              child: VideoPlayerControls(controller: controller, enableGestures: false, forceMobileLayout: true),
+              child: VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true),
             ),
           ),
         );
@@ -630,7 +630,7 @@ void main() {
             SizedBox(
               width: 800,
               height: 600,
-              child: VideoPlayerControls(controller: controller, enableGestures: false, forceMobileLayout: true),
+              child: VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true),
             ),
           ),
         );
@@ -653,7 +653,7 @@ void main() {
             SizedBox(
               width: 800,
               height: 600,
-              child: VideoPlayerControls(controller: controller, enableGestures: false, forceMobileLayout: true),
+              child: VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true),
             ),
           ),
         );
@@ -691,8 +691,8 @@ void main() {
                 child: VideoPlayerControls(
                   forceMobileLayout: true,
                   controller: controller,
-                  enableGestures: false,
-                  onExitFullscreen: () => exitFullscreenCalled = true,
+                  gestureConfig: const GestureConfig(enableGestures: false),
+                  fullscreenConfig: FullscreenConfig(onExitFullscreen: () => exitFullscreenCalled = true),
                 ),
               ),
             ),
@@ -733,8 +733,8 @@ void main() {
                 child: VideoPlayerControls(
                   forceMobileLayout: true,
                   controller: controller,
-                  enableGestures: false,
-                  onEnterFullscreen: () => enterFullscreenCalled = true,
+                  gestureConfig: const GestureConfig(enableGestures: false),
+                  fullscreenConfig: FullscreenConfig(onEnterFullscreen: () => enterFullscreenCalled = true),
                 ),
               ),
             ),

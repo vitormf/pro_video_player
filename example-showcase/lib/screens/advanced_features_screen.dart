@@ -166,8 +166,10 @@ class _ErrorHandlingDemoState extends State<_ErrorHandlingDemo> with AutomaticKe
                 child: ProVideoPlayer(
                   key: TestKeys.errorHandlingVideoPlayer,
                   controller: _controller!,
-                  controlsBuilder: (context, controller) =>
-                      VideoPlayerControls(controller: controller, showFullscreenButton: false),
+                  controlsBuilder: (context, controller) => VideoPlayerControls(
+                    controller: controller,
+                    buttonsConfig: const ButtonsConfig(showFullscreenButton: false),
+                  ),
                   placeholder: const Center(child: CircularProgressIndicator(color: Colors.white)),
                 ),
               ),
@@ -361,8 +363,10 @@ class _MiniPlayer extends StatelessWidget {
       children: [
         ProVideoPlayer(
           controller: controller,
-          controlsBuilder: (context, controller) =>
-              VideoPlayerControls(controller: controller, showFullscreenButton: false),
+          controlsBuilder: (context, controller) => VideoPlayerControls(
+            controller: controller,
+            buttonsConfig: const ButtonsConfig(showFullscreenButton: false),
+          ),
           placeholder: const Center(child: CircularProgressIndicator()),
         ),
         // Remove button overlay

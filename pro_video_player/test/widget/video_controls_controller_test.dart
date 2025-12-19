@@ -63,49 +63,21 @@ void main() {
   /// Waits for async initialization to complete before returning.
   Future<VideoControlsController> createController({
     required ProVideoPlayerController videoController,
-    bool autoHide = true,
-    Duration autoHideDuration = const Duration(seconds: 3),
-    bool enableKeyboardShortcuts = true,
-    Duration keyboardSeekDuration = const Duration(seconds: 10),
-    bool enableContextMenu = true,
-    bool minimalToolbarOnDesktop = false,
-    bool showFullscreenButton = true,
-    bool showPipButton = true,
-    bool showBackgroundPlaybackButton = false,
-    bool showSubtitleButton = true,
-    bool showAudioButton = true,
-    bool showQualityButton = true,
-    bool showSpeedButton = true,
-    List<double> speedOptions = const [0.5, 1.0, 1.5, 2.0],
-    List<VideoScalingMode> scalingModeOptions = const [
-      VideoScalingMode.fit,
-      VideoScalingMode.fill,
-      VideoScalingMode.stretch,
-    ],
-    VoidCallback? onEnterFullscreen,
-    VoidCallback? onExitFullscreen,
-    FullscreenOrientation fullscreenOrientation = FullscreenOrientation.landscapeBoth,
+    ButtonsConfig buttonsConfig = const ButtonsConfig(),
+    GestureConfig gestureConfig = const GestureConfig(),
+    ControlsBehaviorConfig behaviorConfig = const ControlsBehaviorConfig(
+      keyboardSeekDuration: Duration(seconds: 10), // Match test expectations
+    ),
+    PlaybackOptionsConfig playbackOptionsConfig = const PlaybackOptionsConfig(),
+    FullscreenConfig fullscreenConfig = const FullscreenConfig(),
   }) async {
     final controller = VideoControlsController(
       videoController: videoController,
-      autoHide: autoHide,
-      autoHideDuration: autoHideDuration,
-      enableKeyboardShortcuts: enableKeyboardShortcuts,
-      keyboardSeekDuration: keyboardSeekDuration,
-      enableContextMenu: enableContextMenu,
-      minimalToolbarOnDesktop: minimalToolbarOnDesktop,
-      showFullscreenButton: showFullscreenButton,
-      showPipButton: showPipButton,
-      showBackgroundPlaybackButton: showBackgroundPlaybackButton,
-      showSubtitleButton: showSubtitleButton,
-      showAudioButton: showAudioButton,
-      showQualityButton: showQualityButton,
-      showSpeedButton: showSpeedButton,
-      speedOptions: speedOptions,
-      scalingModeOptions: scalingModeOptions,
-      onEnterFullscreen: onEnterFullscreen ?? () {},
-      onExitFullscreen: onExitFullscreen ?? () {},
-      fullscreenOrientation: fullscreenOrientation,
+      buttonsConfig: buttonsConfig,
+      gestureConfig: gestureConfig,
+      behaviorConfig: behaviorConfig,
+      playbackOptionsConfig: playbackOptionsConfig,
+      fullscreenConfig: fullscreenConfig,
     );
 
     // Wait for async initialization (PiP, background playback, casting checks)
@@ -138,7 +110,7 @@ void main() {
 
         final controller = await createController(
           videoController: videoController,
-          autoHideDuration: TestDelays.stateUpdate,
+          behaviorConfig: const ControlsBehaviorConfig(autoHideDuration: TestDelays.stateUpdate),
         );
 
         var notifyCount = 0;
@@ -174,7 +146,7 @@ void main() {
 
         await Future<void>.delayed(TestDelays.stateUpdate);
 
-        expect(controller.controlsState.isBackgroundPlaybackSupported, isNull);
+        expect(controller.controlsState.isBackgroundPlaybackSupported, isFalse);
 
         controller.dispose();
       });
@@ -232,7 +204,7 @@ void main() {
 
         final controller = await createController(
           videoController: videoController,
-          autoHideDuration: const Duration(milliseconds: 200),
+          behaviorConfig: const ControlsBehaviorConfig(autoHideDuration: Duration(milliseconds: 200)),
         );
 
         // Start playing to activate auto-hide timer
@@ -258,7 +230,7 @@ void main() {
 
         final controller = await createController(
           videoController: videoController,
-          autoHideDuration: TestDelays.stateUpdate,
+          behaviorConfig: const ControlsBehaviorConfig(autoHideDuration: TestDelays.stateUpdate),
         );
 
         videoController.value = videoController.value.copyWith(playbackState: PlaybackState.playing);
@@ -279,7 +251,7 @@ void main() {
 
         final controller = await createController(
           videoController: videoController,
-          autoHideDuration: TestDelays.stateUpdate,
+          behaviorConfig: const ControlsBehaviorConfig(autoHideDuration: TestDelays.stateUpdate),
         );
 
         videoController.value = videoController.value.copyWith(playbackState: PlaybackState.paused);
@@ -300,7 +272,7 @@ void main() {
 
         final controller = await createController(
           videoController: videoController,
-          autoHideDuration: TestDelays.stateUpdate,
+          behaviorConfig: const ControlsBehaviorConfig(autoHideDuration: TestDelays.stateUpdate),
         );
 
         videoController.value = videoController.value.copyWith(playbackState: PlaybackState.buffering);
@@ -321,8 +293,7 @@ void main() {
 
         final controller = await createController(
           videoController: videoController,
-          autoHide: false,
-          autoHideDuration: TestDelays.stateUpdate,
+          behaviorConfig: const ControlsBehaviorConfig(autoHide: false, autoHideDuration: TestDelays.stateUpdate),
         );
 
         videoController.value = videoController.value.copyWith(playbackState: PlaybackState.playing);
@@ -349,7 +320,7 @@ void main() {
 
         final controller = await createController(
           videoController: videoController,
-          autoHideDuration: TestDelays.stateUpdate,
+          behaviorConfig: const ControlsBehaviorConfig(autoHideDuration: TestDelays.stateUpdate),
         );
 
         // Start playing first (which triggers auto-hide timer)
@@ -375,7 +346,7 @@ void main() {
 
         final controller = await createController(
           videoController: videoController,
-          autoHideDuration: TestDelays.stateUpdate,
+          behaviorConfig: const ControlsBehaviorConfig(autoHideDuration: TestDelays.stateUpdate),
         );
 
         videoController.value = videoController.value.copyWith(playbackState: PlaybackState.playing);
@@ -454,7 +425,7 @@ void main() {
 
         final controller = await createController(
           videoController: videoController,
-          autoHideDuration: TestDelays.stateUpdate,
+          behaviorConfig: const ControlsBehaviorConfig(autoHideDuration: TestDelays.stateUpdate),
         );
 
         videoController.value = videoController.value.copyWith(playbackState: PlaybackState.playing);
@@ -790,7 +761,7 @@ void main() {
 
         final controller = await createController(
           videoController: videoController,
-          autoHideDuration: TestDelays.stateUpdate,
+          behaviorConfig: const ControlsBehaviorConfig(autoHideDuration: TestDelays.stateUpdate),
         );
 
         videoController.value = videoController.value.copyWith(playbackState: PlaybackState.playing);
@@ -966,7 +937,7 @@ void main() {
 
         final controller = await createController(
           videoController: videoController,
-          autoHideDuration: TestDelays.stateUpdate,
+          behaviorConfig: const ControlsBehaviorConfig(autoHideDuration: TestDelays.stateUpdate),
         );
 
         var notifyCount = 0;
@@ -1027,7 +998,7 @@ void main() {
 
         final controller = await createController(
           videoController: videoController,
-          autoHide: false, // Disable to allow pumpAndSettle to complete
+          behaviorConfig: const ControlsBehaviorConfig(autoHide: false), // Disable to allow pumpAndSettle to complete
         );
 
         await tester.pumpWidget(
@@ -1064,7 +1035,7 @@ void main() {
 
         final controller = await createController(
           videoController: videoController,
-          autoHide: false, // Disable to allow pumpAndSettle to complete
+          behaviorConfig: const ControlsBehaviorConfig(autoHide: false), // Disable to allow pumpAndSettle to complete
         );
 
         await tester.pumpWidget(
@@ -1101,7 +1072,7 @@ void main() {
 
         final controller = await createController(
           videoController: videoController,
-          autoHide: false, // Disable to allow pumpAndSettle to complete
+          behaviorConfig: const ControlsBehaviorConfig(autoHide: false), // Disable to allow pumpAndSettle to complete
         );
 
         await tester.pumpWidget(
@@ -1141,7 +1112,7 @@ void main() {
 
         final controller = await createController(
           videoController: videoController,
-          autoHide: false, // Disable to allow pumpAndSettle to complete
+          behaviorConfig: const ControlsBehaviorConfig(autoHide: false), // Disable to allow pumpAndSettle to complete
         );
 
         await tester.pumpWidget(

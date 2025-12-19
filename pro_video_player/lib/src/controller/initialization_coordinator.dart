@@ -1,17 +1,6 @@
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
-import 'casting_manager.dart';
-import 'configuration_manager.dart';
-import 'device_controls_manager.dart';
-import 'error_recovery_manager.dart';
-import 'event_coordinator.dart';
-import 'fullscreen_manager.dart';
-import 'metadata_manager.dart';
-import 'pip_manager.dart';
-import 'playback_manager.dart';
-import 'playlist_manager.dart';
-import 'subtitle_manager.dart';
-import 'track_manager.dart';
+import 'controller_services.dart';
 
 // Alias for cleaner code
 typedef _Logger = ProVideoPlayerLogger;
@@ -133,14 +122,23 @@ class InitializationCoordinator {
       // Notify that player is created (allows UI to show player view)
       setValue(getValue().copyWith(playbackState: PlaybackState.buffering));
 
-      // Initialize all managers
-      final managers = initializeManagers();
-      final circularManagers = initializeCircularDependencyManagers(
-        playbackManager: managers.playbackManager,
-        trackManager: managers.trackManager,
-        errorRecoveryManager: managers.errorRecovery,
+      // Initialize all managers using the service container
+      final services = ControllerServices.create(
+        platform: platform,
+        errorRecoveryOptions: errorRecoveryOptions,
+        getValue: getValue,
+        setValue: setValue,
+        getPlayerId: getPlayerId,
+        getOptions: getOptions,
+        isDisposed: isDisposed,
+        isRetrying: isRetrying,
+        setRetrying: setRetrying,
         setPlayerId: setPlayerId,
         setSource: setSource,
+        ensureInitialized: ensureInitialized,
+        onRetry: onRetry,
+        onPlay: onPlay,
+        onSeekTo: onSeekTo,
       );
 
       // Don't subscribe to events here - subscription happens lazily when needed
@@ -161,257 +159,32 @@ class InitializationCoordinator {
 
       // Auto-discover subtitles for local file sources
       if (options.autoDiscoverSubtitles && options.subtitlesEnabled && source is FileVideoSource) {
-        await managers.subtitleManager.discoverAndAddSubtitles(source.path, options.subtitleDiscoveryMode);
+        await services.subtitleManager.discoverAndAddSubtitles(source.path, options.subtitleDiscoveryMode);
       }
 
-      return InitializationResult.complete(managers, circularManagers, autoPlay: options.autoPlay);
+      return InitializationResult.complete(services, autoPlay: options.autoPlay);
     } catch (e) {
       _Logger.error('Failed to initialize player', tag: 'InitCoordinator', error: e);
       setValue(getValue().copyWith(playbackState: PlaybackState.error, errorMessage: e.toString()));
       rethrow;
     }
   }
-
-  /// Initializes all managers and returns them.
-  ///
-  /// Managers are created in dependency order (managers that other managers
-  /// depend on are created first).
-  ManagerSet initializeManagers() {
-    // Initialize error recovery manager
-    final errorRecovery = ErrorRecoveryManager(
-      options: errorRecoveryOptions,
-      getValue: getValue,
-      setValue: setValue,
-      isDisposed: isDisposed,
-      getPlayerId: getPlayerId,
-      platform: platform,
-      onRetry: onRetry,
-    );
-
-    // Initialize track manager
-    final trackManager = TrackManager(
-      getValue: getValue,
-      setValue: setValue,
-      getPlayerId: getPlayerId,
-      getOptions: getOptions,
-      platform: platform,
-      ensureInitialized: ensureInitialized,
-    );
-
-    // Initialize playback manager (must be before metadata manager for seekTo callback)
-    final playbackManager = PlaybackManager(
-      getValue: getValue,
-      setValue: setValue,
-      getPlayerId: getPlayerId,
-      platform: platform,
-      ensureInitialized: ensureInitialized,
-    );
-
-    // Initialize metadata manager
-    final metadataManager = MetadataManager(
-      getValue: getValue,
-      getPlayerId: getPlayerId,
-      platform: platform,
-      ensureInitialized: ensureInitialized,
-      onSeekTo: playbackManager.seekTo,
-    );
-
-    // Initialize PiP manager
-    final pipManager = PipManager(
-      getPlayerId: getPlayerId,
-      getOptions: getOptions,
-      platform: platform,
-      ensureInitialized: ensureInitialized,
-    );
-
-    // Initialize fullscreen manager
-    final fullscreenManager = FullscreenManager(
-      getValue: getValue,
-      setValue: setValue,
-      getPlayerId: getPlayerId,
-      getOptions: getOptions,
-      platform: platform,
-      ensureInitialized: ensureInitialized,
-    );
-
-    // Initialize casting manager
-    final castingManager = CastingManager(
-      getPlayerId: getPlayerId,
-      getOptions: getOptions,
-      platform: platform,
-      ensureInitialized: ensureInitialized,
-    );
-
-    // Initialize device controls manager
-    final deviceControlsManager = DeviceControlsManager(platform: platform, ensureInitialized: ensureInitialized);
-
-    // Initialize subtitle manager
-    final subtitleManager = SubtitleManager(
-      getPlayerId: getPlayerId,
-      getOptions: getOptions,
-      platform: platform,
-      ensureInitialized: ensureInitialized,
-    );
-
-    // Initialize configuration manager
-    final configurationManager = ConfigurationManager(
-      getValue: getValue,
-      setValue: setValue,
-      getPlayerId: getPlayerId,
-      platform: platform,
-      ensureInitialized: ensureInitialized,
-    );
-
-    // Playlist manager and event coordinator are created separately and passed in
-    // because they have circular dependencies with the controller's methods
-
-    return ManagerSet(
-      errorRecovery: errorRecovery,
-      trackManager: trackManager,
-      playbackManager: playbackManager,
-      metadataManager: metadataManager,
-      pipManager: pipManager,
-      fullscreenManager: fullscreenManager,
-      castingManager: castingManager,
-      deviceControlsManager: deviceControlsManager,
-      subtitleManager: subtitleManager,
-      configurationManager: configurationManager,
-    );
-  }
-
-  /// Creates playlist manager and event coordinator with circular dependencies.
-  ///
-  /// These managers depend on controller methods (onPlay, onSeekTo) and other
-  /// managers, so they're created separately after the initial manager set.
-  CircularDependencyManagers initializeCircularDependencyManagers({
-    required PlaybackManager playbackManager,
-    required TrackManager trackManager,
-    required ErrorRecoveryManager errorRecoveryManager,
-    required void Function(int?) setPlayerId,
-    required void Function(VideoSource) setSource,
-  }) {
-    // Initialize playlist manager
-    final playlistManager = PlaylistManager(
-      getValue: getValue,
-      setValue: setValue,
-      getOptions: getOptions,
-      getPlayerId: getPlayerId,
-      setPlayerId: setPlayerId,
-      setSource: setSource,
-      platform: platform,
-      onPlay: onPlay,
-    );
-
-    // Initialize event coordinator
-    final eventCoordinator = EventCoordinator(
-      getValue: getValue,
-      setValue: setValue,
-      getPlayerId: getPlayerId,
-      getOptions: getOptions,
-      isDisposed: isDisposed,
-      isRetrying: isRetrying,
-      setRetrying: setRetrying,
-      platform: platform,
-      playbackManager: playbackManager,
-      trackManager: trackManager,
-      errorRecoveryManager: errorRecoveryManager,
-      playlistManager: playlistManager,
-      onSeekTo: onSeekTo,
-      onPlay: onPlay,
-    );
-
-    // Wire up circular dependency: playlist manager needs to subscribe to events
-    playlistManager.eventSubscriptionCallback = eventCoordinator.subscribeToEvents;
-
-    return CircularDependencyManagers(playlistManager: playlistManager, eventCoordinator: eventCoordinator);
-  }
-}
-
-/// Container for all manager instances (except circular dependency managers).
-class ManagerSet {
-  /// Creates a manager set.
-  const ManagerSet({
-    required this.errorRecovery,
-    required this.trackManager,
-    required this.playbackManager,
-    required this.metadataManager,
-    required this.pipManager,
-    required this.fullscreenManager,
-    required this.castingManager,
-    required this.deviceControlsManager,
-    required this.subtitleManager,
-    required this.configurationManager,
-  });
-
-  /// Error recovery manager instance.
-  final ErrorRecoveryManager errorRecovery;
-
-  /// Track manager instance.
-  final TrackManager trackManager;
-
-  /// Playback manager instance.
-  final PlaybackManager playbackManager;
-
-  /// Metadata manager instance.
-  final MetadataManager metadataManager;
-
-  /// PiP manager instance.
-  final PipManager pipManager;
-
-  /// Fullscreen manager instance.
-  final FullscreenManager fullscreenManager;
-
-  /// Casting manager instance.
-  final CastingManager castingManager;
-
-  /// Device controls manager instance.
-  final DeviceControlsManager deviceControlsManager;
-
-  /// Subtitle manager instance.
-  final SubtitleManager subtitleManager;
-
-  /// Configuration manager instance.
-  final ConfigurationManager configurationManager;
-}
-
-/// Container for managers with circular dependencies.
-class CircularDependencyManagers {
-  /// Creates a circular dependency managers container.
-  const CircularDependencyManagers({required this.playlistManager, required this.eventCoordinator});
-
-  /// Playlist manager instance.
-  final PlaylistManager playlistManager;
-
-  /// Event coordinator instance.
-  final EventCoordinator eventCoordinator;
 }
 
 /// Result of initialization, indicating whether it completed or needs playlist handling.
 class InitializationResult {
-  const InitializationResult._({
-    this.managers,
-    this.circularManagers,
-    this.playlist,
-    this.options,
-    this.autoPlay = false,
-  });
+  const InitializationResult._({this.services, this.playlist, this.options, this.autoPlay = false});
 
   /// Initialization completed successfully.
-  factory InitializationResult.complete(
-    ManagerSet managers,
-    CircularDependencyManagers circularManagers, {
-    bool autoPlay = false,
-  }) => InitializationResult._(managers: managers, circularManagers: circularManagers, autoPlay: autoPlay);
+  factory InitializationResult.complete(ControllerServices services, {bool autoPlay = false}) =>
+      InitializationResult._(services: services, autoPlay: autoPlay);
 
   /// Loaded a playlist that needs playlist-specific initialization.
   factory InitializationResult.playlist(Playlist playlist, VideoPlayerOptions options) =>
       InitializationResult._(playlist: playlist, options: options);
 
-  /// Manager instances (null if this is a playlist result).
-  final ManagerSet? managers;
-
-  /// Circular dependency managers (null if this is a playlist result).
-  final CircularDependencyManagers? circularManagers;
+  /// Service container instance (null if this is a playlist result).
+  final ControllerServices? services;
 
   /// Playlist instance (null if this is a complete result).
   final Playlist? playlist;
@@ -426,5 +199,5 @@ class InitializationResult {
   bool get isPlaylist => playlist != null;
 
   /// Whether this result represents completed initialization.
-  bool get isComplete => managers != null;
+  bool get isComplete => services != null;
 }

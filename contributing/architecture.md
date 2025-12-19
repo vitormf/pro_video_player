@@ -163,6 +163,73 @@ await controller.dispose();
 
 ---
 
+## Dependency Injection: ControllerServices
+
+The controller uses a dependency injection container (`ControllerServices`) to manage its 12 specialized managers. This provides:
+
+- **Encapsulation**: Dependency wiring hidden in factory method
+- **Testability**: Easy to mock entire service container if needed
+- **Maintainability**: Single place to see all dependencies
+- **Reduced complexity**: Controller has 1 services field instead of 12 manager fields
+
+### Manager Creation Phases
+
+Managers are created in 4 phases to handle dependencies correctly:
+
+**Phase 1: Independent Managers** (9 managers)
+- ErrorRecoveryManager
+- TrackManager
+- PlaybackManager
+- PipManager
+- FullscreenManager
+- CastingManager
+- DeviceControlsManager
+- SubtitleManager
+- ConfigurationManager
+
+**Phase 2: Cross-Dependent Managers** (1 manager)
+- MetadataManager (depends on PlaybackManager.seekTo)
+
+**Phase 3: Circular Dependencies** (2 managers)
+- PlaylistManager (needs EventCoordinator callback)
+- EventCoordinator (needs PlaylistManager reference)
+
+**Phase 4: Resolve Circular Dependency**
+```dart
+playlistManager.eventSubscriptionCallback = eventCoordinator.subscribeToEvents;
+```
+
+### Adding a New Manager
+
+1. Create manager class in `lib/src/controller/` directory
+2. Add field to `ControllerServices` class
+3. Wire dependencies in `ControllerServices.create()` factory method
+4. Expose via controller public API (add methods to `ProVideoPlayerController`)
+
+### Example: Controller Initialization
+
+```dart
+// Internal: Services created during initialization
+final services = ControllerServices.create(
+  platform: platform,
+  errorRecoveryOptions: errorRecoveryOptions,
+  getValue: () => value,
+  setValue: (v) => value = v,
+  getPlayerId: () => _playerId,
+  getOptions: () => _options,
+  // ... other callbacks
+);
+
+// Controller stores single services instance
+_services = services;
+
+// Access managers through services
+await _services.playbackManager.play();
+await _services.trackManager.setSubtitleTrack(track);
+```
+
+---
+
 ## State Management Architecture
 
 **Philosophy:** Use only Flutter built-ins (no external state management libraries). Separate concerns for better testability and performance.
