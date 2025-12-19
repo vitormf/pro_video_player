@@ -6,7 +6,6 @@ import Foundation
 public class ProVideoPlayerPlugin: NSObject, FlutterPlugin, PlatformPluginBehavior {
     private(set) var sharedBase: SharedPluginBase!
     private var registrar: FlutterPluginRegistrar!
-    private var pigeonHandler: PigeonHostApiHandler?
 
     /// Test-friendly initializer that creates a plugin instance with a custom registrar
     /// - Parameter registrar: The Flutter plugin registrar to use
@@ -18,7 +17,6 @@ public class ProVideoPlayerPlugin: NSObject, FlutterPlugin, PlatformPluginBehavi
             platformBehavior: self,
             config: .macOS
         )
-        self.pigeonHandler = PigeonHostApiHandler(sharedBase: self.sharedBase, platformBehavior: self)
     }
 
     override init() {
@@ -34,9 +32,8 @@ public class ProVideoPlayerPlugin: NSObject, FlutterPlugin, PlatformPluginBehavi
             config: .macOS
         )
 
-        // Register Pigeon API for all method calls
-        instance.pigeonHandler = PigeonHostApiHandler(sharedBase: instance.sharedBase, platformBehavior: instance)
-        ProVideoPlayerHostApiSetup.setUp(binaryMessenger: registrar.messenger, api: instance.pigeonHandler)
+        // Register Pigeon API - SharedPluginBase implements ProVideoPlayerHostApi directly
+        ProVideoPlayerHostApiSetup.setUp(binaryMessenger: registrar.messenger, api: instance.sharedBase)
 
         // Register platform views
         let factory = VideoPlayerViewFactory(plugin: instance.sharedBase)
@@ -45,14 +42,6 @@ public class ProVideoPlayerPlugin: NSObject, FlutterPlugin, PlatformPluginBehavi
         // Register AirPlay route picker view factory
         let airPlayFactory = AirPlayRoutePickerViewFactory(messenger: registrar.messenger)
         registrar.register(airPlayFactory, withId: "dev.pro_video_player.macos/airplay_picker")
-    }
-
-    // Note: This handle() method is no longer used since we migrated to Pigeon.
-    // It's kept only because tests might still reference it.
-    // All method calls now go through PigeonHostApiHandler instead.
-    public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-        // No-op: All calls should go through Pigeon API now
-        result(FlutterMethodNotImplemented)
     }
 
     /// Gets a player by ID (for testing purposes)
@@ -71,7 +60,6 @@ public class ProVideoPlayerPlugin: NSObject, FlutterPlugin, PlatformPluginBehavi
             supported = false
         }
 
-        verboseLog("isPipSupported returning: \(supported)", tag: "Plugin")
         return supported
     }
 

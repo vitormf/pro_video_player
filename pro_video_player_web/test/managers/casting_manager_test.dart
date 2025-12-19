@@ -156,7 +156,7 @@ void main() {
       });
 
       test('stops casting by reloading video', () async {
-        mockRemote.state = 'connected';
+        mockRemote.mockState = 'connected';
         fixture.videoElement.currentTime = 45.0;
         fixture.videoElement.paused = false;
 
@@ -177,7 +177,7 @@ void main() {
       });
 
       test('stops casting reloads video source', () async {
-        mockRemote.state = 'connected';
+        mockRemote.mockState = 'connected';
         fixture.videoElement.currentTime = 30.5;
         fixture.videoElement.paused = true;
 
@@ -191,7 +191,7 @@ void main() {
       });
 
       test('returns false when stopping cast while disconnected', () async {
-        mockRemote.state = 'disconnected';
+        mockRemote.mockState = 'disconnected';
 
         final success = await manager.stopCasting(
           currentSource: const VideoSource.network('https://example.com/video.mp4'),

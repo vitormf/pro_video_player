@@ -4,6 +4,7 @@ import 'dart:js_interop_unsafe';
 
 import 'package:web/web.dart' as web;
 
+import 'abstractions/hls_player_interface.dart';
 import 'verbose_logging.dart';
 
 /// HLS.js CDN URL - using a stable version.
@@ -140,8 +141,9 @@ class HlsEvents {
 
 /// Wrapper for HLS.js instance providing Dart-friendly API.
 ///
+/// Implements [HlsPlayerInterface] for type-safe usage in managers.
 /// Uses dynamic JS access since HLS.js is loaded at runtime from CDN.
-class HlsPlayer {
+class HlsPlayer implements HlsPlayerInterface {
   HlsPlayer._(this._hls);
 
   final JSObject _hls;
@@ -165,54 +167,54 @@ class HlsPlayer {
     return HlsPlayer._(hls);
   }
 
-  /// Attaches the HLS.js player to a video element.
-  void attachMedia(web.HTMLVideoElement video) {
-    _hls.callMethod('attachMedia'.toJS, video);
+  @override
+  void attachMedia(Object video) {
+    _hls.callMethod('attachMedia'.toJS, video as web.HTMLVideoElement);
     verboseLog('Media attached', tag: 'HlsPlayer');
   }
 
-  /// Detaches the player from the video element.
+  @override
   void detachMedia() {
     _hls.callMethod('detachMedia'.toJS);
     verboseLog('Media detached', tag: 'HlsPlayer');
   }
 
-  /// Loads an HLS source URL.
+  @override
   void loadSource(String url) {
     _hls.callMethod('loadSource'.toJS, url.toJS);
     verboseLog('Loading source: $url', tag: 'HlsPlayer');
   }
 
-  /// Starts loading the stream.
+  @override
   void startLoad([int startPosition = -1]) {
     _hls.callMethod('startLoad'.toJS, startPosition.toJS);
   }
 
-  /// Stops loading the stream.
+  @override
   void stopLoad() => _hls.callMethod('stopLoad'.toJS);
 
-  /// Gets the current quality level index (-1 for auto).
+  @override
   int get currentLevel => (_hls['currentLevel'] as JSNumber?)?.toDartInt ?? -1;
 
-  /// Sets the current quality level index (-1 for auto).
+  @override
   set currentLevel(int level) => _hls['currentLevel'] = level.toJS;
 
-  /// Gets the next level to be loaded (-1 for auto).
+  @override
   int get nextLevel => (_hls['nextLevel'] as JSNumber?)?.toDartInt ?? -1;
 
-  /// Sets the next level to be loaded (-1 for auto).
+  @override
   set nextLevel(int level) => _hls['nextLevel'] = level.toJS;
 
-  /// Gets the auto level capping (-1 for no cap).
+  @override
   int get autoLevelCapping => (_hls['autoLevelCapping'] as JSNumber?)?.toDartInt ?? -1;
 
-  /// Sets the auto level capping (-1 for no cap).
+  @override
   set autoLevelCapping(int level) => _hls['autoLevelCapping'] = level.toJS;
 
-  /// Gets whether auto level selection is enabled.
+  @override
   bool get autoLevelEnabled => (_hls['autoLevelEnabled'] as JSBoolean?)?.toDart ?? true;
 
-  /// Gets the list of available quality levels.
+  @override
   List<HlsLevel> get levels {
     final levelsJs = _hls['levels'] as JSArray?;
     if (levelsJs == null) return [];
@@ -230,13 +232,13 @@ class HlsPlayer {
     return result;
   }
 
-  /// Gets the current audio track index.
+  @override
   int get audioTrack => (_hls['audioTrack'] as JSNumber?)?.toDartInt ?? 0;
 
-  /// Sets the current audio track index.
+  @override
   set audioTrack(int index) => _hls['audioTrack'] = index.toJS;
 
-  /// Gets the list of available audio tracks.
+  @override
   List<HlsAudioTrack> get audioTracks {
     final tracksJs = _hls['audioTracks'] as JSArray?;
     if (tracksJs == null) return [];
@@ -254,13 +256,13 @@ class HlsPlayer {
     return result;
   }
 
-  /// Gets the current subtitle track index (-1 for disabled).
+  @override
   int get subtitleTrack => (_hls['subtitleTrack'] as JSNumber?)?.toDartInt ?? -1;
 
-  /// Sets the current subtitle track index (-1 to disable).
+  @override
   set subtitleTrack(int index) => _hls['subtitleTrack'] = index.toJS;
 
-  /// Gets the list of available subtitle tracks.
+  @override
   List<HlsSubtitleTrack> get subtitleTracks {
     final tracksJs = _hls['subtitleTracks'] as JSArray?;
     if (tracksJs == null) return [];
@@ -278,11 +280,11 @@ class HlsPlayer {
     return result;
   }
 
-  /// Gets the estimated bandwidth in bits per second.
+  @override
   double get bandwidthEstimate => (_hls['bandwidthEstimate'] as JSNumber?)?.toDartDouble ?? 0.0;
 
-  /// Adds an event listener.
-  void on(String event, void Function(String event, JSObject? data) callback) {
+  @override
+  void on(String event, void Function(String event, Object? data) callback) {
     _registeredEvents.add(event);
     final jsCallback = ((JSString eventName, JSObject? data) {
       callback(eventName.toDart, data);
@@ -290,7 +292,7 @@ class HlsPlayer {
     _hls.callMethod('on'.toJS, event.toJS, jsCallback);
   }
 
-  /// Removes all event listeners.
+  @override
   void offAll() {
     for (final event in _registeredEvents) {
       _hls.callMethod('off'.toJS, event.toJS);
@@ -298,22 +300,22 @@ class HlsPlayer {
     _registeredEvents.clear();
   }
 
-  /// Destroys the HLS.js instance and releases resources.
+  @override
   void destroy() {
     offAll();
     _hls.callMethod('destroy'.toJS);
     verboseLog('HLS.js player destroyed', tag: 'HlsPlayer');
   }
 
-  /// Recovers from a media error.
+  @override
   void recoverMediaError() => _hls.callMethod('recoverMediaError'.toJS);
 
-  /// Swaps the audio codec for error recovery.
+  @override
   void swapAudioCodec() => _hls.callMethod('swapAudioCodec'.toJS);
 }
 
 /// Represents an HLS quality level.
-class HlsLevel {
+class HlsLevel implements HlsLevelInterface {
   HlsLevel._({
     required this.index,
     required this.bitrate,
@@ -332,25 +334,25 @@ class HlsLevel {
     codecs: (js['codecs'] as JSString?)?.toDart,
   );
 
-  /// The level index in the HLS manifest.
+  @override
   final int index;
 
-  /// The bitrate in bits per second.
+  @override
   final int bitrate;
 
-  /// The video width in pixels.
+  @override
   final int width;
 
-  /// The video height in pixels.
+  @override
   final int height;
 
-  /// Optional name from the manifest.
+  @override
   final String? name;
 
-  /// The codec string.
+  @override
   final String? codecs;
 
-  /// Returns a human-readable label for this quality level.
+  @override
   String get label {
     if (name != null && name!.isNotEmpty) return name!;
     if (height > 0) return '${height}p';
@@ -363,7 +365,7 @@ class HlsLevel {
 }
 
 /// Represents an HLS audio track.
-class HlsAudioTrack {
+class HlsAudioTrack implements HlsAudioTrackInterface {
   HlsAudioTrack._({required this.index, this.id, this.name, this.lang, this.isDefault = false});
 
   factory HlsAudioTrack._fromJs(JSObject js, int index) => HlsAudioTrack._(
@@ -374,22 +376,22 @@ class HlsAudioTrack {
     isDefault: (js['default'] as JSBoolean?)?.toDart ?? false,
   );
 
-  /// The track index in the list.
+  @override
   final int index;
 
-  /// The track ID from the manifest.
+  @override
   final int? id;
 
-  /// The track name.
+  @override
   final String? name;
 
-  /// The language code.
+  @override
   final String? lang;
 
-  /// Whether this is the default track.
+  @override
   final bool isDefault;
 
-  /// Returns a human-readable label for this audio track.
+  @override
   String get label {
     if (name != null && name!.isNotEmpty) return name!;
     if (lang != null && lang!.isNotEmpty) return lang!;
@@ -401,7 +403,7 @@ class HlsAudioTrack {
 }
 
 /// Represents an HLS subtitle track.
-class HlsSubtitleTrack {
+class HlsSubtitleTrack implements HlsSubtitleTrackInterface {
   HlsSubtitleTrack._({required this.index, this.id, this.name, this.lang, this.isDefault = false, this.forced = false});
 
   factory HlsSubtitleTrack._fromJs(JSObject js, int index) => HlsSubtitleTrack._(
@@ -413,25 +415,25 @@ class HlsSubtitleTrack {
     forced: (js['forced'] as JSBoolean?)?.toDart ?? false,
   );
 
-  /// The track index in the list.
+  @override
   final int index;
 
-  /// The track ID from the manifest.
+  @override
   final int? id;
 
-  /// The track name.
+  @override
   final String? name;
 
-  /// The language code.
+  @override
   final String? lang;
 
-  /// Whether this is the default track.
+  @override
   final bool isDefault;
 
-  /// Whether this is a forced track (for foreign language parts).
+  @override
   final bool forced;
 
-  /// Returns a human-readable label for this subtitle track.
+  @override
   String get label {
     if (name != null && name!.isNotEmpty) return name!;
     if (lang != null && lang!.isNotEmpty) return lang!;

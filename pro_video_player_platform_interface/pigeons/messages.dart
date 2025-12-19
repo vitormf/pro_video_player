@@ -889,8 +889,46 @@ class VideoPlayerEventMessage {
 ///
 /// This API is implemented in Dart and called from the native platform
 /// to send events.
+///
+/// HYBRID EVENT SYSTEM:
+/// - High-frequency events (position, buffering, state) use EventChannel
+/// - Low-frequency events (errors, metadata, completion) use @FlutterApi for type safety
 @FlutterApi()
 abstract class ProVideoPlayerFlutterApi {
-  /// Called when a video player event occurs.
+  /// Called when a video player event occurs (deprecated - kept for EventChannel compatibility).
+  ///
+  /// High-frequency events still use EventChannel:
+  /// - positionChanged, bufferedPositionChanged
+  /// - playbackStateChanged, durationChanged
+  /// - videoSizeChanged, bufferingStarted, bufferingEnded
   void onEvent(int playerId, VideoPlayerEventMessage event);
+
+  // ==================== Low-Frequency Events (Type-Safe) ====================
+
+  /// Called when an error occurs during playback.
+  void onError(int playerId, String errorCode, String errorMessage);
+
+  /// Called when video metadata is extracted.
+  void onMetadataExtracted(int playerId, VideoMetadataMessage metadata);
+
+  /// Called when playback completes.
+  void onPlaybackCompleted(int playerId);
+
+  /// Called when a PiP action is triggered by the user.
+  void onPipActionTriggered(int playerId, String action);
+
+  /// Called when cast state changes.
+  void onCastStateChanged(int playerId, CastStateEnum state, CastDeviceMessage? device);
+
+  /// Called when subtitle tracks change.
+  void onSubtitleTracksChanged(int playerId, List<SubtitleTrackMessage?> tracks);
+
+  /// Called when audio tracks change.
+  void onAudioTracksChanged(int playerId, List<AudioTrackMessage?> tracks);
+
+  /// Called when battery information changes.
+  ///
+  /// Emitted when the device's battery level or charging state changes.
+  /// Platform availability varies (see getBatteryInfo documentation).
+  void onBatteryInfoChanged(BatteryInfoMessage batteryInfo);
 }

@@ -2446,10 +2446,38 @@ class ProVideoPlayerHostApiSetup {
 /// This API is implemented in Dart and called from the native platform
 /// to send events.
 ///
+/// HYBRID EVENT SYSTEM:
+/// - High-frequency events (position, buffering, state) use EventChannel
+/// - Low-frequency events (errors, metadata, completion) use @FlutterApi for type safety
+///
 /// Generated protocol from Pigeon that represents Flutter messages that can be called from Swift.
 protocol ProVideoPlayerFlutterApiProtocol {
-  /// Called when a video player event occurs.
+  /// Called when a video player event occurs (deprecated - kept for EventChannel compatibility).
+  ///
+  /// High-frequency events still use EventChannel:
+  /// - positionChanged, bufferedPositionChanged
+  /// - playbackStateChanged, durationChanged
+  /// - videoSizeChanged, bufferingStarted, bufferingEnded
   func onEvent(playerId playerIdArg: Int64, event eventArg: VideoPlayerEventMessage, completion: @escaping (Result<Void, PigeonError>) -> Void)
+  /// Called when an error occurs during playback.
+  func onError(playerId playerIdArg: Int64, errorCode errorCodeArg: String, errorMessage errorMessageArg: String, completion: @escaping (Result<Void, PigeonError>) -> Void)
+  /// Called when video metadata is extracted.
+  func onMetadataExtracted(playerId playerIdArg: Int64, metadata metadataArg: VideoMetadataMessage, completion: @escaping (Result<Void, PigeonError>) -> Void)
+  /// Called when playback completes.
+  func onPlaybackCompleted(playerId playerIdArg: Int64, completion: @escaping (Result<Void, PigeonError>) -> Void)
+  /// Called when a PiP action is triggered by the user.
+  func onPipActionTriggered(playerId playerIdArg: Int64, action actionArg: String, completion: @escaping (Result<Void, PigeonError>) -> Void)
+  /// Called when cast state changes.
+  func onCastStateChanged(playerId playerIdArg: Int64, state stateArg: CastStateEnum, device deviceArg: CastDeviceMessage?, completion: @escaping (Result<Void, PigeonError>) -> Void)
+  /// Called when subtitle tracks change.
+  func onSubtitleTracksChanged(playerId playerIdArg: Int64, tracks tracksArg: [SubtitleTrackMessage?], completion: @escaping (Result<Void, PigeonError>) -> Void)
+  /// Called when audio tracks change.
+  func onAudioTracksChanged(playerId playerIdArg: Int64, tracks tracksArg: [AudioTrackMessage?], completion: @escaping (Result<Void, PigeonError>) -> Void)
+  /// Called when battery information changes.
+  ///
+  /// Emitted when the device's battery level or charging state changes.
+  /// Platform availability varies (see getBatteryInfo documentation).
+  func onBatteryInfoChanged(batteryInfo batteryInfoArg: BatteryInfoMessage, completion: @escaping (Result<Void, PigeonError>) -> Void)
 }
 class ProVideoPlayerFlutterApi: ProVideoPlayerFlutterApiProtocol {
   private let binaryMessenger: FlutterBinaryMessenger
@@ -2461,11 +2489,171 @@ class ProVideoPlayerFlutterApi: ProVideoPlayerFlutterApiProtocol {
   var codec: PigeonMessagesPigeonCodec {
     return PigeonMessagesPigeonCodec.shared
   }
-  /// Called when a video player event occurs.
+  /// Called when a video player event occurs (deprecated - kept for EventChannel compatibility).
+  ///
+  /// High-frequency events still use EventChannel:
+  /// - positionChanged, bufferedPositionChanged
+  /// - playbackStateChanged, durationChanged
+  /// - videoSizeChanged, bufferingStarted, bufferingEnded
   func onEvent(playerId playerIdArg: Int64, event eventArg: VideoPlayerEventMessage, completion: @escaping (Result<Void, PigeonError>) -> Void) {
     let channelName: String = "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onEvent\(messageChannelSuffix)"
     let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
     channel.sendMessage([playerIdArg, eventArg] as [Any?]) { response in
+      guard let listResponse = response as? [Any?] else {
+        completion(.failure(createConnectionError(withChannelName: channelName)))
+        return
+      }
+      if listResponse.count > 1 {
+        let code: String = listResponse[0] as! String
+        let message: String? = nilOrValue(listResponse[1])
+        let details: String? = nilOrValue(listResponse[2])
+        completion(.failure(PigeonError(code: code, message: message, details: details)))
+      } else {
+        completion(.success(Void()))
+      }
+    }
+  }
+  /// Called when an error occurs during playback.
+  func onError(playerId playerIdArg: Int64, errorCode errorCodeArg: String, errorMessage errorMessageArg: String, completion: @escaping (Result<Void, PigeonError>) -> Void) {
+    let channelName: String = "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onError\(messageChannelSuffix)"
+    let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
+    channel.sendMessage([playerIdArg, errorCodeArg, errorMessageArg] as [Any?]) { response in
+      guard let listResponse = response as? [Any?] else {
+        completion(.failure(createConnectionError(withChannelName: channelName)))
+        return
+      }
+      if listResponse.count > 1 {
+        let code: String = listResponse[0] as! String
+        let message: String? = nilOrValue(listResponse[1])
+        let details: String? = nilOrValue(listResponse[2])
+        completion(.failure(PigeonError(code: code, message: message, details: details)))
+      } else {
+        completion(.success(Void()))
+      }
+    }
+  }
+  /// Called when video metadata is extracted.
+  func onMetadataExtracted(playerId playerIdArg: Int64, metadata metadataArg: VideoMetadataMessage, completion: @escaping (Result<Void, PigeonError>) -> Void) {
+    let channelName: String = "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onMetadataExtracted\(messageChannelSuffix)"
+    let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
+    channel.sendMessage([playerIdArg, metadataArg] as [Any?]) { response in
+      guard let listResponse = response as? [Any?] else {
+        completion(.failure(createConnectionError(withChannelName: channelName)))
+        return
+      }
+      if listResponse.count > 1 {
+        let code: String = listResponse[0] as! String
+        let message: String? = nilOrValue(listResponse[1])
+        let details: String? = nilOrValue(listResponse[2])
+        completion(.failure(PigeonError(code: code, message: message, details: details)))
+      } else {
+        completion(.success(Void()))
+      }
+    }
+  }
+  /// Called when playback completes.
+  func onPlaybackCompleted(playerId playerIdArg: Int64, completion: @escaping (Result<Void, PigeonError>) -> Void) {
+    let channelName: String = "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onPlaybackCompleted\(messageChannelSuffix)"
+    let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
+    channel.sendMessage([playerIdArg] as [Any?]) { response in
+      guard let listResponse = response as? [Any?] else {
+        completion(.failure(createConnectionError(withChannelName: channelName)))
+        return
+      }
+      if listResponse.count > 1 {
+        let code: String = listResponse[0] as! String
+        let message: String? = nilOrValue(listResponse[1])
+        let details: String? = nilOrValue(listResponse[2])
+        completion(.failure(PigeonError(code: code, message: message, details: details)))
+      } else {
+        completion(.success(Void()))
+      }
+    }
+  }
+  /// Called when a PiP action is triggered by the user.
+  func onPipActionTriggered(playerId playerIdArg: Int64, action actionArg: String, completion: @escaping (Result<Void, PigeonError>) -> Void) {
+    let channelName: String = "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onPipActionTriggered\(messageChannelSuffix)"
+    let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
+    channel.sendMessage([playerIdArg, actionArg] as [Any?]) { response in
+      guard let listResponse = response as? [Any?] else {
+        completion(.failure(createConnectionError(withChannelName: channelName)))
+        return
+      }
+      if listResponse.count > 1 {
+        let code: String = listResponse[0] as! String
+        let message: String? = nilOrValue(listResponse[1])
+        let details: String? = nilOrValue(listResponse[2])
+        completion(.failure(PigeonError(code: code, message: message, details: details)))
+      } else {
+        completion(.success(Void()))
+      }
+    }
+  }
+  /// Called when cast state changes.
+  func onCastStateChanged(playerId playerIdArg: Int64, state stateArg: CastStateEnum, device deviceArg: CastDeviceMessage?, completion: @escaping (Result<Void, PigeonError>) -> Void) {
+    let channelName: String = "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onCastStateChanged\(messageChannelSuffix)"
+    let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
+    channel.sendMessage([playerIdArg, stateArg, deviceArg] as [Any?]) { response in
+      guard let listResponse = response as? [Any?] else {
+        completion(.failure(createConnectionError(withChannelName: channelName)))
+        return
+      }
+      if listResponse.count > 1 {
+        let code: String = listResponse[0] as! String
+        let message: String? = nilOrValue(listResponse[1])
+        let details: String? = nilOrValue(listResponse[2])
+        completion(.failure(PigeonError(code: code, message: message, details: details)))
+      } else {
+        completion(.success(Void()))
+      }
+    }
+  }
+  /// Called when subtitle tracks change.
+  func onSubtitleTracksChanged(playerId playerIdArg: Int64, tracks tracksArg: [SubtitleTrackMessage?], completion: @escaping (Result<Void, PigeonError>) -> Void) {
+    let channelName: String = "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onSubtitleTracksChanged\(messageChannelSuffix)"
+    let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
+    channel.sendMessage([playerIdArg, tracksArg] as [Any?]) { response in
+      guard let listResponse = response as? [Any?] else {
+        completion(.failure(createConnectionError(withChannelName: channelName)))
+        return
+      }
+      if listResponse.count > 1 {
+        let code: String = listResponse[0] as! String
+        let message: String? = nilOrValue(listResponse[1])
+        let details: String? = nilOrValue(listResponse[2])
+        completion(.failure(PigeonError(code: code, message: message, details: details)))
+      } else {
+        completion(.success(Void()))
+      }
+    }
+  }
+  /// Called when audio tracks change.
+  func onAudioTracksChanged(playerId playerIdArg: Int64, tracks tracksArg: [AudioTrackMessage?], completion: @escaping (Result<Void, PigeonError>) -> Void) {
+    let channelName: String = "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onAudioTracksChanged\(messageChannelSuffix)"
+    let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
+    channel.sendMessage([playerIdArg, tracksArg] as [Any?]) { response in
+      guard let listResponse = response as? [Any?] else {
+        completion(.failure(createConnectionError(withChannelName: channelName)))
+        return
+      }
+      if listResponse.count > 1 {
+        let code: String = listResponse[0] as! String
+        let message: String? = nilOrValue(listResponse[1])
+        let details: String? = nilOrValue(listResponse[2])
+        completion(.failure(PigeonError(code: code, message: message, details: details)))
+      } else {
+        completion(.success(Void()))
+      }
+    }
+  }
+  /// Called when battery information changes.
+  ///
+  /// Emitted when the device's battery level or charging state changes.
+  /// Platform availability varies (see getBatteryInfo documentation).
+  func onBatteryInfoChanged(batteryInfo batteryInfoArg: BatteryInfoMessage, completion: @escaping (Result<Void, PigeonError>) -> Void) {
+    let channelName: String = "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onBatteryInfoChanged\(messageChannelSuffix)"
+    let channel = FlutterBasicMessageChannel(name: channelName, binaryMessenger: binaryMessenger, codec: codec)
+    channel.sendMessage([batteryInfoArg] as [Any?]) { response in
       guard let listResponse = response as? [Any?] else {
         completion(.failure(createConnectionError(withChannelName: channelName)))
         return

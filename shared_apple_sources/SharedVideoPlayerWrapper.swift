@@ -31,7 +31,7 @@ open class SharedVideoPlayerWrapper: NSObject {
     ) {
         self.playerId = playerId
         self.registrar = registrar
-        
+
         #if os(iOS)
         self.eventChannel = FlutterEventChannel(
             name: eventChannelName,
@@ -43,7 +43,7 @@ open class SharedVideoPlayerWrapper: NSObject {
             binaryMessenger: binaryMessenger as! FlutterBinaryMessenger
         )
         #endif
-        
+
         self.platformAdapter = platformAdapter
         self.sharedPlayer = SharedVideoPlayer(
             playerId: playerId,
@@ -51,9 +51,9 @@ open class SharedVideoPlayerWrapper: NSObject {
             source: source,
             options: options
         )
-        
+
         super.init()
-        
+
         eventChannel.setStreamHandler(self)
         sharedPlayer.eventSink = self
     }
@@ -232,6 +232,10 @@ open class SharedVideoPlayerWrapper: NSObject {
 
     public func handleAppDidEnterBackground() {
         sharedPlayer.handleAppDidEnterBackground()
+    }
+
+    public func handleAppWillEnterForeground() {
+        sharedPlayer.handleAppWillEnterForeground()
     }
 
     public func handlePipDidStart() {

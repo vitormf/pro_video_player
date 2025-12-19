@@ -1403,6 +1403,10 @@ class ProVideoPlayerHostApi {
 // This API is implemented in Dart and called from the native platform
 // to send events.
 //
+// HYBRID EVENT SYSTEM:
+// - High-frequency events (position, buffering, state) use EventChannel
+// - Low-frequency events (errors, metadata, completion) use @FlutterApi for type safety
+//
 // Generated class from Pigeon that represents Flutter messages that can be called from C++.
 class ProVideoPlayerFlutterApi {
  public:
@@ -1411,10 +1415,66 @@ class ProVideoPlayerFlutterApi {
     flutter::BinaryMessenger* binary_messenger,
     const std::string& message_channel_suffix);
   static const flutter::StandardMessageCodec& GetCodec();
-  // Called when a video player event occurs.
+  // Called when a video player event occurs (deprecated - kept for EventChannel compatibility).
+  //
+  // High-frequency events still use EventChannel:
+  // - positionChanged, bufferedPositionChanged
+  // - playbackStateChanged, durationChanged
+  // - videoSizeChanged, bufferingStarted, bufferingEnded
   void OnEvent(
     int64_t player_id,
     const VideoPlayerEventMessage& event,
+    std::function<void(void)>&& on_success,
+    std::function<void(const FlutterError&)>&& on_error);
+  // Called when an error occurs during playback.
+  void OnError(
+    int64_t player_id,
+    const std::string& error_code,
+    const std::string& error_message,
+    std::function<void(void)>&& on_success,
+    std::function<void(const FlutterError&)>&& on_error);
+  // Called when video metadata is extracted.
+  void OnMetadataExtracted(
+    int64_t player_id,
+    const VideoMetadataMessage& metadata,
+    std::function<void(void)>&& on_success,
+    std::function<void(const FlutterError&)>&& on_error);
+  // Called when playback completes.
+  void OnPlaybackCompleted(
+    int64_t player_id,
+    std::function<void(void)>&& on_success,
+    std::function<void(const FlutterError&)>&& on_error);
+  // Called when a PiP action is triggered by the user.
+  void OnPipActionTriggered(
+    int64_t player_id,
+    const std::string& action,
+    std::function<void(void)>&& on_success,
+    std::function<void(const FlutterError&)>&& on_error);
+  // Called when cast state changes.
+  void OnCastStateChanged(
+    int64_t player_id,
+    const CastStateEnum& state,
+    const CastDeviceMessage* device,
+    std::function<void(void)>&& on_success,
+    std::function<void(const FlutterError&)>&& on_error);
+  // Called when subtitle tracks change.
+  void OnSubtitleTracksChanged(
+    int64_t player_id,
+    const flutter::EncodableList& tracks,
+    std::function<void(void)>&& on_success,
+    std::function<void(const FlutterError&)>&& on_error);
+  // Called when audio tracks change.
+  void OnAudioTracksChanged(
+    int64_t player_id,
+    const flutter::EncodableList& tracks,
+    std::function<void(void)>&& on_success,
+    std::function<void(const FlutterError&)>&& on_error);
+  // Called when battery information changes.
+  //
+  // Emitted when the device's battery level or charging state changes.
+  // Platform availability varies (see getBatteryInfo documentation).
+  void OnBatteryInfoChanged(
+    const BatteryInfoMessage& battery_info,
     std::function<void(void)>&& on_success,
     std::function<void(const FlutterError&)>&& on_error);
 

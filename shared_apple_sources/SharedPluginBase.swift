@@ -59,18 +59,15 @@ public protocol PlatformPluginBehavior {
 
 /// Shared base implementation for iOS and macOS video player plugins.
 ///
-/// This class contains all the common method channel handling logic to eliminate
-/// code duplication between iOS and macOS implementations.
-open class SharedPluginBase: NSObject, FlutterStreamHandler {
+/// This class implements the Pigeon-generated ProVideoPlayerHostApi protocol,
+/// providing type-safe platform communication without the bridge layer.
+open class SharedPluginBase: NSObject, ProVideoPlayerHostApi {
     private var players: [Int: SharedVideoPlayerWrapper] = [:]
     private var nextPlayerId: Int = 0
     private let registrar: Any
     private let platformBehavior: PlatformPluginBehavior
     private let config: PlatformConfig
-
-    // Battery updates stream
-    private var batteryEventSink: FlutterEventSink?
-    private var batteryEventChannel: FlutterEventChannel?
+    private let flutterApi: ProVideoPlayerFlutterApi
 
     #if os(iOS)
         /// Cached MPVolumeView for setting system volume without showing system HUD.
@@ -86,305 +83,162 @@ open class SharedPluginBase: NSObject, FlutterStreamHandler {
         self.registrar = registrar
         self.platformBehavior = platformBehavior
         self.config = config
+
+        // Initialize FlutterApi for native → Dart callbacks
+        #if os(iOS)
+            let messenger = (registrar as! FlutterPluginRegistrar).messenger()
+            self.flutterApi = ProVideoPlayerFlutterApi(binaryMessenger: messenger)
+        #elseif os(macOS)
+            let messenger = (registrar as! FlutterPluginRegistrar).messenger
+            self.flutterApi = ProVideoPlayerFlutterApi(binaryMessenger: messenger)
+        #endif
+
         super.init()
 
-        // Set up battery event channel
-        setupBatteryEventChannel()
+        // Set up battery monitoring
+        setupBatteryMonitoring()
     }
 
     public func getPlayer(for playerId: Int) -> SharedVideoPlayerWrapper? {
         return players[playerId]
     }
 
-    /// Main method call handler - routes method calls to appropriate handlers
-    public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-        // Handle verbose logging control
-        if call.method == "setVerboseLogging" {
-            handleSetVerboseLogging(call: call, result: result)
-            return
-        }
-
-        verboseLog("Method called: \(call.method)", tag: "Plugin")
-
-        switch call.method {
-        case "create":
-            handleCreate(call: call, result: result)
-        case "dispose":
-            handleDispose(call: call, result: result)
-        case "play":
-            handlePlay(call: call, result: result)
-        case "pause":
-            handlePause(call: call, result: result)
-        case "stop":
-            handleStop(call: call, result: result)
-        case "seekTo":
-            handleSeekTo(call: call, result: result)
-        case "setPlaybackSpeed":
-            handleSetPlaybackSpeed(call: call, result: result)
-        case "setVolume":
-            handleSetVolume(call: call, result: result)
-        case "getDeviceVolume":
-            handleGetDeviceVolume(result: result)
-        case "setDeviceVolume":
-            handleSetDeviceVolume(call: call, result: result)
-        case "getScreenBrightness":
-            handleGetScreenBrightness(result: result)
-        case "setScreenBrightness":
-            handleSetScreenBrightness(call: call, result: result)
-        case "getBatteryInfo":
-            handleGetBatteryInfo(result: result)
-        case "setLooping":
-            handleSetLooping(call: call, result: result)
-        case "setScalingMode":
-            handleSetScalingMode(call: call, result: result)
-        case "setSubtitleTrack":
-            handleSetSubtitleTrack(call: call, result: result)
-        case "setAudioTrack":
-            handleSetAudioTrack(call: call, result: result)
-        case "addExternalSubtitle":
-            handleAddExternalSubtitle(call: call, result: result)
-        case "removeExternalSubtitle":
-            handleRemoveExternalSubtitle(call: call, result: result)
-        case "getExternalSubtitles":
-            handleGetExternalSubtitles(call: call, result: result)
-        case "getPosition":
-            handleGetPosition(call: call, result: result)
-        case "getDuration":
-            handleGetDuration(call: call, result: result)
-        case "enterPip":
-            handleEnterPip(call: call, result: result)
-        case "exitPip":
-            handleExitPip(call: call, result: result)
-        case "isPipSupported":
-            handleIsPipSupported(result: result)
-        case "setPipActions":
-            handleSetPipActionsWrapper(call: call, result: result)
-        case "enterFullscreen":
-            handleEnterFullscreen(call: call, result: result)
-        case "exitFullscreen":
-            handleExitFullscreen(call: call, result: result)
-        case "setMediaMetadata":
-            handleSetMediaMetadata(call: call, result: result)
-        case "getVideoQualities":
-            handleGetVideoQualities(call: call, result: result)
-        case "setVideoQuality":
-            handleSetVideoQuality(call: call, result: result)
-        case "getCurrentVideoQuality":
-            handleGetCurrentVideoQuality(call: call, result: result)
-        case "isQualitySelectionSupported":
-            handleIsQualitySelectionSupported(call: call, result: result)
-        case "setBackgroundPlayback":
-            handleSetBackgroundPlayback(call: call, result: result)
-        case "isBackgroundPlaybackSupported":
-            handleIsBackgroundPlaybackSupportedWrapper(result: result)
-        case "getVideoMetadata":
-            handleGetVideoMetadata(call: call, result: result)
-        case "setControlsMode":
-            handleSetControlsMode(call: call, result: result)
-        case "isCastingSupported":
-            handleIsCastingSupported(result: result)
-        case "getAvailableCastDevices":
-            handleGetAvailableCastDevices(call: call, result: result)
-        case "startCasting":
-            handleStartCasting(call: call, result: result)
-        case "stopCasting":
-            handleStopCasting(call: call, result: result)
-        case "getCastState":
-            handleGetCastState(call: call, result: result)
-        case "getCurrentCastDevice":
-            handleGetCurrentCastDevice(call: call, result: result)
-        case "setWindowFullscreen":
-            handleSetWindowFullscreen(call: call, result: result)
-        default:
-            result(FlutterMethodNotImplemented)
-        }
-    }
-
-    // MARK: - Method Handlers
-
-    private func handleSetVerboseLogging(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        if let args = call.arguments as? [String: Any],
-            let enabled = args["enabled"] as? Bool
-        {
-            setVideoPlayerVerboseLogging(enabled)
-            verboseLog("Verbose logging \(enabled ? "enabled" : "disabled")", tag: "Plugin")
-            result(nil)
-        } else {
-            result(
-                FlutterError(
-                    code: "INVALID_ARGS", message: "Invalid arguments for setVerboseLogging",
-                    details: nil))
-        }
-    }
+    // MARK: - ProVideoPlayerHostApi Implementation
 
     /// Creates a platform-specific video player by delegating to platformBehavior
     private func createVideoPlayer(playerId: Int, source: [String: Any], options: [String: Any])
         -> SharedVideoPlayerWrapper
     {
-        return platformBehavior.createVideoPlayer(
+        let player = platformBehavior.createVideoPlayer(
             playerId: playerId, source: source, options: options)
+        // Wire up FlutterApi for native → Dart callbacks
+        player.sharedPlayer.flutterApi = flutterApi
+        return player
     }
 
-    private func handleCreate(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-            let sourceData = args["source"] as? [String: Any],
-            let optionsData = args["options"] as? [String: Any]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid arguments", details: nil))
-            return
-        }
+    func create(
+        source: VideoSourceMessage,
+        options: VideoPlayerOptionsMessage,
+        completion: @escaping (Result<Int64, Error>) -> Void
+    ) {
 
         let playerId = nextPlayerId
         nextPlayerId += 1
 
+        // Convert Pigeon messages to dictionary format expected by createVideoPlayer
+        let sourceData = convertVideoSourceToDict(source)
+        let optionsData = convertPlayerOptionsToDict(options)
+
         let player = createVideoPlayer(playerId: playerId, source: sourceData, options: optionsData)
 
         players[playerId] = player
-        result(playerId)
+        completion(.success(Int64(playerId)))
     }
 
-    private func handleDispose(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid arguments", details: nil))
-            return
-        }
-
-        players[playerId]?.dispose()
-        players.removeValue(forKey: playerId)
-        result(nil)
+    func dispose(playerId: Int64, completion: @escaping (Result<Void, Error>) -> Void) {
+        let playerIdInt = Int(playerId)
+        players[playerIdInt]?.dispose()
+        players.removeValue(forKey: playerIdInt)
+        completion(.success(()))
     }
 
-    private func handlePlay(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let player = players[playerId]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid player ID", details: nil))
+    func play(playerId: Int64, completion: @escaping (Result<Void, Error>) -> Void) {
+
+        guard let player = players[Int(playerId)] else {
+            completion(.failure(PigeonError(code: "INVALID_PLAYER", message: "Player \(playerId) not found", details: nil)))
             return
         }
 
         player.play()
-        result(nil)
+        completion(.success(()))
     }
 
-    private func handlePause(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let player = players[playerId]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid player ID", details: nil))
+    func pause(playerId: Int64, completion: @escaping (Result<Void, Error>) -> Void) {
+
+        guard let player = players[Int(playerId)] else {
+            completion(.failure(PigeonError(code: "INVALID_PLAYER", message: "Player \(playerId) not found", details: nil)))
             return
         }
 
         player.pause()
-        result(nil)
+        completion(.success(()))
     }
 
-    private func handleStop(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let player = players[playerId]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid player ID", details: nil))
+    func stop(playerId: Int64, completion: @escaping (Result<Void, Error>) -> Void) {
+
+        guard let player = players[Int(playerId)] else {
+            completion(.failure(PigeonError(code: "INVALID_PLAYER", message: "Player \(playerId) not found", details: nil)))
             return
         }
 
         player.stop()
-        result(nil)
+        completion(.success(()))
     }
 
-    private func handleSeekTo(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let position = args["position"] as? Int,
-            let player = players[playerId]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid arguments", details: nil))
+    func seekTo(playerId: Int64, positionMs: Int64, completion: @escaping (Result<Void, Error>) -> Void) {
+
+        guard let player = players[Int(playerId)] else {
+            completion(.failure(PigeonError(code: "INVALID_PLAYER", message: "Player \(playerId) not found", details: nil)))
             return
         }
 
-        guard position >= 0 else {
-            result(
-                FlutterError(
-                    code: "INVALID_ARGS", message: "Position must be non-negative", details: nil))
+        guard positionMs >= 0 else {
+            completion(.failure(PigeonError(code: "INVALID_ARGS", message: "Position must be non-negative", details: nil)))
             return
         }
 
-        player.seekTo(milliseconds: position)
-        result(nil)
+        player.seekTo(milliseconds: Int(positionMs))
+        completion(.success(()))
     }
 
-    private func handleSetPlaybackSpeed(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let speed = args["speed"] as? Double,
-            let player = players[playerId]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid arguments", details: nil))
+    func setPlaybackSpeed(playerId: Int64, speed: Double, completion: @escaping (Result<Void, Error>) -> Void) {
+
+        guard let player = players[Int(playerId)] else {
+            completion(.failure(PigeonError(code: "INVALID_PLAYER", message: "Player \(playerId) not found", details: nil)))
             return
         }
 
         guard speed > 0.0 && speed <= 10.0 else {
-            result(
-                FlutterError(
-                    code: "INVALID_ARGS",
-                    message: "Playback speed must be between 0.0 (exclusive) and 10.0", details: nil
-                ))
+            completion(.failure(PigeonError(code: "INVALID_ARGS", message: "Playback speed must be between 0.0 (exclusive) and 10.0", details: nil)))
             return
         }
 
         player.setPlaybackSpeed(Float(speed))
-        result(nil)
+        completion(.success(()))
     }
 
-    private func handleSetVolume(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let volume = args["volume"] as? Double,
-            let player = players[playerId]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid arguments", details: nil))
+    func setVolume(playerId: Int64, volume: Double, completion: @escaping (Result<Void, Error>) -> Void) {
+
+        guard let player = players[Int(playerId)] else {
+            completion(.failure(PigeonError(code: "INVALID_PLAYER", message: "Player \(playerId) not found", details: nil)))
             return
         }
 
         guard volume >= 0.0 && volume <= 1.0 else {
-            result(
-                FlutterError(
-                    code: "INVALID_ARGS", message: "Volume must be between 0.0 and 1.0",
-                    details: nil))
+            completion(.failure(PigeonError(code: "INVALID_ARGS", message: "Volume must be between 0.0 and 1.0", details: nil)))
             return
         }
 
         player.setVolume(Float(volume))
-        result(nil)
+        completion(.success(()))
     }
 
-    private func handleGetDeviceVolume(result: @escaping FlutterResult) {
+    func getDeviceVolume(completion: @escaping (Result<Double, Error>) -> Void) {
+
         #if os(iOS)
             let volume = AVAudioSession.sharedInstance().outputVolume
-            result(Double(volume))
+            completion(.success(Double(volume)))
         #elseif os(macOS)
             // macOS doesn't have a simple API to get system volume
             // Return 1.0 as a fallback (full volume)
-            result(1.0)
+            completion(.success(1.0))
         #endif
     }
 
-    private func handleSetDeviceVolume(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-            let volume = args["volume"] as? Double
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid arguments", details: nil))
-            return
-        }
+    func setDeviceVolume(volume: Double, completion: @escaping (Result<Void, Error>) -> Void) {
 
         guard volume >= 0.0 && volume <= 1.0 else {
-            result(
-                FlutterError(
-                    code: "INVALID_ARGS", message: "Volume must be between 0.0 and 1.0",
-                    details: nil))
+            completion(.failure(PigeonError(code: "INVALID_ARGS", message: "Volume must be between 0.0 and 1.0", details: nil)))
             return
         }
 
@@ -393,7 +247,7 @@ open class SharedPluginBase: NSObject, FlutterStreamHandler {
             // The volumeView must be in the view hierarchy for this to work
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else {
-                    result(nil)
+                    completion(.success(()))
                     return
                 }
 
@@ -410,7 +264,7 @@ open class SharedPluginBase: NSObject, FlutterStreamHandler {
                 {
                     slider.value = Float(volume)
                 }
-                result(nil)
+                completion(.success(()))
             }
             return
         #elseif os(macOS)
@@ -421,61 +275,47 @@ open class SharedPluginBase: NSObject, FlutterStreamHandler {
             if let appleScript = NSAppleScript(source: script) {
                 appleScript.executeAndReturnError(&error)
                 if let error = error {
-                    result(
-                        FlutterError(
-                            code: "VOLUME_ERROR", message: "Failed to set volume: \(error)",
-                            details: nil))
+                    completion(.failure(PigeonError(code: "VOLUME_ERROR", message: "Failed to set volume: \(error)", details: nil)))
                 } else {
-                    result(nil)
+                    completion(.success(()))
                 }
             } else {
-                result(
-                    FlutterError(
-                        code: "VOLUME_ERROR", message: "Failed to create AppleScript", details: nil)
-                )
+                completion(.failure(PigeonError(code: "VOLUME_ERROR", message: "Failed to create AppleScript", details: nil)))
             }
         #endif
     }
 
-    private func handleGetScreenBrightness(result: @escaping FlutterResult) {
+    func getScreenBrightness(completion: @escaping (Result<Double, Error>) -> Void) {
+
         #if os(iOS)
             let brightness = UIScreen.main.brightness
-            result(Double(brightness))
+            completion(.success(Double(brightness)))
         #elseif os(macOS)
             // macOS doesn't have a simple API to get screen brightness
-            result(1.0)
+            completion(.success(1.0))
         #endif
     }
 
-    private func handleSetScreenBrightness(call: FlutterMethodCall, result: @escaping FlutterResult)
-    {
-        guard let args = call.arguments as? [String: Any],
-            let brightness = args["brightness"] as? Double
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid arguments", details: nil))
-            return
-        }
+    func setScreenBrightness(brightness: Double, completion: @escaping (Result<Void, Error>) -> Void) {
 
         guard brightness >= 0.0 && brightness <= 1.0 else {
-            result(
-                FlutterError(
-                    code: "INVALID_ARGS", message: "Brightness must be between 0.0 and 1.0",
-                    details: nil))
+            completion(.failure(PigeonError(code: "INVALID_ARGS", message: "Brightness must be between 0.0 and 1.0", details: nil)))
             return
         }
 
         #if os(iOS)
             UIScreen.main.brightness = CGFloat(brightness)
-            result(nil)
+            completion(.success(()))
         #elseif os(macOS)
             // macOS brightness control requires private APIs or external tools
             // For now, just return success as a no-op
             _ = brightness  // Suppress unused variable warning
-            result(nil)
+            completion(.success(()))
         #endif
     }
 
-    private func handleGetBatteryInfo(result: @escaping FlutterResult) {
+    func getBatteryInfo(completion: @escaping (Result<BatteryInfoMessage?, Error>) -> Void) {
+
         #if os(iOS)
             // Enable battery monitoring
             UIDevice.current.isBatteryMonitoringEnabled = true
@@ -483,7 +323,7 @@ open class SharedPluginBase: NSObject, FlutterStreamHandler {
             let batteryLevel = UIDevice.current.batteryLevel
             // batteryLevel returns -1.0 if battery state is unknown
             if batteryLevel < 0 {
-                result(nil)
+                completion(.success(nil))
                 return
             }
 
@@ -491,11 +331,8 @@ open class SharedPluginBase: NSObject, FlutterStreamHandler {
             let isCharging = batteryState == .charging || batteryState == .full
             let percentage = Int(batteryLevel * 100)
 
-            let batteryInfo: [String: Any] = [
-                "percentage": percentage,
-                "isCharging": isCharging
-            ]
-            result(batteryInfo)
+            let batteryInfo = BatteryInfoMessage(percentage: Int64(percentage), isCharging: isCharging)
+            completion(.success(batteryInfo))
         #elseif os(macOS)
             // Use IOKit to get battery info on macOS
             let snapshot = IOPSCopyPowerSourcesInfo().takeRetainedValue()
@@ -503,12 +340,12 @@ open class SharedPluginBase: NSObject, FlutterStreamHandler {
 
             guard let source = sources.first else {
                 // No battery (desktop Mac)
-                result(nil)
+                completion(.success(nil))
                 return
             }
 
             guard let description = IOPSGetPowerSourceDescription(snapshot, source).takeUnretainedValue() as? [String: Any] else {
-                result(nil)
+                completion(.success(nil))
                 return
             }
 
@@ -519,441 +356,291 @@ open class SharedPluginBase: NSObject, FlutterStreamHandler {
                 let percentage = (currentCapacity * 100) / maxCapacity
                 let isCharging = (description[kIOPSIsChargingKey] as? Bool) ?? false
 
-                let batteryInfo: [String: Any] = [
-                    "percentage": percentage,
-                    "isCharging": isCharging
-                ]
-                result(batteryInfo)
+                let batteryInfo = BatteryInfoMessage(percentage: Int64(percentage), isCharging: isCharging)
+                completion(.success(batteryInfo))
             } else {
-                result(nil)
+                completion(.success(nil))
             }
         #endif
     }
 
-    private func handleSetLooping(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let looping = args["looping"] as? Bool,
-            let player = players[playerId]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid arguments", details: nil))
+    func setLooping(playerId: Int64, looping: Bool, completion: @escaping (Result<Void, Error>) -> Void) {
+
+        guard let player = players[Int(playerId)] else {
+            completion(.failure(PigeonError(code: "INVALID_PLAYER", message: "Player \(playerId) not found", details: nil)))
             return
         }
 
         player.setLooping(looping)
-        result(nil)
+        completion(.success(()))
     }
 
-    private func handleSetScalingMode(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let scalingMode = args["scalingMode"] as? String,
-            let player = players[playerId]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid arguments", details: nil))
+    func setScalingMode(playerId: Int64, mode: VideoScalingModeEnum, completion: @escaping (Result<Void, Error>) -> Void) {
+
+        guard let player = players[Int(playerId)] else {
+            completion(.failure(PigeonError(code: "INVALID_PLAYER", message: "Player \(playerId) not found", details: nil)))
             return
         }
 
-        let validModes: Set<String> = ["fit", "fill", "stretch", "fitWidth", "fitHeight"]
-        guard validModes.contains(scalingMode) else {
-            result(
-                FlutterError(
-                    code: "INVALID_ARGS",
-                    message: "Invalid scaling mode. Must be one of: fit, fill, fitWidth, fitHeight",
-                    details: nil))
-            return
-        }
-
+        let scalingMode = convertScalingModeToString(mode)
         player.setScalingMode(scalingMode)
-        result(nil)
+        completion(.success(()))
     }
 
-    private func handleSetSubtitleTrack(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let player = players[playerId]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid arguments", details: nil))
+    func setControlsMode(playerId: Int64, mode: ControlsModeEnum, completion: @escaping (Result<Void, Error>) -> Void) {
+
+        let controlsMode: ControlsMode =
+            switch mode {
+            case .nativeControls: .native
+            case .flutterControls: .custom  // Flutter controls are handled as custom on native side
+            case .videoOnly: .none
+            case .customControls: .custom
+            }
+
+        VideoPlayerViewRegistry.shared.setControlsMode(for: Int(playerId), mode: controlsMode)
+        completion(.success(()))
+    }
+
+    func setSubtitleTrack(playerId: Int64, track: SubtitleTrackMessage?, completion: @escaping (Result<Void, Error>) -> Void) {
+
+        guard let player = players[Int(playerId)] else {
+            completion(.failure(PigeonError(code: "INVALID_PLAYER", message: "Player \(playerId) not found", details: nil)))
             return
         }
 
-        let track = args["track"] as? [String: Any]
-        player.setSubtitleTrack(track)
-        result(nil)
+        let trackDict: [String: Any]? = track.map {
+            [
+                "id": $0.id,
+                "label": $0.label as Any,
+                "language": $0.language as Any,
+                "isDefault": $0.isDefault as Any
+            ]
+        }
+
+        player.setSubtitleTrack(trackDict)
+        completion(.success(()))
     }
 
-    private func handleSetAudioTrack(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let player = players[playerId]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid arguments", details: nil))
+    func setSubtitleRenderMode(playerId: Int64, mode: SubtitleRenderModeEnum, completion: @escaping (Result<Void, Error>) -> Void) {
+        // Subtitle render mode is primarily handled on Dart side
+        completion(.success(()))
+    }
+
+    func setAudioTrack(playerId: Int64, track: AudioTrackMessage?, completion: @escaping (Result<Void, Error>) -> Void) {
+
+        guard let player = players[Int(playerId)] else {
+            completion(.failure(PigeonError(code: "INVALID_PLAYER", message: "Player \(playerId) not found", details: nil)))
             return
         }
 
-        let track = args["track"] as? [String: Any]
-        player.setAudioTrack(track)
-        result(nil)
+        let trackDict: [String: Any]? = track.map {
+            [
+                "id": $0.id,
+                "label": $0.label as Any,
+                "language": $0.language as Any,
+                "isDefault": $0.isDefault as Any
+            ]
+        }
+
+        player.setAudioTrack(trackDict)
+        completion(.success(()))
     }
 
     // MARK: - External Subtitles
 
-    private func handleAddExternalSubtitle(call: FlutterMethodCall, result: @escaping FlutterResult)
-    {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let sourceType = args["sourceType"] as? String,
-            let path = args["path"] as? String,
-            let player = players[playerId]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid arguments", details: nil))
+    func addExternalSubtitle(playerId: Int64, source: SubtitleSourceMessage, completion: @escaping (Result<ExternalSubtitleTrackMessage?, Error>) -> Void) {
+
+        guard let player = players[Int(playerId)] else {
+            completion(.failure(PigeonError(code: "INVALID_PLAYER", message: "Player \(playerId) not found", details: nil)))
             return
         }
 
-        let format = args["format"] as? String
-        let label = args["label"] as? String
-        let language = args["language"] as? String
-        let isDefault = args["isDefault"] as? Bool ?? false
+        // Convert VideoSourceType enum to string
+        let sourceTypeString: String
+        switch source.type {
+        case .network:
+            sourceTypeString = "network"
+        case .file:
+            sourceTypeString = "file"
+        case .asset:
+            sourceTypeString = "asset"
+        }
+
+        // Convert optional format to string
+        let formatString: String? = source.format.map { convertSubtitleFormatToString($0) }
 
         player.addExternalSubtitle(
-            sourceType: sourceType,
-            path: path,
-            format: format,
-            label: label,
-            language: language,
-            isDefault: isDefault
-        ) { track in
-            result(track)
+            sourceType: sourceTypeString,
+            path: source.path,
+            format: formatString,
+            label: source.label,
+            language: source.language,
+            isDefault: source.isDefault
+        ) { trackDict in
+            guard let trackDict = trackDict as? [String: Any] else {
+                completion(.success(nil))
+                return
+            }
+
+            let track = ExternalSubtitleTrackMessage(
+                id: trackDict["id"] as? String ?? "",
+                label: trackDict["label"] as? String ?? "",
+                language: trackDict["language"] as? String,
+                isDefault: trackDict["isDefault"] as? Bool ?? false,
+                path: trackDict["path"] as? String ?? "",
+                sourceType: trackDict["sourceType"] as? String ?? "",
+                format: self.convertStringToSubtitleFormat(trackDict["format"] as? String ?? "vtt")
+            )
+            completion(.success(track))
         }
     }
 
-    private func handleRemoveExternalSubtitle(
-        call: FlutterMethodCall, result: @escaping FlutterResult
-    ) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let trackId = args["trackId"] as? String,
-            let player = players[playerId]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid arguments", details: nil))
+    func removeExternalSubtitle(playerId: Int64, trackId: String, completion: @escaping (Result<Bool, Error>) -> Void) {
+
+        guard let player = players[Int(playerId)] else {
+            completion(.failure(PigeonError(code: "INVALID_PLAYER", message: "Player \(playerId) not found", details: nil)))
             return
         }
 
         let success = player.removeExternalSubtitle(trackId: trackId)
-        result(success)
+        completion(.success(success))
     }
 
-    private func handleGetExternalSubtitles(
-        call: FlutterMethodCall, result: @escaping FlutterResult
-    ) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let player = players[playerId]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid arguments", details: nil))
+    func getExternalSubtitles(playerId: Int64, completion: @escaping (Result<[ExternalSubtitleTrackMessage?], Error>) -> Void) {
+
+        guard let player = players[Int(playerId)] else {
+            completion(.failure(PigeonError(code: "INVALID_PLAYER", message: "Player \(playerId) not found", details: nil)))
             return
         }
 
-        result(player.getExternalSubtitles())
-    }
-
-    private func handleGetPosition(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let player = players[playerId]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid player ID", details: nil))
+        guard let tracksArray = player.getExternalSubtitles() as? [[String: Any]] else {
+            completion(.success([]))
             return
         }
 
-        result(player.getPosition())
+        let tracks = tracksArray.map { trackDict -> ExternalSubtitleTrackMessage in
+            ExternalSubtitleTrackMessage(
+                id: trackDict["id"] as? String ?? "",
+                label: trackDict["label"] as? String ?? "",
+                language: trackDict["language"] as? String,
+                isDefault: trackDict["isDefault"] as? Bool ?? false,
+                path: trackDict["path"] as? String ?? "",
+                sourceType: trackDict["sourceType"] as? String ?? "",
+                format: convertStringToSubtitleFormat(trackDict["format"] as? String ?? "vtt")
+            )
+        }
+        completion(.success(tracks))
     }
 
-    private func handleGetDuration(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let player = players[playerId]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid player ID", details: nil))
+    func getPosition(playerId: Int64, completion: @escaping (Result<Int64, Error>) -> Void) {
+
+        guard let player = players[Int(playerId)] else {
+            completion(.failure(PigeonError(code: "INVALID_PLAYER", message: "Player \(playerId) not found", details: nil)))
             return
         }
 
-        result(player.getDuration())
+        let position = player.getPosition()
+        completion(.success(Int64(position)))
     }
 
-    private func handleEnterPip(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let player = players[playerId]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid player ID", details: nil))
+    func getDuration(playerId: Int64, completion: @escaping (Result<Int64, Error>) -> Void) {
+
+        guard let player = players[Int(playerId)] else {
+            completion(.failure(PigeonError(code: "INVALID_PLAYER", message: "Player \(playerId) not found", details: nil)))
+            return
+        }
+
+        let duration = player.getDuration()
+        completion(.success(Int64(duration)))
+    }
+
+    // MARK: - Picture-in-Picture
+
+    func enterPip(playerId: Int64, options: PipOptionsMessage, completion: @escaping (Result<Bool, Error>) -> Void) {
+
+        guard let player = players[Int(playerId)] else {
+            completion(.failure(PigeonError(code: "INVALID_PLAYER", message: "Player \(playerId) not found", details: nil)))
             return
         }
 
         let success = player.enterPip()
-        result(success)
+        completion(.success(success))
     }
 
-    private func handleExitPip(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let player = players[playerId]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid player ID", details: nil))
+    func exitPip(playerId: Int64, completion: @escaping (Result<Void, Error>) -> Void) {
+
+        guard let player = players[Int(playerId)] else {
+            completion(.failure(PigeonError(code: "INVALID_PLAYER", message: "Player \(playerId) not found", details: nil)))
             return
         }
 
         player.exitPip()
-        result(nil)
+        completion(.success(()))
     }
 
-    private func handleIsPipSupported(result: @escaping FlutterResult) {
-        result(platformBehavior.isPipSupported())
+    func isPipSupported(completion: @escaping (Result<Bool, Error>) -> Void) {
+        let supported = platformBehavior.isPipSupported()
+        completion(.success(supported))
     }
 
-    private func handleSetPipActionsWrapper(
-        call: FlutterMethodCall, result: @escaping FlutterResult
-    ) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let player = players[playerId]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid player ID", details: nil))
+    func setPipActions(playerId: Int64, actions: [PipActionMessage?], completion: @escaping (Result<Void, Error>) -> Void) {
+
+        guard let player = players[Int(playerId)] else {
+            completion(.failure(PigeonError(code: "INVALID_PLAYER", message: "Player \(playerId) not found", details: nil)))
             return
         }
 
-        platformBehavior.handleSetPipActions(call: call, player: player, result: result)
+        // Convert Pigeon actions to dictionary format
+        let actionsArray = actions.compactMap { action -> [String: Any]? in
+            guard let action = action else { return nil }
+            var dict: [String: Any] = ["type": convertPipActionTypeToString(action.type)]
+            if let skipIntervalMs = action.skipIntervalMs {
+                dict["skipIntervalMs"] = skipIntervalMs
+            }
+            return dict
+        }
+
+        // Create a fake FlutterMethodCall for platform behavior
+        let args: [String: Any] = ["playerId": Int(playerId), "actions": actionsArray]
+        let call = FlutterMethodCall(methodName: "setPipActions", arguments: args)
+
+        platformBehavior.handleSetPipActions(call: call, player: player) { result in
+            if let error = result as? FlutterError {
+                completion(.failure(PigeonError(code: error.code, message: error.message, details: error.details)))
+            } else {
+                completion(.success(()))
+            }
+        }
     }
 
-    private func handleEnterFullscreen(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let player = players[playerId]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid player ID", details: nil))
+    // MARK: - Fullscreen
+
+    func enterFullscreen(playerId: Int64, completion: @escaping (Result<Bool, Error>) -> Void) {
+
+        guard let player = players[Int(playerId)] else {
+            completion(.failure(PigeonError(code: "INVALID_PLAYER", message: "Player \(playerId) not found", details: nil)))
             return
         }
 
         let success = player.enterFullscreen()
-        result(success)
+        completion(.success(success))
     }
 
-    private func handleExitFullscreen(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let player = players[playerId]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid player ID", details: nil))
+    func exitFullscreen(playerId: Int64, completion: @escaping (Result<Void, Error>) -> Void) {
+
+        guard let player = players[Int(playerId)] else {
+            completion(.failure(PigeonError(code: "INVALID_PLAYER", message: "Player \(playerId) not found", details: nil)))
             return
         }
 
         player.exitFullscreen()
-        result(nil)
+        completion(.success(()))
     }
 
-    private func handleSetMediaMetadata(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let player = players[playerId]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid player ID", details: nil))
-            return
-        }
-
-        let metadata = args["metadata"] as? [String: Any] ?? [:]
-        player.setMediaMetadata(metadata)
-        result(nil)
-    }
-
-    private func handleGetVideoQualities(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let player = players[playerId]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid player ID", details: nil))
-            return
-        }
-
-        result(player.getVideoQualities())
-    }
-
-    private func handleSetVideoQuality(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let player = players[playerId]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid player ID", details: nil))
-            return
-        }
-
-        let track = args["track"] as? [String: Any]
-        result(player.setVideoQuality(track))
-    }
-
-    private func handleGetCurrentVideoQuality(
-        call: FlutterMethodCall, result: @escaping FlutterResult
-    ) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let player = players[playerId]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid player ID", details: nil))
-            return
-        }
-
-        result(player.getCurrentVideoQuality())
-    }
-
-    private func handleIsQualitySelectionSupported(
-        call: FlutterMethodCall, result: @escaping FlutterResult
-    ) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let player = players[playerId]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid player ID", details: nil))
-            return
-        }
-
-        result(player.isQualitySelectionSupported())
-    }
-
-    private func handleSetBackgroundPlayback(
-        call: FlutterMethodCall, result: @escaping FlutterResult
-    ) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let enabled = args["enabled"] as? Bool,
-            let player = players[playerId]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid arguments", details: nil))
-            return
-        }
-
-        result(player.setBackgroundPlayback(enabled))
-    }
-
-    private func handleIsBackgroundPlaybackSupportedWrapper(result: @escaping FlutterResult) {
-        result(platformBehavior.isBackgroundPlaybackSupported())
-    }
-
-    private func handleGetVideoMetadata(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let player = players[playerId]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid player ID", details: nil))
-            return
-        }
-
-        result(player.getVideoMetadata())
-    }
-
-    private func handleSetControlsMode(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let controlsModeString = args["controlsMode"] as? String
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid arguments", details: nil))
-            return
-        }
-
-        let controlsMode: ControlsMode =
-            switch controlsModeString {
-            case "native": .native
-            case "flutter": .custom  // Flutter controls are handled as custom on native side
-            default: .none
-            }
-
-        VideoPlayerViewRegistry.shared.setControlsMode(for: playerId, mode: controlsMode)
-        result(nil)
-    }
-
-    // MARK: - Casting Methods
-
-    private func handleIsCastingSupported(result: @escaping FlutterResult) {
-        // AirPlay is always supported on iOS/macOS
-        result(true)
-    }
-
-    private func handleGetAvailableCastDevices(
-        call: FlutterMethodCall, result: @escaping FlutterResult
-    ) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let player = players[playerId]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid player ID", details: nil))
-            return
-        }
-
-        result(player.getAvailableCastDevices())
-    }
-
-    private func handleStartCasting(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let player = players[playerId]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid arguments", details: nil))
-            return
-        }
-
-        // Device is optional - on iOS/macOS AirPlay selection is done via system UI
-        let device = args["device"] as? [String: Any] ?? [:]
-        result(player.startCasting(device: device))
-    }
-
-    private func handleStopCasting(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let player = players[playerId]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid player ID", details: nil))
-            return
-        }
-
-        player.stopCasting()
-        result(nil)
-    }
-
-    private func handleGetCastState(call: FlutterMethodCall, result: @escaping FlutterResult) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let player = players[playerId]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid player ID", details: nil))
-            return
-        }
-
-        result(player.getCastState())
-    }
-
-    private func handleGetCurrentCastDevice(
-        call: FlutterMethodCall, result: @escaping FlutterResult
-    ) {
-        guard let args = call.arguments as? [String: Any],
-            let playerId = args["playerId"] as? Int,
-            let player = players[playerId]
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid player ID", details: nil))
-            return
-        }
-
-        result(player.getCurrentCastDevice())
-    }
-
-    private func handleSetWindowFullscreen(call: FlutterMethodCall, result: @escaping FlutterResult)
-    {
-        guard let args = call.arguments as? [String: Any],
-            let fullscreen = args["fullscreen"] as? Bool
-        else {
-            result(FlutterError(code: "INVALID_ARGS", message: "Invalid arguments", details: nil))
-            return
-        }
+    func setWindowFullscreen(fullscreen: Bool, completion: @escaping (Result<Void, Error>) -> Void) {
 
         // Return immediately to avoid blocking Flutter
-        result(nil)
+        completion(.success(()))
 
         #if os(macOS)
             // Perform window fullscreen toggle asynchronously after a brief delay
@@ -973,30 +660,364 @@ open class SharedPluginBase: NSObject, FlutterStreamHandler {
         #endif
     }
 
-    // MARK: - Battery Event Channel
+    // MARK: - Media Metadata and Quality
 
-    private func setupBatteryEventChannel() {
-        #if os(iOS)
-            let messenger = (registrar as! FlutterPluginRegistrar).messenger()
-            batteryEventChannel = FlutterEventChannel(
-                name: "dev.pro_video_player.pro_video_player_ios/batteryUpdates",
-                binaryMessenger: messenger
-            )
-        #elseif os(macOS)
-            let messenger = (registrar as! FlutterPluginRegistrar).messenger
-            batteryEventChannel = FlutterEventChannel(
-                name: "dev.pro_video_player.pro_video_player_macos/batteryUpdates",
-                binaryMessenger: messenger
-            )
-        #endif
-        batteryEventChannel?.setStreamHandler(self)
+    func setMediaMetadata(playerId: Int64, metadata: MediaMetadataMessage, completion: @escaping (Result<Void, Error>) -> Void) {
+
+        guard let player = players[Int(playerId)] else {
+            completion(.failure(PigeonError(code: "INVALID_PLAYER", message: "Player \(playerId) not found", details: nil)))
+            return
+        }
+
+        var metadataDict: [String: Any] = [:]
+        if let title = metadata.title {
+            metadataDict["title"] = title
+        }
+        if let artist = metadata.artist {
+            metadataDict["artist"] = artist
+        }
+        if let album = metadata.album {
+            metadataDict["album"] = album
+        }
+        if let artworkUrl = metadata.artworkUrl {
+            metadataDict["artworkUrl"] = artworkUrl
+        }
+
+        player.setMediaMetadata(metadataDict)
+        completion(.success(()))
     }
 
-    // MARK: - FlutterStreamHandler
+    func getVideoMetadata(playerId: Int64, completion: @escaping (Result<VideoMetadataMessage?, Error>) -> Void) {
 
-    public func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
-        batteryEventSink = events
+        guard let player = players[Int(playerId)] else {
+            completion(.failure(PigeonError(code: "INVALID_PLAYER", message: "Player \(playerId) not found", details: nil)))
+            return
+        }
 
+        guard let metadataDict = player.getVideoMetadata() as? [String: Any] else {
+            completion(.success(nil))
+            return
+        }
+
+        let metadata = VideoMetadataMessage(
+            duration: metadataDict["duration"] as? Int64,
+            width: metadataDict["width"] as? Int64,
+            height: metadataDict["height"] as? Int64,
+            videoCodec: metadataDict["videoCodec"] as? String,
+            audioCodec: metadataDict["audioCodec"] as? String,
+            bitrate: metadataDict["bitrate"] as? Int64,
+            frameRate: metadataDict["frameRate"] as? Double
+        )
+        completion(.success(metadata))
+    }
+
+    func getVideoQualities(playerId: Int64, completion: @escaping (Result<[VideoQualityTrackMessage?], Error>) -> Void) {
+
+        guard let player = players[Int(playerId)] else {
+            completion(.failure(PigeonError(code: "INVALID_PLAYER", message: "Player \(playerId) not found", details: nil)))
+            return
+        }
+
+        guard let qualitiesArray = player.getVideoQualities() as? [[String: Any]] else {
+            completion(.success([]))
+            return
+        }
+
+        let qualities = qualitiesArray.map { qualityDict -> VideoQualityTrackMessage in
+            VideoQualityTrackMessage(
+                id: qualityDict["id"] as? String ?? "",
+                label: qualityDict["label"] as? String,
+                bitrate: qualityDict["bitrate"] as? Int64,
+                width: qualityDict["width"] as? Int64,
+                height: qualityDict["height"] as? Int64,
+                codec: qualityDict["codec"] as? String,
+                isDefault: qualityDict["isDefault"] as? Bool
+            )
+        }
+        completion(.success(qualities))
+    }
+
+    func setVideoQuality(playerId: Int64, track: VideoQualityTrackMessage, completion: @escaping (Result<Bool, Error>) -> Void) {
+
+        guard let player = players[Int(playerId)] else {
+            completion(.failure(PigeonError(code: "INVALID_PLAYER", message: "Player \(playerId) not found", details: nil)))
+            return
+        }
+
+        var trackDict: [String: Any] = ["id": track.id]
+        if let bitrate = track.bitrate {
+            trackDict["bitrate"] = Int(bitrate)
+        }
+        if let width = track.width {
+            trackDict["width"] = Int(width)
+        }
+        if let height = track.height {
+            trackDict["height"] = Int(height)
+        }
+        if let label = track.label {
+            trackDict["label"] = label
+        }
+        if let codec = track.codec {
+            trackDict["codec"] = codec
+        }
+        if let isDefault = track.isDefault {
+            trackDict["isDefault"] = isDefault
+        }
+
+        let success = player.setVideoQuality(trackDict)
+        completion(.success(success))
+    }
+
+    func getCurrentVideoQuality(playerId: Int64, completion: @escaping (Result<VideoQualityTrackMessage, Error>) -> Void) {
+
+        guard let player = players[Int(playerId)] else {
+            completion(.failure(PigeonError(code: "INVALID_PLAYER", message: "Player \(playerId) not found", details: nil)))
+            return
+        }
+
+        guard let qualityDict = player.getCurrentVideoQuality() as? [String: Any] else {
+            completion(.failure(PigeonError(code: "NOT_FOUND", message: "Current quality not found", details: nil)))
+            return
+        }
+
+        let quality = VideoQualityTrackMessage(
+            id: qualityDict["id"] as? String ?? "",
+            label: qualityDict["label"] as? String,
+            bitrate: qualityDict["bitrate"] as? Int64,
+            width: qualityDict["width"] as? Int64,
+            height: qualityDict["height"] as? Int64,
+            codec: qualityDict["codec"] as? String,
+            isDefault: qualityDict["isDefault"] as? Bool
+        )
+        completion(.success(quality))
+    }
+
+    func isQualitySelectionSupported(playerId: Int64, completion: @escaping (Result<Bool, Error>) -> Void) {
+
+        guard let player = players[Int(playerId)] else {
+            completion(.failure(PigeonError(code: "INVALID_PLAYER", message: "Player \(playerId) not found", details: nil)))
+            return
+        }
+
+        let supported = player.isQualitySelectionSupported()
+        completion(.success(supported))
+    }
+
+    // MARK: - Background Playback
+
+    func setBackgroundPlayback(playerId: Int64, enabled: Bool, completion: @escaping (Result<Bool, Error>) -> Void) {
+
+        guard let player = players[Int(playerId)] else {
+            completion(.failure(PigeonError(code: "INVALID_PLAYER", message: "Player \(playerId) not found", details: nil)))
+            return
+        }
+
+        let success = player.setBackgroundPlayback(enabled)
+        completion(.success(success))
+    }
+
+    func isBackgroundPlaybackSupported(completion: @escaping (Result<Bool, Error>) -> Void) {
+        let supported = platformBehavior.isBackgroundPlaybackSupported()
+        completion(.success(supported))
+    }
+
+    // MARK: - Casting
+
+    func isCastingSupported(completion: @escaping (Result<Bool, Error>) -> Void) {
+        // AirPlay is always supported on iOS/macOS
+        completion(.success(true))
+    }
+
+    func getAvailableCastDevices(playerId: Int64, completion: @escaping (Result<[CastDeviceMessage?], Error>) -> Void) {
+
+        guard let player = players[Int(playerId)] else {
+            completion(.failure(PigeonError(code: "INVALID_PLAYER", message: "Player \(playerId) not found", details: nil)))
+            return
+        }
+
+        // AirPlay device discovery is handled by the system, not exposed programmatically
+        completion(.success([]))
+    }
+
+    func startCasting(playerId: Int64, device: CastDeviceMessage?, completion: @escaping (Result<Bool, Error>) -> Void) {
+
+        guard let player = players[Int(playerId)] else {
+            completion(.failure(PigeonError(code: "INVALID_PLAYER", message: "Player \(playerId) not found", details: nil)))
+            return
+        }
+
+        // Device is optional - on iOS/macOS AirPlay selection is done via system UI
+        let deviceDict: [String: Any] = device.map {
+            ["id": $0.id, "name": $0.name, "type": convertCastDeviceTypeToString($0.type)]
+        } ?? [:]
+
+        let success = player.startCasting(device: deviceDict)
+        completion(.success(success))
+    }
+
+    func stopCasting(playerId: Int64, completion: @escaping (Result<Bool, Error>) -> Void) {
+
+        guard let player = players[Int(playerId)] else {
+            completion(.failure(PigeonError(code: "INVALID_PLAYER", message: "Player \(playerId) not found", details: nil)))
+            return
+        }
+
+        player.stopCasting()
+        completion(.success(true))
+    }
+
+    func getCastState(playerId: Int64, completion: @escaping (Result<CastStateEnum, Error>) -> Void) {
+
+        guard let player = players[Int(playerId)] else {
+            completion(.failure(PigeonError(code: "INVALID_PLAYER", message: "Player \(playerId) not found", details: nil)))
+            return
+        }
+
+        guard let stateString = player.getCastState() as? String else {
+            completion(.success(.notConnected))
+            return
+        }
+
+        let state = convertStringToCastState(stateString)
+        completion(.success(state))
+    }
+
+    func getCurrentCastDevice(playerId: Int64, completion: @escaping (Result<CastDeviceMessage?, Error>) -> Void) {
+
+        guard let player = players[Int(playerId)] else {
+            completion(.failure(PigeonError(code: "INVALID_PLAYER", message: "Player \(playerId) not found", details: nil)))
+            return
+        }
+
+        guard let deviceDict = player.getCurrentCastDevice() as? [String: Any] else {
+            completion(.success(nil))
+            return
+        }
+
+        let device = CastDeviceMessage(
+            id: deviceDict["id"] as? String ?? "",
+            name: deviceDict["name"] as? String ?? "",
+            type: convertStringToCastDeviceType(deviceDict["type"] as? String ?? "unknown")
+        )
+        completion(.success(device))
+    }
+
+    // MARK: - Platform Capabilities
+
+    func getPlatformInfo(completion: @escaping (Result<PlatformInfoMessage, Error>) -> Void) {
+
+        #if os(iOS)
+        let platformName = "iOS"
+        #elseif os(macOS)
+        let platformName = "macOS"
+        #else
+        let platformName = "Unknown"
+        #endif
+
+        let info = PlatformInfoMessage(
+            platformName: platformName,
+            nativePlayerType: "AVPlayer",
+            additionalInfo: nil
+        )
+        completion(.success(info))
+    }
+
+    func setVerboseLogging(enabled: Bool, completion: @escaping (Result<Void, Error>) -> Void) {
+        VerboseLogger.shared.setEnabled(enabled)
+        completion(.success(()))
+    }
+
+    func supportsPictureInPicture(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(platformBehavior.isPipSupported()))
+    }
+
+    func supportsFullscreen(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(true))
+    }
+
+    func supportsBackgroundPlayback(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(platformBehavior.isBackgroundPlaybackSupported()))
+    }
+
+    func supportsCasting(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(true))
+    }
+
+    func supportsAirPlay(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(true))
+    }
+
+    func supportsChromecast(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(false))
+    }
+
+    func supportsRemotePlayback(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(false))
+    }
+
+    func supportsQualitySelection(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(true))
+    }
+
+    func supportsPlaybackSpeedControl(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(true))
+    }
+
+    func supportsSubtitles(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(true))
+    }
+
+    func supportsExternalSubtitles(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(true))
+    }
+
+    func supportsAudioTrackSelection(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(true))
+    }
+
+    func supportsChapters(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(true))
+    }
+
+    func supportsVideoMetadataExtraction(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(true))
+    }
+
+    func supportsNetworkMonitoring(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(true))
+    }
+
+    func supportsBandwidthEstimation(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(true))
+    }
+
+    func supportsAdaptiveBitrate(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(true))
+    }
+
+    func supportsHLS(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(true))
+    }
+
+    func supportsDASH(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(false))
+    }
+
+    func supportsDeviceVolumeControl(completion: @escaping (Result<Bool, Error>) -> Void) {
+        completion(.success(true))
+    }
+
+    func supportsScreenBrightnessControl(completion: @escaping (Result<Bool, Error>) -> Void) {
+        #if os(iOS)
+        completion(.success(true))
+        #else
+        completion(.success(false))
+        #endif
+    }
+
+    // MARK: - Battery Monitoring
+
+    private func setupBatteryMonitoring() {
         #if os(iOS)
             // Enable battery monitoring
             UIDevice.current.isBatteryMonitoringEnabled = true
@@ -1018,23 +1039,10 @@ open class SharedPluginBase: NSObject, FlutterStreamHandler {
             // Send initial battery state
             sendBatteryUpdate()
         #elseif os(macOS)
-            // macOS: We could set up a timer to poll battery state periodically
-            // For now, just send initial state
+            // macOS: Send initial state only (no continuous monitoring)
+            // Platform implementations can call getBatteryInfo() for updates
             sendBatteryUpdate()
         #endif
-
-        return nil
-    }
-
-    public func onCancel(withArguments arguments: Any?) -> FlutterError? {
-        #if os(iOS)
-            // Remove observers
-            NotificationCenter.default.removeObserver(self, name: UIDevice.batteryLevelDidChangeNotification, object: nil)
-            NotificationCenter.default.removeObserver(self, name: UIDevice.batteryStateDidChangeNotification, object: nil)
-        #endif
-
-        batteryEventSink = nil
-        return nil
     }
 
     #if os(iOS)
@@ -1048,8 +1056,6 @@ open class SharedPluginBase: NSObject, FlutterStreamHandler {
     #endif
 
     private func sendBatteryUpdate() {
-        guard let eventSink = batteryEventSink else { return }
-
         #if os(iOS)
             let batteryLevel = UIDevice.current.batteryLevel
             if batteryLevel < 0 {
@@ -1059,13 +1065,10 @@ open class SharedPluginBase: NSObject, FlutterStreamHandler {
 
             let batteryState = UIDevice.current.batteryState
             let isCharging = batteryState == .charging || batteryState == .full
-            let percentage = Int(batteryLevel * 100)
+            let percentage = Int64(batteryLevel * 100)
 
-            let batteryInfo: [String: Any] = [
-                "percentage": percentage,
-                "isCharging": isCharging
-            ]
-            eventSink(batteryInfo)
+            let batteryInfo = BatteryInfoMessage(percentage: percentage, isCharging: isCharging)
+            flutterApi.onBatteryInfoChanged(batteryInfo: batteryInfo) { _ in }
         #elseif os(macOS)
             let snapshot = IOPSCopyPowerSourcesInfo().takeRetainedValue()
             let sources = IOPSCopyPowerSourcesList(snapshot).takeRetainedValue() as Array
@@ -1079,14 +1082,150 @@ open class SharedPluginBase: NSObject, FlutterStreamHandler {
                 return
             }
 
-            let percentage = (currentCapacity * 100) / maxCapacity
+            let percentage = Int64((currentCapacity * 100) / maxCapacity)
             let isCharging = (description[kIOPSIsChargingKey] as? Bool) ?? false
 
-            let batteryInfo: [String: Any] = [
-                "percentage": percentage,
-                "isCharging": isCharging
-            ]
-            eventSink(batteryInfo)
+            let batteryInfo = BatteryInfoMessage(percentage: percentage, isCharging: isCharging)
+            flutterApi.onBatteryInfoChanged(batteryInfo: batteryInfo) { _ in }
         #endif
+    }
+
+    // MARK: - Conversion Helper Methods
+
+    private func convertVideoSourceToDict(_ source: VideoSourceMessage) -> [String: Any] {
+        var dict: [String: Any] = [:]
+
+        switch source.type {
+        case .network:
+            dict["type"] = "network"
+            if let url = source.url {
+                dict["url"] = url
+            }
+            if let headers = source.headers {
+                dict["headers"] = headers.compactMapValues { $0 }
+            }
+        case .file:
+            dict["type"] = "file"
+            if let path = source.path {
+                dict["path"] = path
+            }
+        case .asset:
+            dict["type"] = "asset"
+            if let assetPath = source.assetPath {
+                dict["assetPath"] = assetPath
+            }
+        }
+
+        return dict
+    }
+
+    private func convertPlayerOptionsToDict(_ options: VideoPlayerOptionsMessage) -> [String: Any] {
+        return [
+            "autoPlay": options.autoPlay,
+            "looping": options.looping,
+            "volume": options.volume,
+            "playbackSpeed": options.playbackSpeed,
+            "allowBackgroundPlayback": options.allowBackgroundPlayback,
+            "mixWithOthers": options.mixWithOthers,
+            "allowPip": options.allowPip,
+            "autoEnterPipOnBackground": options.autoEnterPipOnBackground
+        ]
+    }
+
+    private func convertScalingModeToString(_ mode: VideoScalingModeEnum) -> String {
+        switch mode {
+        case .fit:
+            return "fit"
+        case .fill:
+            return "fill"
+        case .stretch:
+            return "stretch"
+        }
+    }
+
+    private func convertSubtitleFormatToString(_ format: SubtitleFormatEnum) -> String {
+        switch format {
+        case .srt:
+            return "srt"
+        case .vtt:
+            return "vtt"
+        case .ssa:
+            return "ssa"
+        case .ass:
+            return "ass"
+        case .ttml:
+            return "ttml"
+        }
+    }
+
+    private func convertStringToSubtitleFormat(_ string: String) -> SubtitleFormatEnum {
+        switch string.lowercased() {
+        case "srt":
+            return .srt
+        case "vtt":
+            return .vtt
+        case "ssa":
+            return .ssa
+        case "ass":
+            return .ass
+        case "ttml":
+            return .ttml
+        default:
+            return .vtt
+        }
+    }
+
+    private func convertPipActionTypeToString(_ type: PipActionTypeEnum) -> String {
+        switch type {
+        case .playPause:
+            return "playPause"
+        case .skipPrevious:
+            return "skipPrevious"
+        case .skipNext:
+            return "skipNext"
+        case .skipBackward:
+            return "skipBackward"
+        case .skipForward:
+            return "skipForward"
+        }
+    }
+
+    private func convertStringToCastState(_ string: String) -> CastStateEnum {
+        switch string.lowercased() {
+        case "connected":
+            return .connected
+        case "connecting":
+            return .connecting
+        case "disconnecting":
+            return .disconnecting
+        default:
+            return .notConnected
+        }
+    }
+
+    private func convertCastDeviceTypeToString(_ type: CastDeviceTypeEnum) -> String {
+        switch type {
+        case .airPlay:
+            return "airplay"
+        case .chromecast:
+            return "chromecast"
+        case .webRemotePlayback:
+            return "webremoteplayback"
+        case .unknown:
+            return "unknown"
+        }
+    }
+
+    private func convertStringToCastDeviceType(_ string: String) -> CastDeviceTypeEnum {
+        switch string.lowercased() {
+        case "airplay":
+            return .airPlay
+        case "chromecast":
+            return .chromecast
+        case "webremoteplayback":
+            return .webRemotePlayback
+        default:
+            return .unknown
+        }
     }
 }

@@ -4,6 +4,7 @@ import 'dart:js_interop_unsafe';
 
 import 'package:web/web.dart' as web;
 
+import 'abstractions/dash_player_interface.dart';
 import 'verbose_logging.dart';
 
 /// dash.js CDN URL - using a stable version.
@@ -151,8 +152,9 @@ class DashEvents {
 
 /// Wrapper for dash.js MediaPlayer instance providing Dart-friendly API.
 ///
+/// Implements [DashPlayerInterface] for type-safe usage in managers.
 /// Uses dynamic JS access since dash.js is loaded at runtime from CDN.
-class DashPlayer {
+class DashPlayer implements DashPlayerInterface {
   DashPlayer._(this._player);
 
   final JSObject _player;
@@ -175,10 +177,10 @@ class DashPlayer {
     return DashPlayer._(player);
   }
 
-  /// Initializes the player with a video element and source URL.
-  void initialize({required web.HTMLVideoElement view, required String url, bool autoPlay = false}) {
+  @override
+  void initialize({required Object view, required String url, bool autoPlay = false}) {
     _player
-      ..callMethod('initialize'.toJS, view, url.toJS, autoPlay.toJS)
+      ..callMethod('initialize'.toJS, view as web.HTMLVideoElement, url.toJS, autoPlay.toJS)
       ..callMethod('updateSettings'.toJS, _createSettings());
     verboseLog('dash.js initialized with URL: $url', tag: 'DashPlayer');
   }
@@ -207,25 +209,24 @@ class DashPlayer {
     return autoSwitch;
   }
 
-  /// Attaches the player to a video element.
-  void attachView(web.HTMLVideoElement view) {
-    _player.callMethod('attachView'.toJS, view);
+  @override
+  void attachView(Object view) {
+    _player.callMethod('attachView'.toJS, view as web.HTMLVideoElement);
     verboseLog('View attached', tag: 'DashPlayer');
   }
 
-  /// Attaches a source URL.
+  @override
   void attachSource(String url) {
     _player.callMethod('attachSource'.toJS, url.toJS);
     verboseLog('Source attached: $url', tag: 'DashPlayer');
   }
 
-  /// Gets the list of available video bitrates/qualities.
+  @override
   List<DashBitrateInfo> getVideoBitrateInfoList() => _getBitrateInfoListFor('video');
 
-  /// Gets the list of available audio bitrates.
+  @override
   List<DashBitrateInfo> getAudioBitrateInfoList() => _getBitrateInfoListFor('audio');
 
-  /// Helper method to get bitrate info list for a specific type (video/audio).
   List<DashBitrateInfo> _getBitrateInfoListFor(String type) {
     try {
       final list = _player.callMethod('getBitrateInfoListFor'.toJS, type.toJS) as JSArray?;
@@ -248,7 +249,7 @@ class DashPlayer {
     }
   }
 
-  /// Gets the current video quality index.
+  @override
   int getQualityFor(String type) {
     try {
       final quality = _player.callMethod('getQualityFor'.toJS, type.toJS) as JSNumber?;
@@ -258,13 +259,13 @@ class DashPlayer {
     }
   }
 
-  /// Sets the video quality index.
+  @override
   void setQualityFor(String type, int quality) {
     _player.callMethod('setQualityFor'.toJS, type.toJS, quality.toJS);
     verboseLog('Set $type quality to $quality', tag: 'DashPlayer');
   }
 
-  /// Enables/disables automatic bitrate adaptation.
+  @override
   void setAutoSwitchQualityFor(String type, {required bool enabled}) {
     try {
       final settings = JSObject();
@@ -281,8 +282,7 @@ class DashPlayer {
     }
   }
 
-  /// Updates player settings with a nested map structure.
-  /// Used for ABR configuration like minBitrate and maxBitrate.
+  @override
   void updateSettings(Map<String, dynamic> settings) {
     try {
       final jsSettings = _convertToJSObject(settings);
@@ -293,7 +293,6 @@ class DashPlayer {
     }
   }
 
-  /// Recursively converts a Dart Map to a JSObject.
   JSObject _convertToJSObject(Map<String, dynamic> map) {
     final result = JSObject();
     for (final entry in map.entries) {
@@ -309,14 +308,13 @@ class DashPlayer {
       } else if (value is String) {
         result[entry.key] = value.toJS;
       } else if (value != null) {
-        // For other types, try to convert to JS
         result[entry.key] = (value as Object).jsify();
       }
     }
     return result;
   }
 
-  /// Gets whether automatic bitrate adaptation is enabled for the type.
+  @override
   bool getAutoSwitchQualityFor(String type) {
     try {
       final settings = _player.callMethod('getSettings'.toJS) as JSObject?;
@@ -334,7 +332,7 @@ class DashPlayer {
     }
   }
 
-  /// Gets the list of available text tracks (subtitles).
+  @override
   List<DashTextTrack> getTextTracks() {
     try {
       final tracks = _player.callMethod('getTracksFor'.toJS, 'text'.toJS) as JSArray?;
@@ -357,7 +355,7 @@ class DashPlayer {
     }
   }
 
-  /// Sets the current text track.
+  @override
   void setTextTrack(int index) {
     try {
       final tracks = _player.callMethod('getTracksFor'.toJS, 'text'.toJS) as JSArray?;
@@ -370,13 +368,13 @@ class DashPlayer {
     }
   }
 
-  /// Enables or disables text track display.
+  @override
   void setTextTrackVisibility({required bool visible}) {
     _player.callMethod('enableText'.toJS, visible.toJS);
     verboseLog('Text track visibility: $visible', tag: 'DashPlayer');
   }
 
-  /// Gets the list of available audio tracks.
+  @override
   List<DashAudioTrack> getAudioTracks() {
     try {
       final tracks = _player.callMethod('getTracksFor'.toJS, 'audio'.toJS) as JSArray?;
@@ -399,7 +397,7 @@ class DashPlayer {
     }
   }
 
-  /// Sets the current audio track.
+  @override
   void setAudioTrack(int index) {
     try {
       final tracks = _player.callMethod('getTracksFor'.toJS, 'audio'.toJS) as JSArray?;
@@ -412,7 +410,7 @@ class DashPlayer {
     }
   }
 
-  /// Gets the average throughput in kbps.
+  @override
   double getAverageThroughput() {
     try {
       final throughput = _player.callMethod('getAverageThroughput'.toJS, 'video'.toJS) as JSNumber?;
@@ -422,8 +420,8 @@ class DashPlayer {
     }
   }
 
-  /// Adds an event listener.
-  void on(String event, void Function(JSObject? data) callback) {
+  @override
+  void on(String event, void Function(Object? data) callback) {
     final jsCallback = ((JSObject? data) {
       callback(data);
     }).toJS;
@@ -431,7 +429,7 @@ class DashPlayer {
     _player.callMethod('on'.toJS, event.toJS, jsCallback);
   }
 
-  /// Removes all event listeners.
+  @override
   void offAll() {
     for (final reg in _registeredEvents) {
       _player.callMethod('off'.toJS, reg.event.toJS, reg.callback);
@@ -439,13 +437,13 @@ class DashPlayer {
     _registeredEvents.clear();
   }
 
-  /// Resets the player.
+  @override
   void reset() {
     _player.callMethod('reset'.toJS);
     verboseLog('dash.js player reset', tag: 'DashPlayer');
   }
 
-  /// Destroys the dash.js instance and releases resources.
+  @override
   void destroy() {
     offAll();
     _player.callMethod('destroy'.toJS);
@@ -461,7 +459,7 @@ class _EventRegistration {
 }
 
 /// Represents a DASH bitrate/quality info.
-class DashBitrateInfo {
+class DashBitrateInfo implements DashBitrateInfoInterface {
   DashBitrateInfo._({
     required this.index,
     required this.bitrate,
@@ -478,22 +476,22 @@ class DashBitrateInfo {
     mediaType: (js['mediaType'] as JSString?)?.toDart,
   );
 
-  /// The quality index.
+  @override
   final int index;
 
-  /// The bitrate in bits per second.
+  @override
   final int bitrate;
 
-  /// The video width in pixels.
+  @override
   final int width;
 
-  /// The video height in pixels.
+  @override
   final int height;
 
-  /// The media type (video/audio).
+  @override
   final String? mediaType;
 
-  /// Returns a human-readable label for this quality level.
+  @override
   String get label {
     if (height > 0) return '${height}p';
     if (bitrate > 0) return '${(bitrate / 1000).round()} kbps';
@@ -505,7 +503,7 @@ class DashBitrateInfo {
 }
 
 /// Represents a DASH text/subtitle track.
-class DashTextTrack {
+class DashTextTrack implements DashTextTrackInterface {
   DashTextTrack._({required this.index, this.id, this.lang, this.roles, this.isDefault = false});
 
   factory DashTextTrack._fromJs(JSObject js, int index) => DashTextTrack._(
@@ -516,22 +514,22 @@ class DashTextTrack {
     isDefault: (js['isDefault'] as JSBoolean?)?.toDart ?? false,
   );
 
-  /// The track index.
+  @override
   final int index;
 
-  /// The track ID from the manifest.
+  @override
   final String? id;
 
-  /// The language code.
+  @override
   final String? lang;
 
-  /// The roles (e.g., subtitle, caption).
+  @override
   final List<String>? roles;
 
-  /// Whether this is the default track.
+  @override
   final bool isDefault;
 
-  /// Returns a human-readable label for this subtitle track.
+  @override
   String get label {
     if (lang != null && lang!.isNotEmpty) return lang!;
     return 'Subtitle ${index + 1}';
@@ -542,7 +540,7 @@ class DashTextTrack {
 }
 
 /// Represents a DASH audio track.
-class DashAudioTrack {
+class DashAudioTrack implements DashAudioTrackInterface {
   DashAudioTrack._({required this.index, this.id, this.lang, this.roles, this.isDefault = false});
 
   factory DashAudioTrack._fromJs(JSObject js, int index) => DashAudioTrack._(
@@ -553,22 +551,22 @@ class DashAudioTrack {
     isDefault: (js['isDefault'] as JSBoolean?)?.toDart ?? false,
   );
 
-  /// The track index.
+  @override
   final int index;
 
-  /// The track ID from the manifest.
+  @override
   final String? id;
 
-  /// The language code.
+  @override
   final String? lang;
 
-  /// The roles.
+  @override
   final List<String>? roles;
 
-  /// Whether this is the default track.
+  @override
   final bool isDefault;
 
-  /// Returns a human-readable label for this audio track.
+  @override
   String get label {
     if (lang != null && lang!.isNotEmpty) return lang!;
     return 'Audio ${index + 1}';

@@ -1,5 +1,6 @@
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
+import '../abstractions/hls_player_interface.dart';
 import '../abstractions/video_element_interface.dart';
 import '../manager_callbacks.dart';
 import '../verbose_logging.dart';
@@ -32,7 +33,7 @@ class MetadataManager with WebManagerCallbacks {
   ///
   /// Emits [VideoMetadataExtractedEvent] if metadata is available, otherwise
   /// does nothing.
-  Future<void> extractAndEmit({required String sourceUrl, dynamic hlsPlayer}) async {
+  Future<void> extractAndEmit({required String sourceUrl, HlsPlayerInterface? hlsPlayer}) async {
     final metadata = getMetadata(sourceUrl: sourceUrl, hlsPlayer: hlsPlayer);
     if (metadata != null) {
       emitEvent(VideoMetadataExtractedEvent(metadata));
@@ -50,20 +51,17 @@ class MetadataManager with WebManagerCallbacks {
   /// [hlsPlayer] is the optional HLS.js player for codec/bitrate extraction.
   ///
   /// Returns null if metadata is not available yet (readyState < 1).
-  VideoMetadata? getMetadata({required String sourceUrl, dynamic hlsPlayer}) {
+  VideoMetadata? getMetadata({required String sourceUrl, HlsPlayerInterface? hlsPlayer}) {
     // Check if video has loaded enough metadata
-    // Note: VideoElementInterface doesn't expose readyState, so we need to cast
-    // In tests, we can set readyState on the mock
-    final element = videoElement as dynamic;
-    final readyState = element.readyState as int;
+    final readyState = videoElement.readyState as int;
     if (readyState < 1) {
       return null;
     }
 
     // Extract basic metadata from video element
     final duration = _extractDuration();
-    final width = element.videoWidth as int;
-    final height = element.videoHeight as int;
+    final width = videoElement.videoWidth as int;
+    final height = videoElement.videoHeight as int;
 
     // Extract codec and bitrate info from HLS.js if available
     String? videoCodec;
@@ -96,8 +94,7 @@ class MetadataManager with WebManagerCallbacks {
 
   /// Extracts duration from video element.
   Duration? _extractDuration() {
-    final element = videoElement as dynamic;
-    final duration = element.duration as double;
+    final duration = videoElement.duration as double;
     if (duration.isNaN || duration.isInfinite) {
       return null;
     }
@@ -108,36 +105,35 @@ class MetadataManager with WebManagerCallbacks {
   }
 
   /// Extracts codec and bitrate info from HLS.js player.
-  Map<String, Object?> _extractHlsCodecInfo(dynamic hlsPlayer) {
+  Map<String, Object?> _extractHlsCodecInfo(HlsPlayerInterface hlsPlayer) {
     final result = <String, Object?>{};
 
     try {
-      final currentLevel = hlsPlayer.currentLevel as int;
+      final currentLevel = hlsPlayer.currentLevel;
       if (currentLevel < 0) {
         // Auto quality mode - don't extract from specific level
         return result;
       }
 
-      final levels = hlsPlayer.levels as List;
-      final levelsLength = levels.length;
-      if (currentLevel >= levelsLength) {
+      final levels = hlsPlayer.levels;
+      if (currentLevel >= levels.length) {
         return result;
       }
 
       final level = levels[currentLevel];
 
       // Extract bitrate
-      final bitrate = level.bitrate as int;
+      final bitrate = level.bitrate;
       if (bitrate > 0) {
         result['videoBitrate'] = bitrate;
       }
 
       // Parse codecs string (e.g., "avc1.64001f,mp4a.40.2")
-      final codecs = level.codecs as String?;
+      final codecs = level.codecs;
       if (codecs != null && codecs.isNotEmpty) {
-        final codecParts = codecs.split(',') as List;
+        final codecParts = codecs.split(',');
         for (final codec in codecParts) {
-          final trimmed = (codec as String).trim();
+          final trimmed = codec.trim();
           if (trimmed.startsWith('avc') || trimmed.startsWith('hvc') || trimmed.startsWith('vp')) {
             result['videoCodec'] = trimmed;
           } else if (trimmed.startsWith('mp4a') || trimmed.startsWith('opus') || trimmed.startsWith('ac-')) {

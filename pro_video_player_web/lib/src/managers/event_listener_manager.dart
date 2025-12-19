@@ -65,44 +65,42 @@ class EventListenerManager with WebManagerCallbacks {
 
   /// Sets up all video element event listeners.
   void _setupEventListeners() {
-    final element = videoElement as dynamic;
-
     // Playback state events
-    element.addEventListener('loadedmetadata', (event) {
+    videoElement.addEventListener('loadedmetadata', (event) {
       final duration = getDuration();
       emitEvent(const PlaybackStateChangedEvent(PlaybackState.ready));
       emitEvent(DurationChangedEvent(duration));
-      emitEvent(VideoSizeChangedEvent(width: element.videoWidth as int, height: element.videoHeight as int));
+      emitEvent(VideoSizeChangedEvent(width: videoElement.videoWidth as int, height: videoElement.videoHeight as int));
 
       // Call metadata loaded callback
       onMetadataLoaded();
     });
 
-    element.addEventListener('play', (event) {
+    videoElement.addEventListener('play', (event) {
       emitEvent(const PlaybackStateChangedEvent(PlaybackState.playing));
     });
 
-    element.addEventListener('pause', (event) {
+    videoElement.addEventListener('pause', (event) {
       emitEvent(const PlaybackStateChangedEvent(PlaybackState.paused));
     });
 
-    element.addEventListener('ended', (event) {
+    videoElement.addEventListener('ended', (event) {
       emitEvent(const PlaybackCompletedEvent());
       emitEvent(const PlaybackStateChangedEvent(PlaybackState.completed));
     });
 
-    element.addEventListener('waiting', (event) {
+    videoElement.addEventListener('waiting', (event) {
       emitEvent(const PlaybackStateChangedEvent(PlaybackState.buffering));
     });
 
-    element.addEventListener('canplay', (event) {
-      if (!(element.paused as bool)) {
+    videoElement.addEventListener('canplay', (event) {
+      if (!(videoElement.paused as bool)) {
         emitEvent(const PlaybackStateChangedEvent(PlaybackState.playing));
       }
     });
 
     // Position updates (with deduplication - only send if changed by 100ms+)
-    element.addEventListener('timeupdate', (event) {
+    videoElement.addEventListener('timeupdate', (event) {
       final position = getPosition();
       final positionMs = position.inMilliseconds;
       if ((positionMs - _lastSentPosition).abs() >= 100) {
@@ -112,10 +110,12 @@ class EventListenerManager with WebManagerCallbacks {
     });
 
     // Buffering updates (with deduplication - only send if increased)
-    element.addEventListener('progress', (event) {
-      final buffered = element.buffered;
+    videoElement.addEventListener('progress', (event) {
+      final buffered = videoElement.buffered;
+      // ignore: avoid_dynamic_calls
       final length = buffered.length as int;
       if (length > 0) {
+        // ignore: avoid_dynamic_calls
         final bufferedEnd = buffered.end(length - 1) as num;
         final bufferedMs = (bufferedEnd * 1000).round();
         if (bufferedMs > _lastSentBufferedPosition) {
@@ -126,22 +126,22 @@ class EventListenerManager with WebManagerCallbacks {
     });
 
     // Stalled event for buffering detection
-    element.addEventListener('stalled', (event) {
+    videoElement.addEventListener('stalled', (event) {
       emitEvent(const BufferingStartedEvent(reason: BufferingReason.networkUnstable));
     });
 
     // Volume changes
-    element.addEventListener('volumechange', (event) {
-      emitEvent(VolumeChangedEvent(element.volume as double));
+    videoElement.addEventListener('volumechange', (event) {
+      emitEvent(VolumeChangedEvent(videoElement.volume as double));
     });
 
     // Playback speed changes
-    element.addEventListener('ratechange', (event) {
-      emitEvent(PlaybackSpeedChangedEvent(element.playbackRate as double));
+    videoElement.addEventListener('ratechange', (event) {
+      emitEvent(PlaybackSpeedChangedEvent(videoElement.playbackRate as double));
     });
 
     // Duration change - important for HLS streams where duration isn't available immediately
-    element.addEventListener('durationchange', (event) {
+    videoElement.addEventListener('durationchange', (event) {
       final duration = getDuration();
       if (duration > Duration.zero) {
         emitEvent(DurationChangedEvent(duration));

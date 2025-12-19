@@ -46,6 +46,13 @@ import com.google.android.gms.cast.framework.CastState
 import com.google.android.gms.cast.framework.CastStateListener
 import com.google.android.gms.cast.framework.SessionManagerListener
 import com.google.android.gms.cast.framework.media.RemoteMediaClient
+import dev.pro_video_player.pro_video_player_android.ProVideoPlayerFlutterApi
+import dev.pro_video_player.pro_video_player_android.VideoMetadataMessage
+import dev.pro_video_player.pro_video_player_android.CastStateEnum
+import dev.pro_video_player.pro_video_player_android.CastDeviceMessage
+import dev.pro_video_player.pro_video_player_android.CastDeviceTypeEnum
+import dev.pro_video_player.pro_video_player_android.SubtitleTrackMessage
+import dev.pro_video_player.pro_video_player_android.AudioTrackMessage
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.EventChannel
 
@@ -65,6 +72,9 @@ class VideoPlayer(
     private val mainHandler = Handler(Looper.getMainLooper())
     private var playerView: PlayerView? = null
     private var mediaSession: MediaSession? = null
+
+    // FlutterApi for native → Dart callbacks
+    var flutterApi: ProVideoPlayerFlutterApi? = null
 
     // Configuration options
     private var allowPip: Boolean = true
@@ -223,7 +233,6 @@ class VideoPlayer(
                 }
 
                 override fun onSessionStarted(session: com.google.android.gms.cast.framework.CastSession, sessionId: String) {
-                    verboseLog("onSessionStarted: sessionId=$sessionId, device=${session.castDevice?.friendlyName}", TAG)
                     sendCastStateEvent("connected", session.castDevice)
                     // Auto-load current media to the cast device
                     loadMediaToCastSession(session)
@@ -255,13 +264,11 @@ class VideoPlayer(
                     // Get the current position from the cast device before session ends
                     session.remoteMediaClient?.let { client ->
                         lastCastPosition = client.approximateStreamPosition
-                        verboseLog("onSessionEnding: Captured cast position: $lastCastPosition", TAG)
                     }
                     sendCastStateEvent("disconnecting", session.castDevice)
                 }
 
                 override fun onSessionEnded(session: com.google.android.gms.cast.framework.CastSession, error: Int) {
-                    verboseLog("onSessionEnded: error=$error, lastCastPosition=$lastCastPosition", TAG)
 
                     // Unregister remote media client callback
                     unregisterRemoteMediaClientCallback(session)
@@ -269,7 +276,6 @@ class VideoPlayer(
                     // Restore local playback at the cast position
                     mainHandler.post {
                         if (isCastingActive && lastCastPosition > 0) {
-                            verboseLog("onSessionEnded: Restoring local playback at position $lastCastPosition", TAG)
                             exoPlayer?.seekTo(lastCastPosition)
                             // Show the player view
                             playerView?.visibility = View.VISIBLE
@@ -485,18 +491,15 @@ class VideoPlayer(
                     // Apply bitrate constraints
                     if (minBitrate != null && minBitrate > 0) {
                         paramsBuilder.setMinVideoBitrate(minBitrate)
-                        verboseLog("setupPlayer: Set min video bitrate to $minBitrate bps", TAG)
                     }
                     if (maxBitrate != null && maxBitrate > 0) {
                         paramsBuilder.setMaxVideoBitrate(maxBitrate)
-                        verboseLog("setupPlayer: Set max video bitrate to $maxBitrate bps", TAG)
                     }
 
                     // In manual mode, we don't auto-switch (handled by isAutoQuality flag)
                     // The actual quality lock happens when user calls setVideoQuality()
                     if (abrMode == "manual") {
                         isAutoQuality = false
-                        verboseLog("setupPlayer: ABR mode set to manual", TAG)
                     }
 
                     trackSelectionParameters = paramsBuilder.build()
@@ -606,7 +609,6 @@ class VideoPlayer(
                 mediaSession = MediaSession.Builder(context, player)
                     .setId("pro_video_player_$playerId")
                     .build()
-                verboseLog("MediaSession created for background playback", TAG)
 
                 // Register player with background playback service
                 MediaPlaybackService.registerPlayer(playerId, player)
@@ -699,10 +701,8 @@ class VideoPlayer(
         val subtitleTracks = mutableListOf<Map<String, Any?>>()
         var trackCounter = 0
 
-        verboseLog("notifySubtitleTracks: Processing ${tracks.groups.size} track groups", TAG)
         for ((groupIndex, group) in tracks.groups.withIndex()) {
             if (group.type == C.TRACK_TYPE_TEXT) {
-                verboseLog("notifySubtitleTracks: Found text track group $groupIndex with ${group.length} tracks", TAG)
                 for (i in 0 until group.length) {
                     val format = group.getTrackFormat(i)
                     val language = format.language
@@ -714,7 +714,6 @@ class VideoPlayer(
                         "language" to language,
                         "isDefault" to (trackCounter == 0)
                     )
-                    verboseLog("notifySubtitleTracks: Track $groupIndex:$i (language: $language)", TAG)
                     subtitleTracks.add(track)
                     trackCounter++
                 }
@@ -722,21 +721,17 @@ class VideoPlayer(
         }
 
         if (subtitleTracks.isNotEmpty()) {
-            verboseLog("notifySubtitleTracks: Sending ${subtitleTracks.size} subtitle tracks to Flutter", TAG)
             sendEvent(mapOf("type" to "subtitleTracksChanged", "tracks" to subtitleTracks))
 
             // Auto-select subtitle only on initial load if configured, and user hasn't manually selected one
             if (showSubtitlesByDefault && isInitialSubtitleSelection && !hasManuallySelectedSubtitle) {
-                verboseLog("notifySubtitleTracks: Auto-selecting subtitle (initial load)", TAG)
                 autoSelectSubtitle(tracks)
                 isInitialSubtitleSelection = false
             } else {
-                verboseLog("notifySubtitleTracks: Skipping auto-selection (manualSelection=$hasManuallySelectedSubtitle, isInitial=$isInitialSubtitleSelection)", TAG)
                 // Mark initial selection as complete after first notification
                 isInitialSubtitleSelection = false
             }
         } else {
-            verboseLog("notifySubtitleTracks: No subtitle tracks found", TAG)
         }
     }
 
@@ -793,7 +788,6 @@ class VideoPlayer(
         }
 
         if (qualityTracks.isNotEmpty()) {
-            verboseLog("notifyVideoQualityTracks: Sending ${qualityTracks.size} quality tracks to Flutter", TAG)
             sendEvent(mapOf("type" to "videoQualityTracksChanged", "tracks" to qualityTracks))
         }
     }
@@ -850,7 +844,6 @@ class VideoPlayer(
         }
 
         if (chapters.isNotEmpty()) {
-            verboseLog("notifyChapters: Sending ${chapters.size} chapters to Flutter", TAG)
             sendEvent(mapOf("type" to "chaptersExtracted", "chapters" to chapters))
         }
     }
@@ -905,7 +898,6 @@ class VideoPlayer(
                 .clearOverridesOfType(C.TRACK_TYPE_VIDEO)
                 .build()
 
-            verboseLog("setVideoQuality: Enabled automatic quality selection", TAG)
             sendEvent(mapOf(
                 "type" to "selectedQualityChanged",
                 "track" to mapOf(
@@ -943,7 +935,6 @@ class VideoPlayer(
 
                 isAutoQuality = false
                 currentQualityTrackId = trackId
-                verboseLog("setVideoQuality: Selected quality track $trackId", TAG)
                 sendEvent(mapOf(
                     "type" to "selectedQualityChanged",
                     "track" to track,
@@ -1489,7 +1480,6 @@ class VideoPlayer(
     }
 
     override fun setSubtitleTrack(track: Map<String, Any>?) {
-        verboseLog("setSubtitleTrack called with track: $track, subtitlesEnabled: $subtitlesEnabled", TAG)
 
         // Mark that user has manually selected a subtitle
         hasManuallySelectedSubtitle = true
@@ -1512,7 +1502,6 @@ class VideoPlayer(
                         verboseLog("setSubtitleTrack: Track ID is null", TAG)
                         return@post
                     }
-                    verboseLog("setSubtitleTrack: Processing track ID: $idString", TAG)
 
                     // Check if this is an external subtitle track
                     if (idString.startsWith("ext-")) {
@@ -1531,7 +1520,6 @@ class VideoPlayer(
 
                         // Select the external subtitle
                         selectedExternalSubtitleId = idString
-                        verboseLog("setSubtitleTrack: Selected external subtitle track: $idString", TAG)
                         sendEvent(mapOf("type" to "selectedSubtitleChanged", "track" to track))
                         return@post
                     }
@@ -1545,21 +1533,17 @@ class VideoPlayer(
                     val groupIndex = parsed.first
                     val trackIndex = parsed.second
 
-                    verboseLog("setSubtitleTrack: Attempting to select group $groupIndex, track $trackIndex", TAG)
 
                     val tracks = player.currentTracks
-                    verboseLog("setSubtitleTrack: Current tracks has ${tracks.groups.size} groups", TAG)
 
                     if (groupIndex < tracks.groups.size) {
                         val group = tracks.groups[groupIndex]
-                        verboseLog("setSubtitleTrack: Group $groupIndex type: ${group.type}, length: ${group.length}", TAG)
 
                         if (group.type == C.TRACK_TYPE_TEXT && trackIndex < group.length) {
                             // Clear external subtitle selection when selecting embedded
                             selectedExternalSubtitleId = null
 
                             val override = TrackSelectionOverride(group.mediaTrackGroup, trackIndex)
-                            verboseLog("setSubtitleTrack: Applying track selection override", TAG)
 
                             player.trackSelectionParameters = player.trackSelectionParameters
                                 .buildUpon()
@@ -1568,7 +1552,6 @@ class VideoPlayer(
                                 .setOverrideForType(override)
                                 .build()
 
-                            verboseLog("setSubtitleTrack: Successfully set subtitle track $groupIndex:$trackIndex", TAG)
                             sendEvent(mapOf("type" to "selectedSubtitleChanged", "track" to track))
                         } else {
                             verboseLog("setSubtitleTrack: Group type or track index invalid. Type=${group.type}, trackIndex=$trackIndex, length=${group.length}", TAG)
@@ -1577,7 +1560,6 @@ class VideoPlayer(
                         verboseLog("setSubtitleTrack: Group index $groupIndex out of bounds (size: ${tracks.groups.size})", TAG)
                     }
                 } else {
-                    verboseLog("setSubtitleTrack: Disabling subtitles", TAG)
                     // Clear external subtitle selection
                     selectedExternalSubtitleId = null
                     // Disable subtitles
@@ -1586,7 +1568,6 @@ class VideoPlayer(
                         .clearOverridesOfType(C.TRACK_TYPE_TEXT)
                         .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
                         .build()
-                    verboseLog("setSubtitleTrack: Subtitles disabled", TAG)
                     sendEvent(mapOf("type" to "selectedSubtitleChanged", "track" to null))
                 }
             } catch (e: Exception) {
@@ -1607,16 +1588,10 @@ class VideoPlayer(
      */
     fun setSubtitleRenderMode(mode: String) {
         subtitleRenderMode = mode
-        verboseLog("Subtitle render mode set to: $mode", TAG)
 
         // Update subtitle view visibility
         val shouldUseFlutterRendering = (mode == "flutter")
         playerView?.subtitleView?.visibility = if (shouldUseFlutterRendering) View.GONE else View.VISIBLE
-
-        verboseLog(
-            "Subtitle view ${if (shouldUseFlutterRendering) "hidden" else "shown"} for ${if (shouldUseFlutterRendering) "Flutter" else "native"} rendering",
-            TAG
-        )
     }
 
     fun setAudioTrack(track: Map<String, Any>?) {
@@ -1691,7 +1666,6 @@ class VideoPlayer(
 
         // If WebVTT content is provided and we're in native rendering mode, use it directly
         if (webvttContent != null && subtitleRenderMode == "native") {
-            ProVideoPlayerPlugin.verboseLog("Using pre-converted WebVTT content (${webvttContent.length} chars) for native rendering", TAG)
             createSubtitleTrackFromContent(webvttContent, sourceType, path, format, label, language, isDefault, callback)
             return
         }
@@ -1850,7 +1824,6 @@ class VideoPlayer(
 
         mainHandler.post {
             externalSubtitles[trackId] = track
-            ProVideoPlayerPlugin.verboseLog("Added external subtitle track: $trackId ($sourceType) from $path", TAG)
 
             notifySubtitleTracksWithExternal()
             callback(track)
@@ -1888,7 +1861,6 @@ class VideoPlayer(
 
         mainHandler.post {
             externalSubtitles[trackId] = track
-            ProVideoPlayerPlugin.verboseLog("Added external subtitle track from WebVTT content: $trackId ($sourceType)", TAG)
 
             notifySubtitleTracksWithExternal()
             callback(track)
@@ -1904,7 +1876,6 @@ class VideoPlayer(
     fun removeExternalSubtitle(trackId: String): Boolean {
         val removed = externalSubtitles.remove(trackId) != null
         if (removed) {
-            ProVideoPlayerPlugin.verboseLog("Removed external subtitle track: $trackId", TAG)
             notifySubtitleTracksWithExternal()
         } else {
             ProVideoPlayerPlugin.verboseLog("External subtitle track not found: $trackId", TAG)
@@ -2536,6 +2507,140 @@ class VideoPlayer(
 
 
     private fun sendEvent(event: Map<String, Any?>) {
+        val eventType = event["type"] as? String
+
+        // Route events based on frequency: high-frequency → EventChannel, low-frequency → FlutterApi
+        when (eventType) {
+            // High-frequency events → EventChannel (optimized for streaming)
+            "positionChanged", "bufferedPositionChanged", "playbackStateChanged",
+            "durationChanged", "videoSizeChanged", "bufferingStarted", "bufferingEnded" -> {
+                sendToEventChannel(event)
+            }
+
+            // Low-frequency events → FlutterApi (type-safe callbacks)
+            "error" -> {
+                val api = flutterApi
+                if (api != null) {
+                    val code = event["code"] as? String ?: "unknown"
+                    val message = event["message"] as? String ?: "Unknown error"
+                    api.onError(playerId.toLong(), code, message) {}
+                } else {
+                    sendToEventChannel(event)
+                }
+            }
+
+            "videoMetadataExtracted" -> {
+                val api = flutterApi
+                if (api != null) {
+                    val metadata = event["metadata"] as? Map<String, Any>
+                    if (metadata != null) {
+                        // Convert to VideoMetadataMessage
+                        val metadataMessage = VideoMetadataMessage(
+                            width = (metadata["width"] as? Number)?.toLong(),
+                            height = (metadata["height"] as? Number)?.toLong(),
+                            duration = (metadata["duration"] as? Number)?.toLong(),
+                            bitrate = (metadata["bitrate"] as? Number)?.toLong(),
+                            videoCodec = metadata["videoCodec"] as? String,
+                            audioCodec = metadata["audioCodec"] as? String,
+                            frameRate = (metadata["frameRate"] as? Number)?.toDouble()
+                        )
+                        api.onMetadataExtracted(playerId.toLong(), metadataMessage) {}
+                    }
+                } else {
+                    sendToEventChannel(event)
+                }
+            }
+
+            "playbackCompleted" -> {
+                val api = flutterApi
+                if (api != null) {
+                    api.onPlaybackCompleted(playerId.toLong()) {}
+                } else {
+                    sendToEventChannel(event)
+                }
+            }
+
+            "pipActionTriggered" -> {
+                val api = flutterApi
+                if (api != null) {
+                    val action = event["action"] as? String ?: ""
+                    api.onPipActionTriggered(playerId.toLong(), action) {}
+                } else {
+                    sendToEventChannel(event)
+                }
+            }
+
+            "castStateChanged" -> {
+                val api = flutterApi
+                if (api != null) {
+                    val state = event["state"] as? String ?: "notConnected"
+                    val castState = when (state) {
+                        "notConnected" -> CastStateEnum.NOT_CONNECTED
+                        "connecting" -> CastStateEnum.CONNECTING
+                        "connected" -> CastStateEnum.CONNECTED
+                        "disconnecting" -> CastStateEnum.DISCONNECTING
+                        else -> CastStateEnum.NOT_CONNECTED
+                    }
+
+                    val device = event["device"] as? Map<String, Any>
+                    val castDevice = if (device != null) {
+                        CastDeviceMessage(
+                            id = (device["id"] as? String) ?: "",
+                            name = (device["name"] as? String) ?: "",
+                            type = CastDeviceTypeEnum.CHROMECAST  // Android uses Chromecast
+                        )
+                    } else {
+                        null
+                    }
+
+                    api.onCastStateChanged(playerId.toLong(), castState, castDevice) {}
+                } else {
+                    sendToEventChannel(event)
+                }
+            }
+
+            "subtitleTracksChanged" -> {
+                val api = flutterApi
+                if (api != null) {
+                    @Suppress("UNCHECKED_CAST")
+                    val tracksData = event["tracks"] as? List<Map<String, Any>> ?: emptyList()
+                    val tracks = tracksData.map { trackData ->
+                        SubtitleTrackMessage(
+                            id = trackData["id"] as? String ?: "",
+                            language = trackData["language"] as? String,
+                            label = trackData["label"] as? String ?: ""
+                        )
+                    }
+                    api.onSubtitleTracksChanged(playerId.toLong(), tracks) {}
+                } else {
+                    sendToEventChannel(event)
+                }
+            }
+
+            "audioTracksChanged" -> {
+                val api = flutterApi
+                if (api != null) {
+                    @Suppress("UNCHECKED_CAST")
+                    val tracksData = event["tracks"] as? List<Map<String, Any>> ?: emptyList()
+                    val tracks = tracksData.map { trackData ->
+                        AudioTrackMessage(
+                            id = trackData["id"] as? String ?: "",
+                            language = trackData["language"] as? String,
+                            label = trackData["label"] as? String ?: ""
+                        )
+                    }
+                    api.onAudioTracksChanged(playerId.toLong(), tracks) {}
+                } else {
+                    sendToEventChannel(event)
+                }
+            }
+
+            // Default: send to EventChannel (fallback for unknown or mixed-frequency events)
+            else -> sendToEventChannel(event)
+        }
+    }
+
+    private fun sendToEventChannel(event: Map<String, Any?>) {
         // Optimize: avoid handler post overhead when already on main thread
         if (Looper.myLooper() == Looper.getMainLooper()) {
             eventSink?.success(event)
@@ -2596,7 +2701,6 @@ class VideoPlayer(
 
             // Show the dialog
             dialog.show(activity.supportFragmentManager, "MediaRouteChooserDialog")
-            verboseLog("startCasting: Showing MediaRouteChooserDialog", TAG)
             return true
         } catch (e: Exception) {
             verboseLog("startCasting: Failed to show dialog: ${e.message}", TAG)
@@ -2608,7 +2712,6 @@ class VideoPlayer(
      * Loads the current media to an active cast session.
      */
     private fun loadMediaToCastSession(session: com.google.android.gms.cast.framework.CastSession) {
-        verboseLog("loadMediaToCastSession: Starting to load media to cast device", TAG)
 
         val remoteMediaClient = session.remoteMediaClient
         if (remoteMediaClient == null) {
@@ -2635,7 +2738,6 @@ class VideoPlayer(
             return
         }
 
-        verboseLog("loadMediaToCastSession: Loading URI: $uri", TAG)
 
         // Build Cast MediaInfo
         val mediaMetadata = com.google.android.gms.cast.MediaMetadata(
@@ -2656,12 +2758,10 @@ class VideoPlayer(
             .setPlayPosition(player.currentPosition)
             .build()
 
-        verboseLog("loadMediaToCastSession: Calling remoteMediaClient.load()", TAG)
         val pendingResult = remoteMediaClient.load(mediaInfo, loadOptions)
         pendingResult.setResultCallback { result ->
             val status = result.status
             if (status.isSuccess) {
-                verboseLog("loadMediaToCastSession: Media loaded successfully, hiding local player", TAG)
                 mainHandler.post {
                     // Pause the local player and hide the view
                     exoPlayer?.pause()
@@ -2695,7 +2795,6 @@ class VideoPlayer(
             }
         }
         client.registerCallback(remoteMediaClientCallback!!)
-        verboseLog("registerRemoteMediaClientCallback: Registered callback for position tracking", TAG)
     }
 
     /**
@@ -2704,7 +2803,6 @@ class VideoPlayer(
     private fun unregisterRemoteMediaClientCallback(session: com.google.android.gms.cast.framework.CastSession) {
         remoteMediaClientCallback?.let { callback ->
             session.remoteMediaClient?.unregisterCallback(callback)
-            verboseLog("unregisterRemoteMediaClientCallback: Unregistered callback", TAG)
         }
         remoteMediaClientCallback = null
     }

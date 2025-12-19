@@ -2573,6 +2573,10 @@ interface ProVideoPlayerHostApi {
  * This API is implemented in Dart and called from the native platform
  * to send events.
  *
+ * HYBRID EVENT SYSTEM:
+ * - High-frequency events (position, buffering, state) use EventChannel
+ * - Low-frequency events (errors, metadata, completion) use @FlutterApi for type safety
+ *
  * Generated class from Pigeon that represents Flutter messages that can be called from Kotlin.
  */
 class ProVideoPlayerFlutterApi(private val binaryMessenger: BinaryMessenger, private val messageChannelSuffix: String = "") {
@@ -2582,7 +2586,14 @@ class ProVideoPlayerFlutterApi(private val binaryMessenger: BinaryMessenger, pri
       PigeonMessagesPigeonCodec()
     }
   }
-  /** Called when a video player event occurs. */
+  /**
+   * Called when a video player event occurs (deprecated - kept for EventChannel compatibility).
+   *
+   * High-frequency events still use EventChannel:
+   * - positionChanged, bufferedPositionChanged
+   * - playbackStateChanged, durationChanged
+   * - videoSizeChanged, bufferingStarted, bufferingEnded
+   */
   fun onEvent(playerIdArg: Long, eventArg: VideoPlayerEventMessage, callback: (Result<Unit>) -> Unit)
 {
     val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
@@ -2597,7 +2608,156 @@ class ProVideoPlayerFlutterApi(private val binaryMessenger: BinaryMessenger, pri
         }
       } else {
         callback(Result.failure(createConnectionError(channelName)))
-      } 
+      }
+    }
+  }
+  /** Called when an error occurs during playback. */
+  fun onError(playerIdArg: Long, errorCodeArg: String, errorMessageArg: String, callback: (Result<Unit>) -> Unit)
+{
+    val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
+    val channelName = "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onError$separatedMessageChannelSuffix"
+    val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
+    channel.send(listOf(playerIdArg, errorCodeArg, errorMessageArg)) {
+      if (it is List<*>) {
+        if (it.size > 1) {
+          callback(Result.failure(FlutterError(it[0] as String, it[1] as String, it[2] as String?)))
+        } else {
+          callback(Result.success(Unit))
+        }
+      } else {
+        callback(Result.failure(createConnectionError(channelName)))
+      }
+    }
+  }
+  /** Called when video metadata is extracted. */
+  fun onMetadataExtracted(playerIdArg: Long, metadataArg: VideoMetadataMessage, callback: (Result<Unit>) -> Unit)
+{
+    val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
+    val channelName = "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onMetadataExtracted$separatedMessageChannelSuffix"
+    val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
+    channel.send(listOf(playerIdArg, metadataArg)) {
+      if (it is List<*>) {
+        if (it.size > 1) {
+          callback(Result.failure(FlutterError(it[0] as String, it[1] as String, it[2] as String?)))
+        } else {
+          callback(Result.success(Unit))
+        }
+      } else {
+        callback(Result.failure(createConnectionError(channelName)))
+      }
+    }
+  }
+  /** Called when playback completes. */
+  fun onPlaybackCompleted(playerIdArg: Long, callback: (Result<Unit>) -> Unit)
+{
+    val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
+    val channelName = "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onPlaybackCompleted$separatedMessageChannelSuffix"
+    val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
+    channel.send(listOf(playerIdArg)) {
+      if (it is List<*>) {
+        if (it.size > 1) {
+          callback(Result.failure(FlutterError(it[0] as String, it[1] as String, it[2] as String?)))
+        } else {
+          callback(Result.success(Unit))
+        }
+      } else {
+        callback(Result.failure(createConnectionError(channelName)))
+      }
+    }
+  }
+  /** Called when a PiP action is triggered by the user. */
+  fun onPipActionTriggered(playerIdArg: Long, actionArg: String, callback: (Result<Unit>) -> Unit)
+{
+    val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
+    val channelName = "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onPipActionTriggered$separatedMessageChannelSuffix"
+    val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
+    channel.send(listOf(playerIdArg, actionArg)) {
+      if (it is List<*>) {
+        if (it.size > 1) {
+          callback(Result.failure(FlutterError(it[0] as String, it[1] as String, it[2] as String?)))
+        } else {
+          callback(Result.success(Unit))
+        }
+      } else {
+        callback(Result.failure(createConnectionError(channelName)))
+      }
+    }
+  }
+  /** Called when cast state changes. */
+  fun onCastStateChanged(playerIdArg: Long, stateArg: CastStateEnum, deviceArg: CastDeviceMessage?, callback: (Result<Unit>) -> Unit)
+{
+    val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
+    val channelName = "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onCastStateChanged$separatedMessageChannelSuffix"
+    val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
+    channel.send(listOf(playerIdArg, stateArg, deviceArg)) {
+      if (it is List<*>) {
+        if (it.size > 1) {
+          callback(Result.failure(FlutterError(it[0] as String, it[1] as String, it[2] as String?)))
+        } else {
+          callback(Result.success(Unit))
+        }
+      } else {
+        callback(Result.failure(createConnectionError(channelName)))
+      }
+    }
+  }
+  /** Called when subtitle tracks change. */
+  fun onSubtitleTracksChanged(playerIdArg: Long, tracksArg: List<SubtitleTrackMessage?>, callback: (Result<Unit>) -> Unit)
+{
+    val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
+    val channelName = "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onSubtitleTracksChanged$separatedMessageChannelSuffix"
+    val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
+    channel.send(listOf(playerIdArg, tracksArg)) {
+      if (it is List<*>) {
+        if (it.size > 1) {
+          callback(Result.failure(FlutterError(it[0] as String, it[1] as String, it[2] as String?)))
+        } else {
+          callback(Result.success(Unit))
+        }
+      } else {
+        callback(Result.failure(createConnectionError(channelName)))
+      }
+    }
+  }
+  /** Called when audio tracks change. */
+  fun onAudioTracksChanged(playerIdArg: Long, tracksArg: List<AudioTrackMessage?>, callback: (Result<Unit>) -> Unit)
+{
+    val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
+    val channelName = "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onAudioTracksChanged$separatedMessageChannelSuffix"
+    val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
+    channel.send(listOf(playerIdArg, tracksArg)) {
+      if (it is List<*>) {
+        if (it.size > 1) {
+          callback(Result.failure(FlutterError(it[0] as String, it[1] as String, it[2] as String?)))
+        } else {
+          callback(Result.success(Unit))
+        }
+      } else {
+        callback(Result.failure(createConnectionError(channelName)))
+      }
+    }
+  }
+  /**
+   * Called when battery information changes.
+   *
+   * Emitted when the device's battery level or charging state changes.
+   * Platform availability varies (see getBatteryInfo documentation).
+   */
+  fun onBatteryInfoChanged(batteryInfoArg: BatteryInfoMessage, callback: (Result<Unit>) -> Unit)
+{
+    val separatedMessageChannelSuffix = if (messageChannelSuffix.isNotEmpty()) ".$messageChannelSuffix" else ""
+    val channelName = "dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onBatteryInfoChanged$separatedMessageChannelSuffix"
+    val channel = BasicMessageChannel<Any?>(binaryMessenger, channelName, codec)
+    channel.send(listOf(batteryInfoArg)) {
+      if (it is List<*>) {
+        if (it.size > 1) {
+          callback(Result.failure(FlutterError(it[0] as String, it[1] as String, it[2] as String?)))
+        } else {
+          callback(Result.success(Unit))
+        }
+      } else {
+        callback(Result.failure(createConnectionError(channelName)))
+      }
     }
   }
 }

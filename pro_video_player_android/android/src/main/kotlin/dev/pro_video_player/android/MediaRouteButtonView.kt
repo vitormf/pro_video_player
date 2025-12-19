@@ -149,7 +149,6 @@ class MediaRouteButtonPlatformView(
         // Extract ARGB components - colorValue is already in ARGB format from Flutter
         val color = colorValue
 
-        verboseLog("Applying tint color: #${Integer.toHexString(color)}", TAG)
 
         // Apply color filter to the button's drawable using reflection
         try {
@@ -161,14 +160,11 @@ class MediaRouteButtonPlatformView(
                 mutatedDrawable.setTint(color)
                 // Force update the drawable
                 mediaRouteButton.setRemoteIndicatorDrawable(mutatedDrawable)
-                verboseLog("Applied tint via setRemoteIndicatorDrawable", TAG)
             } else {
-                verboseLog("mRemoteIndicator drawable is null, trying alternative", TAG)
                 // Try to set tint on the button directly using CompoundDrawable approach
                 applyTintViaDrawableState(color)
             }
         } catch (e: Exception) {
-            verboseLog("Reflection failed: ${e.message}", TAG)
             applyTintViaDrawableState(color)
         }
     }
@@ -178,9 +174,8 @@ class MediaRouteButtonPlatformView(
             // Use foreground tint as alternative
             mediaRouteButton.foregroundTintList = android.content.res.ColorStateList.valueOf(color)
             mediaRouteButton.invalidate()
-            verboseLog("Applied tint via foregroundTintList", TAG)
-        } catch (e: Exception) {
-            verboseLog("Failed to apply tint: ${e.message}", TAG)
+        } catch (_: Exception) {
+            // Tint application failed - not critical
         }
     }
 
@@ -267,19 +262,15 @@ class MediaRouteButtonPlatformView(
             { context }
         )
 
-        for ((index, createContext) in contextAttempts.withIndex()) {
+        for (createContext in contextAttempts) {
             try {
                 val attemptContext = createContext()
-                val button = MediaRouteButton(attemptContext)
-                verboseLog("Successfully created MediaRouteButton with attempt ${index + 1}", TAG)
-                return button
+                return MediaRouteButton(attemptContext)
             } catch (e: IllegalArgumentException) {
-                if (e.message?.contains("background can not be translucent") == true) {
-                    verboseLog("Context attempt ${index + 1} failed: ${e.message}", TAG)
-                    // Continue to next attempt
-                } else {
+                if (e.message?.contains("background can not be translucent") != true) {
                     throw e // Re-throw non-theme related errors
                 }
+                // Continue to next attempt for transparent background theme issue
             }
         }
 

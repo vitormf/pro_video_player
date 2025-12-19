@@ -29,6 +29,7 @@ class SharedVideoPlayer: NSObject {
 
     let playerId: Int
     weak var eventSink: EventSink?
+    weak var flutterApi: ProVideoPlayerFlutterApi?
     let platformAdapter: PlatformAdapter
 
     private(set) var player: AVPlayer?
@@ -54,6 +55,7 @@ class SharedVideoPlayer: NSObject {
     private var isPlaying: Bool = false
     private var isPipActive: Bool = false
     private var isInBackground: Bool = false
+    private var userRequestedPip: Bool = false  // Tracks if PiP was explicitly requested by user
     #if os(macOS)
     private var wakeLockActivity: NSObjectProtocol?
     #endif
@@ -196,13 +198,8 @@ class SharedVideoPlayer: NSObject {
 
         // Perform heavy initialization on background thread to avoid blocking UI
         // AVPlayer, AVPlayerItem, and AVURLAsset can all be created off the main thread
-        let startTime = Date()
-        verboseLog("🎬 [INIT] Starting background initialization", tag: "SharedVideoPlayer")
-
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self = self else { return }
-
-            verboseLog("🎬 [INIT] Creating AVURLAsset (elapsed: \(Date().timeIntervalSince(startTime) * 1000)ms)", tag: "SharedVideoPlayer")
 
             // Create player item with headers if needed
             var asset: AVURLAsset
@@ -212,7 +209,6 @@ class SharedVideoPlayer: NSObject {
                 asset = AVURLAsset(url: videoUrl)
             }
 
-            verboseLog("🎬 [INIT] Creating AVPlayerItem (elapsed: \(Date().timeIntervalSince(startTime) * 1000)ms)", tag: "SharedVideoPlayer")
             let playerItem = AVPlayerItem(asset: asset)
 
             // Configure buffering based on tier
@@ -225,28 +221,21 @@ class SharedVideoPlayer: NSObject {
                 playerItem.preferredPeakBitRate = Double(maxBitrate)
             }
 
-            verboseLog("🎬 [INIT] Creating AVPlayer (elapsed: \(Date().timeIntervalSince(startTime) * 1000)ms)", tag: "SharedVideoPlayer")
             let player = AVPlayer(playerItem: playerItem)
 
-            verboseLog("🎬 [INIT] PHASE 1 - Queue minimal setup (elapsed: \(Date().timeIntervalSince(startTime) * 1000)ms)", tag: "SharedVideoPlayer")
 
             // Phase 1: ONLY create the layer - absolute minimum for display
             DispatchQueue.main.async {
-                verboseLog("🎬 [PHASE 1] START - Creating layer (elapsed: \(Date().timeIntervalSince(startTime) * 1000)ms)", tag: "SharedVideoPlayer")
                 self.playerLayer = AVPlayerLayer(player: player)
-                verboseLog("🎬 [PHASE 1] Layer created (elapsed: \(Date().timeIntervalSince(startTime) * 1000)ms)", tag: "SharedVideoPlayer")
             }
 
             // Phase 2: Assign player/item and configure (deferred separately)
-            verboseLog("🎬 [INIT] PHASE 2 - Queue configuration (elapsed: \(Date().timeIntervalSince(startTime) * 1000)ms)", tag: "SharedVideoPlayer")
             DispatchQueue.main.async {
-                verboseLog("🎬 [PHASE 2] START - Configuration (elapsed: \(Date().timeIntervalSince(startTime) * 1000)ms)", tag: "SharedVideoPlayer")
 
                 self.player = player
                 self.playerItem = playerItem
                 self.playerLayer?.videoGravity = .resizeAspect
 
-                verboseLog("🎬 [PHASE 2] Player assigned (elapsed: \(Date().timeIntervalSince(startTime) * 1000)ms)", tag: "SharedVideoPlayer")
 
                     // Apply scaling mode if specified
                     if let scalingMode = options["scalingMode"] as? String {
@@ -272,15 +261,12 @@ class SharedVideoPlayer: NSObject {
                         self.player?.rate = 0
                     }
 
-                    verboseLog("🎬 [PHASE 2] Setting up observers (elapsed: \(Date().timeIntervalSince(startTime) * 1000)ms)", tag: "SharedVideoPlayer")
                     // Setup observers (critical for playback)
                     self.setupObservers()
 
-                    verboseLog("🎬 [PHASE 2] Setting up casting (elapsed: \(Date().timeIntervalSince(startTime) * 1000)ms)", tag: "SharedVideoPlayer")
                     // Setup casting (lightweight part)
                     self.setupCastingWithoutRouteCheck()
 
-                    verboseLog("🎬 [PHASE 2] Sending events (elapsed: \(Date().timeIntervalSince(startTime) * 1000)ms)", tag: "SharedVideoPlayer")
                     // Send playback state event (playing if autoPlay, ready otherwise)
                     let playbackState = shouldAutoPlay ? "playing" : "ready"
                     self.sendEvent(["type": "playbackStateChanged", "state": playbackState])
@@ -291,15 +277,11 @@ class SharedVideoPlayer: NSObject {
                         self.updateNowPlayingInfo()
                     }
 
-                    verboseLog("🎬 [PHASE 2] Events sent (elapsed: \(Date().timeIntervalSince(startTime) * 1000)ms)", tag: "SharedVideoPlayer")
             }
 
             // Phase 3: Slow AVAudioSession access (deferred to very end)
-            verboseLog("🎬 [INIT] PHASE 3 - Queue AVAudioSession (elapsed: \(Date().timeIntervalSince(startTime) * 1000)ms)", tag: "SharedVideoPlayer")
             DispatchQueue.main.async {
-                verboseLog("🎬 [PHASE 3] START - AVAudioSession (elapsed: \(Date().timeIntervalSince(startTime) * 1000)ms)", tag: "SharedVideoPlayer")
                 self.updateAvailableRoutes()
-                verboseLog("🎬 [PHASE 3] END - COMPLETE (elapsed: \(Date().timeIntervalSince(startTime) * 1000)ms)", tag: "SharedVideoPlayer")
             }
         }
     }
@@ -543,6 +525,9 @@ class SharedVideoPlayer: NSObject {
         case .readyToPlay:
             let duration = Int(CMTimeGetSeconds(item.duration) * 1000)
             sendEvent(["type": "durationChanged", "duration": duration])
+
+            // Notify Flutter of the initial background playback state from options
+            sendEvent(["type": "backgroundPlaybackChanged", "isEnabled": allowBackgroundPlayback])
 
             // Defer video size and metadata extraction to avoid blocking
             // Use AVFoundation's async loading to avoid warnings
@@ -868,14 +853,50 @@ class SharedVideoPlayer: NSObject {
         isInBackground = true
         updateScreenSleepPrevention()
 
+        // Determine what should happen when app goes to background:
+        // 1. If autoEnterPipOnBackground is enabled -> enter PiP (video continues in floating window)
+        // 2. If allowBackgroundPlayback is enabled but not auto-PiP -> audio continues (no PiP)
+        // 3. If neither is enabled -> pause playback
+
         if autoEnterPipOnBackground && allowPip {
+            // User wants PiP when backgrounding
             _ = enterPip()
+        } else if allowBackgroundPlayback {
+            // Background audio-only mode: disconnect video layer so AVPlayer only outputs audio.
+            // On iOS, if the video layer is still connected when backgrounding, iOS may pause
+            // the player because the video rendering surface is not visible.
+            // By disconnecting the layer, audio continues in background.
+            #if os(iOS)
+            playerLayer?.player = nil
+            #endif
+        } else {
+            // Background playback is disabled - pause the video
+            // This prevents iOS from trying to preserve playback via PiP
+            if isPlaying {
+                player?.pause()
+                // Note: We don't update isPlaying or send events here because
+                // playback will resume automatically when app returns to foreground
+            }
         }
     }
 
     @objc func handleAppWillEnterForeground() {
         isInBackground = false
         updateScreenSleepPrevention()
+
+        // Reconnect video layer if it was disconnected for background audio-only mode
+        #if os(iOS)
+        if allowBackgroundPlayback && playerLayer?.player == nil {
+            playerLayer?.player = player
+        }
+        #endif
+
+        // If playback was paused due to backgrounding (not user-initiated pause),
+        // and the video was playing before, resume playback.
+        // We check isPlaying because we didn't update it when auto-pausing on background.
+        if isPlaying && !allowBackgroundPlayback && (player?.rate ?? 0) == 0 {
+            player?.rate = playbackSpeed
+        }
     }
 
     // MARK: - Public Methods
@@ -890,7 +911,12 @@ class SharedVideoPlayer: NSObject {
 
     func onPlayerLayerAttachedToView() {
         platformAdapter.onPlayerLayerAttached(playerLayer: playerLayer)
-        setupPipController()
+        // Only create PiP controller automatically if user wants auto-PiP on background.
+        // For manual-only PiP, the controller will be created lazily in enterPip().
+        // This prevents iOS from auto-triggering PiP when we only want background audio.
+        if autoEnterPipOnBackground {
+            setupPipController()
+        }
     }
 
     func onPlayerViewControllerAttached(_ controller: Any) {
@@ -906,6 +932,18 @@ class SharedVideoPlayer: NSObject {
         if platformAdapter.isPipSupported() {
             pipController = platformAdapter.createPipController(playerLayer: playerLayer)
             pipController?.delegate = self
+
+            // Configure automatic PiP behavior when app goes to background.
+            // This is the iOS system-level auto-PiP, distinct from our manual enterPip() call.
+            // Must match autoEnterPipOnBackground to prevent iOS from starting PiP
+            // when user only wants background audio playback.
+            // Note: This property is iOS-only (not available on macOS).
+            #if os(iOS)
+            if #available(iOS 14.2, *) {
+                pipController?.canStartPictureInPictureAutomaticallyFromInline = autoEnterPipOnBackground
+            }
+            #endif
+
             isPipControllerReady = true
         }
     }
@@ -1050,7 +1088,6 @@ class SharedVideoPlayer: NSObject {
 
                 // Select the external subtitle
                 selectedExternalSubtitleId = idString
-                verboseLog("Selected external subtitle track: \(idString)", tag: "Subtitles")
                 sendEvent(["type": "selectedSubtitleChanged", "track": trackData])
                 return
             }
@@ -1137,7 +1174,6 @@ class SharedVideoPlayer: NSObject {
         completion: @escaping ([String: Any]?) -> Void
     ) {
         guard subtitlesEnabled else {
-            verboseLog("Subtitles disabled, cannot add external subtitle", tag: "Subtitles")
             completion(nil)
             return
         }
@@ -1351,7 +1387,6 @@ class SharedVideoPlayer: NSObject {
             }
 
             self.externalSubtitles[trackId] = track
-            verboseLog("Added external subtitle track: \(trackId) (\(sourceType)) from \(path)", tag: "Subtitles")
 
             self.notifySubtitleTracksWithExternal()
             completion(track)
@@ -1368,7 +1403,6 @@ class SharedVideoPlayer: NSObject {
             return false
         }
 
-        verboseLog("Removed external subtitle track: \(trackId)", tag: "Subtitles")
 
         // Notify about the change
         notifySubtitleTracksWithExternal()
@@ -1442,30 +1476,17 @@ class SharedVideoPlayer: NSObject {
     }
 
     func enterPip() -> Bool {
-        verboseLog("enterPip called - allowPip=\(allowPip)", tag: "PiP")
-        guard allowPip else {
-            verboseLog("PiP not allowed in options", tag: "PiP")
-            return false
-        }
+        guard allowPip else { return false }
 
         if !isPipControllerReady {
-            verboseLog("PiP controller not ready, setting up...", tag: "PiP")
             setupPipController()
         }
 
-        guard let controller = pipController else {
-            verboseLog("PiP controller is nil after setup", tag: "PiP")
-            return false
-        }
+        guard let controller = pipController else { return false }
 
-        // Note: isPictureInPicturePossible is unreliable on macOS (and sometimes iOS)
-        // and often returns false even when PiP is available. We log it for debugging
-        // but don't block PiP from starting.
-        let isPossible = controller.isPictureInPicturePossible
-        verboseLog("isPictureInPicturePossible=\(isPossible) - attempting to start anyway", tag: "PiP")
-
+        // Mark that PiP was explicitly requested (by user or by autoEnterPipOnBackground)
+        userRequestedPip = true
         controller.startPictureInPicture()
-        verboseLog("startPictureInPicture() called", tag: "PiP")
         return true
     }
 
@@ -2082,6 +2103,171 @@ class SharedVideoPlayer: NSObject {
     // MARK: - Event Sending
 
     func sendEvent(_ event: [String: Any]) {
+        guard let eventType = event["type"] as? String else {
+            // No type - send to EventChannel as fallback
+            sendToEventChannel(event)
+            return
+        }
+
+        // Route events based on frequency
+        switch eventType {
+        // High-frequency events → EventChannel (proven, low overhead)
+        case "positionChanged", "bufferedPositionChanged",
+             "playbackStateChanged", "durationChanged",
+             "videoSizeChanged", "bufferingStarted", "bufferingEnded",
+             "volumeChanged", "playbackSpeedChanged", "selectedSubtitleChanged",
+             "selectedAudioChanged", "bufferingReasonChanged", "bandwidthEstimate",
+             "networkStateChanged", "metadataChanged", "backgroundPlaybackChanged",
+             "playbackRecovered", "networkReconnected":
+            sendToEventChannel(event)
+
+        // Low-frequency events → FlutterApi (type safety)
+        case "error":
+            if let flutterApi = flutterApi {
+                let code = event["code"] as? String ?? "UNKNOWN"
+                let message = event["message"] as? String ?? ""
+                flutterApi.onError(
+                    playerId: Int64(playerId),
+                    errorCode: code,
+                    errorMessage: message
+                ) { _ in }
+            } else {
+                // Fallback to EventChannel if FlutterApi not available
+                sendToEventChannel(event)
+            }
+
+        case "videoMetadataExtracted":
+            if let flutterApi = flutterApi, let metadataDict = event["metadata"] as? [String: Any] {
+                let metadata = VideoMetadataMessage(
+                    duration: metadataDict["duration"] as? Int64,
+                    width: metadataDict["width"] as? Int64,
+                    height: metadataDict["height"] as? Int64,
+                    videoCodec: metadataDict["videoCodec"] as? String,
+                    audioCodec: metadataDict["audioCodec"] as? String,
+                    bitrate: metadataDict["bitrate"] as? Int64,
+                    frameRate: metadataDict["frameRate"] as? Double
+                )
+                flutterApi.onMetadataExtracted(
+                    playerId: Int64(playerId),
+                    metadata: metadata
+                ) { _ in }
+            } else {
+                sendToEventChannel(event)
+            }
+
+        case "playbackCompleted":
+            if let flutterApi = flutterApi {
+                flutterApi.onPlaybackCompleted(playerId: Int64(playerId)) { _ in }
+            } else {
+                sendToEventChannel(event)
+            }
+
+        case "pipActionTriggered":
+            if let flutterApi = flutterApi, let action = event["action"] as? String {
+                flutterApi.onPipActionTriggered(
+                    playerId: Int64(playerId),
+                    action: action
+                ) { _ in }
+            } else {
+                sendToEventChannel(event)
+            }
+
+        case "castStateChanged":
+            if let flutterApi = flutterApi {
+                let stateString = event["state"] as? String ?? "notConnected"
+                let state: CastStateEnum = {
+                    switch stateString {
+                    case "connecting": return .connecting
+                    case "connected": return .connected
+                    case "disconnecting": return .disconnecting
+                    default: return .notConnected
+                    }
+                }()
+
+                var device: CastDeviceMessage? = nil
+                if let deviceDict = event["device"] as? [String: Any] {
+                    let deviceType: CastDeviceTypeEnum = {
+                        switch deviceDict["type"] as? String {
+                        case "airPlay": return .airPlay
+                        case "chromecast": return .chromecast
+                        case "webRemotePlayback": return .webRemotePlayback
+                        default: return .unknown
+                        }
+                    }()
+                    device = CastDeviceMessage(
+                        id: deviceDict["id"] as? String ?? "",
+                        name: deviceDict["name"] as? String ?? "",
+                        type: deviceType
+                    )
+                }
+
+                flutterApi.onCastStateChanged(
+                    playerId: Int64(playerId),
+                    state: state,
+                    device: device
+                ) { _ in }
+            } else {
+                sendToEventChannel(event)
+            }
+
+        case "subtitleTracksChanged":
+            if let flutterApi = flutterApi, let tracksArray = event["tracks"] as? [[String: Any]] {
+                let tracks: [SubtitleTrackMessage?] = tracksArray.map { trackDict in
+                    guard let id = trackDict["id"] as? String else { return nil }
+                    let format: SubtitleFormatEnum? = {
+                        guard let formatStr = trackDict["format"] as? String else { return nil }
+                        switch formatStr.lowercased() {
+                        case "srt": return .srt
+                        case "vtt", "webvtt": return .vtt
+                        case "ssa": return .ssa
+                        case "ass": return .ass
+                        case "ttml": return .ttml
+                        default: return nil
+                        }
+                    }()
+                    return SubtitleTrackMessage(
+                        id: id,
+                        label: trackDict["label"] as? String,
+                        language: trackDict["language"] as? String,
+                        format: format,
+                        isDefault: trackDict["isDefault"] as? Bool
+                    )
+                }
+                flutterApi.onSubtitleTracksChanged(
+                    playerId: Int64(playerId),
+                    tracks: tracks
+                ) { _ in }
+            } else {
+                sendToEventChannel(event)
+            }
+
+        case "audioTracksChanged":
+            if let flutterApi = flutterApi, let tracksArray = event["tracks"] as? [[String: Any]] {
+                let tracks: [AudioTrackMessage?] = tracksArray.map { trackDict in
+                    guard let id = trackDict["id"] as? String else { return nil }
+                    return AudioTrackMessage(
+                        id: id,
+                        label: trackDict["label"] as? String,
+                        language: trackDict["language"] as? String,
+                        channelCount: trackDict["channelCount"] as? Int64,
+                        isDefault: trackDict["isDefault"] as? Bool
+                    )
+                }
+                flutterApi.onAudioTracksChanged(
+                    playerId: Int64(playerId),
+                    tracks: tracks
+                ) { _ in }
+            } else {
+                sendToEventChannel(event)
+            }
+
+        default:
+            // Unknown event type - send to EventChannel as fallback
+            sendToEventChannel(event)
+        }
+    }
+
+    private func sendToEventChannel(_ event: [String: Any]) {
         // Optimize: avoid async dispatch overhead when already on main thread
         if Thread.isMainThread {
             eventSink?.send(event)
@@ -2145,6 +2331,14 @@ extension SharedVideoPlayer: AVPictureInPictureControllerDelegate {
     func pictureInPictureControllerDidStartPictureInPicture(
         _ pictureInPictureController: AVPictureInPictureController
     ) {
+        // Check if PiP was explicitly requested or if it was auto-triggered by iOS
+        // If auto-triggered and we don't want auto-PiP, exit immediately
+        if !userRequestedPip && !autoEnterPipOnBackground {
+            // Exit PiP immediately - we don't want auto-PiP
+            exitPip()
+            return
+        }
+
         isPipActive = true
         sendEvent(["type": "pipStateChanged", "isActive": true])
         updateScreenSleepPrevention()
@@ -2154,6 +2348,7 @@ extension SharedVideoPlayer: AVPictureInPictureControllerDelegate {
         _ pictureInPictureController: AVPictureInPictureController
     ) {
         isPipActive = false
+        userRequestedPip = false  // Reset the flag when PiP stops
         sendEvent(["type": "pipStateChanged", "isActive": false])
         updateScreenSleepPrevention()
     }

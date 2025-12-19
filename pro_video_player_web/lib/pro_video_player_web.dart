@@ -190,109 +190,67 @@ class ProVideoPlayerWeb extends ProVideoPlayerPlatform {
   }
 
   @override
-  Future<bool> supportsPictureInPicture() async {
-    return _checkPictureInPictureSupport();
-  }
+  Future<bool> supportsPictureInPicture() async => _checkPictureInPictureSupport();
 
   @override
-  Future<bool> supportsFullscreen() async {
-    return _checkFullscreenSupport();
-  }
+  Future<bool> supportsFullscreen() async => _checkFullscreenSupport();
 
   @override
-  Future<bool> supportsBackgroundPlayback() async {
-    return false; // Web doesn't support background playback
-  }
+  Future<bool> supportsBackgroundPlayback() async => false; // Web doesn't support background playback
 
   @override
-  Future<bool> supportsCasting() async {
-    return _checkRemotePlaybackSupport(); // Remote Playback API for casting
-  }
+  Future<bool> supportsCasting() async => _checkRemotePlaybackSupport(); // Remote Playback API for casting
 
   @override
-  Future<bool> supportsAirPlay() async {
-    return false; // AirPlay is iOS/macOS only
-  }
+  Future<bool> supportsAirPlay() async => false; // AirPlay is iOS/macOS only
 
   @override
-  Future<bool> supportsChromecast() async {
-    return false; // Chromecast is Android only (web uses Remote Playback API)
-  }
+  Future<bool> supportsChromecast() async => false; // Chromecast is Android only (web uses Remote Playback API)
 
   @override
-  Future<bool> supportsRemotePlayback() async {
-    return _checkRemotePlaybackSupport(); // Browser Remote Playback API
-  }
+  Future<bool> supportsRemotePlayback() async => _checkRemotePlaybackSupport(); // Browser Remote Playback API
 
   @override
-  Future<bool> supportsQualitySelection() async {
-    return true; // Web supports quality selection with HLS/DASH libraries
-  }
+  Future<bool> supportsQualitySelection() async => true; // Web supports quality selection with HLS/DASH libraries
 
   @override
-  Future<bool> supportsPlaybackSpeedControl() async {
-    return true; // HTML5 video supports playback rate
-  }
+  Future<bool> supportsPlaybackSpeedControl() async => true; // HTML5 video supports playback rate
 
   @override
-  Future<bool> supportsSubtitles() async {
-    return true; // HTML5 video has TextTrack support
-  }
+  Future<bool> supportsSubtitles() async => true; // HTML5 video has TextTrack support
 
   @override
-  Future<bool> supportsExternalSubtitles() async {
-    return true; // Can add TextTrack programmatically
-  }
+  Future<bool> supportsExternalSubtitles() async => true; // Can add TextTrack programmatically
 
   @override
-  Future<bool> supportsAudioTrackSelection() async {
-    return true; // HTML5 video has AudioTrack support
-  }
+  Future<bool> supportsAudioTrackSelection() async => true; // HTML5 video has AudioTrack support
 
   @override
-  Future<bool> supportsChapters() async {
-    return false; // Limited chapter support on web
-  }
+  Future<bool> supportsChapters() async => false; // Limited chapter support on web
 
   @override
-  Future<bool> supportsVideoMetadataExtraction() async {
-    return true; // Can extract metadata from video element
-  }
+  Future<bool> supportsVideoMetadataExtraction() async => true; // Can extract metadata from video element
 
   @override
-  Future<bool> supportsNetworkMonitoring() async {
-    return true; // Navigator.connection API
-  }
+  Future<bool> supportsNetworkMonitoring() async => true; // Navigator.connection API
 
   @override
-  Future<bool> supportsBandwidthEstimation() async {
-    return false; // Limited bandwidth estimation on web
-  }
+  Future<bool> supportsBandwidthEstimation() async => false; // Limited bandwidth estimation on web
 
   @override
-  Future<bool> supportsAdaptiveBitrate() async {
-    return true; // HLS.js and dash.js support ABR
-  }
+  Future<bool> supportsAdaptiveBitrate() async => true; // HLS.js and dash.js support ABR
 
   @override
-  Future<bool> supportsHLS() async {
-    return true; // HLS.js library support
-  }
+  Future<bool> supportsHLS() async => true; // HLS.js library support
 
   @override
-  Future<bool> supportsDASH() async {
-    return true; // dash.js library support
-  }
+  Future<bool> supportsDASH() async => true; // dash.js library support
 
   @override
-  Future<bool> supportsDeviceVolumeControl() async {
-    return false; // Web cannot control device volume
-  }
+  Future<bool> supportsDeviceVolumeControl() async => false; // Web cannot control device volume
 
   @override
-  Future<bool> supportsScreenBrightnessControl() async {
-    return false; // Web cannot control screen brightness
-  }
+  Future<bool> supportsScreenBrightnessControl() async => false; // Web cannot control screen brightness
 
   bool _checkPictureInPictureSupport() {
     try {

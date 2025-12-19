@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
 import '../abstractions/video_element_interface.dart';
@@ -54,19 +56,18 @@ class CastingManager with WebManagerCallbacks {
   /// Sets up remote playback (casting) using the Remote Playback API.
   void _setupRemotePlayback() {
     try {
-      // Get the remote playback object
-      final element = videoElement as dynamic;
-      final remotePlayback = element.mockRemotePlayback;
+      // Get the remote playback object via the typed interface
+      final remotePlayback = videoElement.remotePlayback;
       if (remotePlayback == null) return;
 
       // Listen for state changes
-      void onConnecting(event) {
+      void onConnecting(Object? event) {
         _castState = CastState.connecting;
         emitEvent(const CastStateChangedEvent(state: CastState.connecting));
         verboseLog('Remote playback connecting', tag: 'CastingManager');
       }
 
-      void onConnect(event) {
+      void onConnect(Object? event) {
         _castState = CastState.connected;
         // Create a generic cast device for web (we don't have detailed device info from the API)
         _currentCastDevice = const CastDevice(
@@ -78,14 +79,14 @@ class CastingManager with WebManagerCallbacks {
         verboseLog('Remote playback connected', tag: 'CastingManager');
       }
 
-      void onDisconnect(event) {
+      void onDisconnect(Object? event) {
         _castState = CastState.notConnected;
         _currentCastDevice = null;
         emitEvent(const CastStateChangedEvent(state: CastState.notConnected));
         verboseLog('Remote playback disconnected', tag: 'CastingManager');
       }
 
-      // Add event listeners
+      // Add event listeners via the typed interface
       remotePlayback.addEventListener('connecting', onConnecting);
       remotePlayback.addEventListener('connect', onConnect);
       remotePlayback.addEventListener('disconnect', onDisconnect);
@@ -97,15 +98,7 @@ class CastingManager with WebManagerCallbacks {
   }
 
   /// Checks if remote playback (casting) is supported.
-  bool _isRemotePlaybackSupported() {
-    try {
-      final element = videoElement as dynamic;
-      final remotePlayback = element.mockRemotePlayback;
-      return remotePlayback != null;
-    } catch (_) {
-      return false;
-    }
-  }
+  bool _isRemotePlaybackSupported() => videoElement.remotePlayback != null;
 
   /// Checks if casting is currently supported.
   ///
@@ -129,8 +122,7 @@ class CastingManager with WebManagerCallbacks {
     }
 
     try {
-      final element = videoElement as dynamic;
-      final remotePlayback = element.mockRemotePlayback;
+      final remotePlayback = videoElement.remotePlayback;
       if (remotePlayback == null) return false;
 
       // prompt() shows the browser's device picker (device parameter is ignored)
@@ -156,32 +148,31 @@ class CastingManager with WebManagerCallbacks {
     if (!_isRemotePlaybackSupported()) return false;
 
     try {
-      final element = videoElement as dynamic;
-      final remotePlayback = element.mockRemotePlayback;
+      final remotePlayback = videoElement.remotePlayback;
       if (remotePlayback == null) return false;
 
-      // Check current state
-      final state = remotePlayback.state as String?;
+      // Check current state via the typed interface
+      final state = remotePlayback.state;
       if (state == 'disconnected') return false;
 
       // The Remote Playback API spec doesn't provide a direct way to disconnect,
       // so we reload the video to force disconnection.
       // Capture state BEFORE modifying the element.
-      final currentTime = element.currentTime as double;
-      final wasPaused = element.paused as bool;
+      final savedTime = videoElement.currentTime;
+      final wasPaused = videoElement.paused as bool;
 
       _castState = CastState.disconnecting;
       emitEvent(const CastStateChangedEvent(state: CastState.disconnecting));
 
-      element.src = '';
-      element.load();
-      element.src = getSourceUrl(currentSource);
+      videoElement.src = '';
+      videoElement.load();
+      videoElement.src = getSourceUrl(currentSource);
 
       // Restore position when ready
-      element.addEventListener('canplay', (event) {
-        element.currentTime = currentTime;
+      videoElement.addEventListener('canplay', (event) {
+        videoElement.currentTime = savedTime;
         if (!wasPaused) {
-          element.play();
+          unawaited(videoElement.play());
         }
       });
 

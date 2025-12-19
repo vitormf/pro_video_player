@@ -51,8 +51,8 @@ class NetworkResilienceManager with WebManagerCallbacks {
   JSFunction? _offlineListener;
 
   // Dart callbacks (stored for testing - can be called from Dart)
-  Function? _onlineCallback;
-  Function? _offlineCallback;
+  void Function(Object?)? _onlineCallback;
+  void Function(Object?)? _offlineCallback;
 
   /// Whether network is currently available.
   bool get isNetworkAvailable => _isNetworkAvailable;
@@ -208,12 +208,12 @@ class NetworkResilienceManager with WebManagerCallbacks {
   /// This allows tests to trigger online/offline events without going through
   /// JS interop.
   @visibleForTesting
-  Function? get onlineCallbackForTesting => _onlineCallback;
+  void Function(Object?)? get onlineCallbackForTesting => _onlineCallback;
 
   /// Test-only: Gets the offline callback for testing.
   ///
   /// This allows tests to trigger online/offline events without going through
   /// JS interop.
   @visibleForTesting
-  Function? get offlineCallbackForTesting => _offlineCallback;
+  void Function(Object?)? get offlineCallbackForTesting => _offlineCallback;
 }

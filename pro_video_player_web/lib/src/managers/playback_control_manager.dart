@@ -39,16 +39,14 @@ class PlaybackControlManager with WebManagerCallbacks {
 
   /// Pauses playback.
   void pause() {
-    final element = videoElement as dynamic;
-    element.pause();
+    videoElement.pause();
     verboseLog('Playback paused', tag: 'PlaybackControlManager');
   }
 
   /// Stops playback and resets position to beginning.
   void stop() {
-    final element = videoElement as dynamic;
-    element.pause();
-    element.currentTime = 0.0;
+    videoElement.pause();
+    videoElement.currentTime = 0.0;
     verboseLog('Playback stopped', tag: 'PlaybackControlManager');
   }
 
@@ -60,8 +58,7 @@ class PlaybackControlManager with WebManagerCallbacks {
       throw ArgumentError('Position must be non-negative');
     }
 
-    final element = videoElement as dynamic;
-    element.currentTime = position.inMilliseconds / 1000.0;
+    videoElement.currentTime = position.inMilliseconds / 1000.0;
     verboseLog('Seeked to: $position', tag: 'PlaybackControlManager');
   }
 
@@ -73,8 +70,7 @@ class PlaybackControlManager with WebManagerCallbacks {
       throw ArgumentError('Playback speed must be between 0.0 (exclusive) and 10.0');
     }
 
-    final element = videoElement as dynamic;
-    element.playbackRate = speed;
+    videoElement.playbackRate = speed;
     verboseLog('Playback speed set to: $speed', tag: 'PlaybackControlManager');
   }
 
@@ -83,21 +79,16 @@ class PlaybackControlManager with WebManagerCallbacks {
   /// Values are clamped to the valid range.
   void setVolume(double volume) {
     final clampedVolume = volume.clamp(0.0, 1.0);
-    final element = videoElement as dynamic;
-    element.volume = clampedVolume;
+    videoElement.volume = clampedVolume;
     verboseLog('Volume set to: $clampedVolume', tag: 'PlaybackControlManager');
   }
 
   /// Gets the current looping state.
-  bool get looping {
-    final element = videoElement as dynamic;
-    return element.loop as bool;
-  }
+  bool get looping => videoElement.loop as bool;
 
   /// Sets whether the video should loop.
   set looping(bool value) {
-    final element = videoElement as dynamic;
-    element.loop = value;
+    videoElement.loop = value;
     verboseLog('Looping set to: $value', tag: 'PlaybackControlManager');
   }
 
@@ -105,8 +96,7 @@ class PlaybackControlManager with WebManagerCallbacks {
   ///
   /// Returns [Duration.zero] for infinite or NaN durations.
   Duration getDuration() {
-    final element = videoElement as dynamic;
-    final duration = element.duration as double;
+    final duration = videoElement.duration as double;
 
     if (duration.isInfinite || duration.isNaN) {
       return Duration.zero;

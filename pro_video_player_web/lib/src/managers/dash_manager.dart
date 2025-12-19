@@ -1,5 +1,6 @@
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
+import '../abstractions/dash_player_interface.dart';
 import '../verbose_logging.dart';
 import 'streaming_manager.dart';
 
@@ -13,10 +14,7 @@ import 'streaming_manager.dart';
 /// - Error handling and recovery
 /// - Event emission for quality/track changes
 /// - Throughput/bandwidth tracking
-///
-/// The manager uses dynamic typing for the DASH player to support both
-/// production (real DASH.js) and test (mock) implementations.
-class DashManager extends StreamingManager {
+class DashManager extends StreamingManager<DashPlayerInterface> {
   /// Creates a DASH manager.
   DashManager({required super.emitEvent, required super.videoElement});
 
@@ -27,7 +25,7 @@ class DashManager extends StreamingManager {
   String? _sourceUrl;
 
   /// Gets the DASH player instance (for coordination with other managers).
-  dynamic get dashPlayer => player;
+  DashPlayerInterface? get dashPlayer => player;
 
   /// Initializes the DASH player and sets up event handlers.
   ///
@@ -39,7 +37,7 @@ class DashManager extends StreamingManager {
   /// [maxBitrate] the maximum bitrate in bits per second.
   Future<void> initialize({
     required String sourceUrl,
-    required dynamic dashPlayer,
+    required DashPlayerInterface dashPlayer,
     bool autoPlay = false,
     AbrMode abrMode = AbrMode.auto,
     int? minBitrate,
@@ -49,23 +47,28 @@ class DashManager extends StreamingManager {
     _sourceUrl = sourceUrl;
     markInitialized();
 
-    // Apply bitrate limits if specified
-    if (minBitrate != null && minBitrate > 0) {
-      dashPlayer.setMinBitrate(minBitrate);
-      verboseLog('Set DASH min bitrate: $minBitrate bps', tag: logTag);
-    }
-
-    if (maxBitrate != null && maxBitrate > 0) {
-      dashPlayer.setMaxBitrate(maxBitrate);
-      verboseLog('Set DASH max bitrate: $maxBitrate bps', tag: logTag);
+    // Apply bitrate limits via settings
+    if (minBitrate != null || maxBitrate != null) {
+      final abrSettings = <String, Object>{};
+      if (minBitrate != null && minBitrate > 0) {
+        abrSettings['minBitrate'] = {'video': minBitrate};
+        verboseLog('Set DASH min bitrate: $minBitrate bps', tag: logTag);
+      }
+      if (maxBitrate != null && maxBitrate > 0) {
+        abrSettings['maxBitrate'] = {'video': maxBitrate};
+        verboseLog('Set DASH max bitrate: $maxBitrate bps', tag: logTag);
+      }
+      dashPlayer.updateSettings({
+        'streaming': {'abr': abrSettings},
+      });
     }
 
     // Configure ABR mode
     if (abrMode == AbrMode.manual) {
-      dashPlayer.setABREnabled(false);
+      dashPlayer.setAutoSwitchQualityFor('video', enabled: false);
       verboseLog('Set DASH to manual quality mode', tag: logTag);
     } else {
-      dashPlayer.setABREnabled(true);
+      dashPlayer.setAutoSwitchQualityFor('video', enabled: true);
       verboseLog('Set DASH to auto quality mode', tag: logTag);
     }
 
@@ -73,7 +76,7 @@ class DashManager extends StreamingManager {
     setupEventHandlers();
 
     // Initialize DASH player with video element and source
-    dashPlayer.initialize(videoElement, sourceUrl, autoPlay);
+    dashPlayer.initialize(view: videoElement, url: sourceUrl, autoPlay: autoPlay);
 
     verboseLog('DASH.js player initialized: $sourceUrl', tag: logTag);
   }
@@ -103,19 +106,19 @@ class DashManager extends StreamingManager {
   }
 
   /// Event handler for stream initialized.
-  void _onStreamInitialized([event]) => _handleStreamInitialized();
+  void _onStreamInitialized(Object? event) => _handleStreamInitialized();
 
   /// Event handler for quality change rendered.
-  void _onQualityChangeRendered([event]) => _handleQualityChangeRendered();
+  void _onQualityChangeRendered(Object? event) => _handleQualityChangeRendered();
 
   /// Event handler for text tracks added.
-  void _onTextTracksAdded([event]) => _handleTextTracksAdded();
+  void _onTextTracksAdded(Object? event) => _handleTextTracksAdded();
 
   /// Event handler for audio tracks added.
-  void _onAudioTracksAdded([event]) => _handleAudioTracksAdded();
+  void _onAudioTracksAdded(Object? event) => _handleAudioTracksAdded();
 
   /// Event handler for errors.
-  void _onError([dynamic event]) => _handleError(event);
+  void _onError(Object? event) => _handleError(event);
 
   /// Handles stream initialized event.
   void _handleStreamInitialized() {
@@ -136,12 +139,10 @@ class DashManager extends StreamingManager {
     verboseLog('DASH text tracks added', tag: logTag);
 
     final tracks = <SubtitleTrack>[];
-    final dashTracks = player?.getTextTracks() as List? ?? [];
+    final dashTracks = player?.getTextTracks() ?? [];
 
     for (final t in dashTracks) {
-      tracks.add(
-        SubtitleTrack(id: t.index.toString(), label: t.label as String? ?? 'Unknown', language: t.lang as String?),
-      );
+      tracks.add(SubtitleTrack(id: t.index.toString(), label: t.label, language: t.lang));
     }
 
     emitEvent(SubtitleTracksChangedEvent(tracks));
@@ -152,19 +153,17 @@ class DashManager extends StreamingManager {
     verboseLog('DASH audio tracks added', tag: logTag);
 
     final tracks = <AudioTrack>[];
-    final dashTracks = player?.getAudioTracks() as List? ?? [];
+    final dashTracks = player?.getAudioTracks() ?? [];
 
     for (final t in dashTracks) {
-      tracks.add(
-        AudioTrack(id: t.index.toString(), label: t.label as String? ?? 'Unknown', language: t.lang as String?),
-      );
+      tracks.add(AudioTrack(id: t.index.toString(), label: t.label, language: t.lang));
     }
 
     emitEvent(AudioTracksChangedEvent(tracks));
   }
 
   /// Handles DASH error event.
-  void _handleError(dynamic data) {
+  void _handleError(Object? data) {
     verboseLog('DASH error: $data', tag: logTag);
 
     // Extract error details if available
@@ -179,7 +178,7 @@ class DashManager extends StreamingManager {
 
   /// Updates available quality tracks from DASH.js bitrate info.
   void _updateAvailableQualities() {
-    final bitrateList = player?.getVideoBitrateInfoList() as List? ?? [];
+    final bitrateList = player?.getVideoBitrateInfoList() ?? [];
     final qualities = <VideoQualityTrack>[];
 
     // Add auto quality option
@@ -187,14 +186,14 @@ class DashManager extends StreamingManager {
 
     // Add each quality level
     for (final info in bitrateList) {
-      final height = (info.height as int?) ?? 0;
-      final width = (info.width as int?) ?? 0;
-      final bitrate = (info.bitrate as int?) ?? 0;
-      final qualityIndex = info.qualityIndex as int?;
+      final height = info.height;
+      final width = info.width;
+      final bitrate = info.bitrate;
+      final qualityIndex = info.index;
 
       qualities.add(
         VideoQualityTrack(
-          id: qualityIndex?.toString() ?? qualities.length.toString(),
+          id: qualityIndex.toString(),
           label: '${height}p',
           width: width,
           height: height,
@@ -214,10 +213,11 @@ class DashManager extends StreamingManager {
   /// Returns true if the quality was set successfully.
   @override
   bool setQuality(VideoQualityTrack track) {
-    if (player == null) return false;
+    final p = player;
+    if (p == null) return false;
 
     if (track.isAuto) {
-      player.setAutoSwitchQualityFor('video', enabled: true);
+      p.setAutoSwitchQualityFor('video', enabled: true);
       verboseLog('Set DASH quality to auto', tag: logTag);
       return true;
     }
@@ -225,13 +225,13 @@ class DashManager extends StreamingManager {
     final index = int.tryParse(track.id);
     if (index == null) return false;
 
-    final bitrateList = player.getVideoBitrateInfoList() as List? ?? [];
+    final bitrateList = p.getVideoBitrateInfoList();
     if (index < 0 || index >= bitrateList.length) {
       return false;
     }
 
-    player.setAutoSwitchQualityFor('video', enabled: false);
-    player.setQualityFor('video', index);
+    p.setAutoSwitchQualityFor('video', enabled: false);
+    p.setQualityFor('video', index);
     verboseLog('Set DASH quality to index $index', tag: logTag);
     return true;
   }
@@ -239,15 +239,16 @@ class DashManager extends StreamingManager {
   /// Gets the current quality track.
   @override
   VideoQualityTrack getCurrentQuality() {
-    if (player == null) return VideoQualityTrack.auto;
+    final p = player;
+    if (p == null) return VideoQualityTrack.auto;
 
     // Check if ABR is enabled
-    final abrEnabled = player.getAutoSwitchQualityFor('video') as bool? ?? true;
+    final abrEnabled = p.getAutoSwitchQualityFor('video');
     if (abrEnabled) {
       return VideoQualityTrack.auto;
     }
 
-    final currentQuality = player.getQualityFor('video') as int? ?? 0;
+    final currentQuality = p.getQualityFor('video');
     final availableQualities = getAvailableQualities();
 
     // Find matching quality in available list (skip auto at index 0)
@@ -263,10 +264,11 @@ class DashManager extends StreamingManager {
   ///
   /// DASH.js returns throughput in kbps, this converts to bps.
   int getAverageThroughput() {
-    if (player == null) return 0;
+    final p = player;
+    if (p == null) return 0;
 
     try {
-      final throughputKbps = player.getAverageThroughput() as double? ?? 0.0;
+      final throughputKbps = p.getAverageThroughput();
       // Convert kbps to bps
       return (throughputKbps * 1000).round();
     } catch (e) {
@@ -278,11 +280,12 @@ class DashManager extends StreamingManager {
   /// Recovers from an error by resetting and reattaching source.
   @override
   Future<void> recover() async {
-    if (player == null || _sourceUrl == null) return;
+    final p = player;
+    if (p == null || _sourceUrl == null) return;
 
     try {
-      player.reset();
-      player.attachSource(_sourceUrl);
+      p.reset();
+      p.attachSource(_sourceUrl!);
       verboseLog('DASH recovery: reset and reattached source', tag: logTag);
     } catch (e) {
       verboseLog('DASH recovery failed: $e', tag: logTag);

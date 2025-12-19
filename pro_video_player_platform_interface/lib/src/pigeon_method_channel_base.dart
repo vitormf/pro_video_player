@@ -9,9 +9,17 @@ import 'types/types.dart';
 ///
 /// This class provides complete type-safe platform channel communication using
 /// Pigeon-generated code for all platform methods and events.
-abstract class PigeonMethodChannelBase extends ProVideoPlayerPlatform {
+///
+/// Implements [ProVideoPlayerFlutterApi] to receive type-safe callbacks from native platforms.
+abstract class PigeonMethodChannelBase extends ProVideoPlayerPlatform implements ProVideoPlayerFlutterApi {
   /// Creates a [PigeonMethodChannelBase] with the given [channelPrefix].
-  PigeonMethodChannelBase(this.channelPrefix) : _hostApi = ProVideoPlayerHostApi(), _eventStreamControllers = {};
+  PigeonMethodChannelBase(this.channelPrefix)
+    : _hostApi = ProVideoPlayerHostApi(),
+      _eventStreamControllers = {},
+      _batteryStreamController = StreamController<BatteryInfo>.broadcast() {
+    // Register this instance as the FlutterApi handler
+    ProVideoPlayerFlutterApi.setUp(this);
+  }
 
   /// The channel prefix used for method and event channels.
   final String channelPrefix;
@@ -22,25 +30,23 @@ abstract class PigeonMethodChannelBase extends ProVideoPlayerPlatform {
   /// Event stream controllers for each player.
   final Map<int, StreamController<VideoPlayerEvent>> _eventStreamControllers;
 
+  /// Battery updates stream controller.
+  final StreamController<BatteryInfo> _batteryStreamController;
+
   // ==================== Core Player Methods ====================
 
   @override
   Future<int> create({required VideoSource source, VideoPlayerOptions options = const VideoPlayerOptions()}) async {
-    ProVideoPlayerLogger.log('Creating player with source: ${source.runtimeType}', tag: 'PigeonMethodChannel');
-
     final sourceMessage = _convertVideoSource(source);
     final optionsMessage = _convertOptions(options);
 
     final playerId = await _hostApi.create(sourceMessage, optionsMessage);
-
-    ProVideoPlayerLogger.log('Player created with ID: $playerId', tag: 'PigeonMethodChannel');
 
     return playerId;
   }
 
   @override
   Future<void> dispose(int playerId) async {
-    ProVideoPlayerLogger.log('Disposing player: $playerId', tag: 'PigeonMethodChannel');
     await _hostApi.dispose(playerId);
     // Clean up event stream controller
     await _eventStreamControllers[playerId]?.close();
@@ -49,19 +55,16 @@ abstract class PigeonMethodChannelBase extends ProVideoPlayerPlatform {
 
   @override
   Future<void> play(int playerId) async {
-    ProVideoPlayerLogger.log('play() called for playerId: $playerId', tag: 'PigeonMethodChannel');
     await _hostApi.play(playerId);
   }
 
   @override
   Future<void> pause(int playerId) async {
-    ProVideoPlayerLogger.log('pause() called for playerId: $playerId', tag: 'PigeonMethodChannel');
     await _hostApi.pause(playerId);
   }
 
   @override
   Future<void> stop(int playerId) async {
-    ProVideoPlayerLogger.log('stop() called for playerId: $playerId', tag: 'PigeonMethodChannel');
     await _hostApi.stop(playerId);
   }
 
@@ -85,7 +88,6 @@ abstract class PigeonMethodChannelBase extends ProVideoPlayerPlatform {
 
   @override
   Future<void> setVolume(int playerId, double volume) async {
-    ProVideoPlayerLogger.log('setVolume() called for playerId: $playerId, volume: $volume', tag: 'PigeonMethodChannel');
     await _hostApi.setVolume(playerId, volume);
   }
 
@@ -103,14 +105,12 @@ abstract class PigeonMethodChannelBase extends ProVideoPlayerPlatform {
 
   @override
   Future<PlatformInfo> getPlatformInfo() async {
-    ProVideoPlayerLogger.log('Getting platform info', tag: 'PigeonMethodChannel');
     final message = await _hostApi.getPlatformInfo();
     return _convertPlatformInfo(message);
   }
 
   @override
   Future<void> setVerboseLogging({required bool enabled}) async {
-    ProVideoPlayerLogger.log('Setting verbose logging to: $enabled', tag: 'PigeonMethodChannel');
     await _hostApi.setVerboseLogging(enabled);
   }
 
@@ -201,10 +201,7 @@ abstract class PigeonMethodChannelBase extends ProVideoPlayerPlatform {
   }
 
   @override
-  Stream<BatteryInfo> get batteryUpdates {
-    // TODO: Implement battery updates stream using Pigeon FlutterApi
-    throw UnimplementedError('Battery updates stream not yet implemented with Pigeon');
-  }
+  Stream<BatteryInfo> get batteryUpdates => _batteryStreamController.stream;
 
   // ==================== Player Configuration ====================
 
@@ -324,7 +321,6 @@ abstract class PigeonMethodChannelBase extends ProVideoPlayerPlatform {
   @override
   Future<bool> isPipSupported() async {
     final result = await _hostApi.isPipSupported();
-    ProVideoPlayerLogger.log('isPipSupported returned: $result', tag: 'PigeonMethodChannelBase');
     return result;
   }
 
@@ -513,10 +509,121 @@ abstract class PigeonMethodChannelBase extends ProVideoPlayerPlatform {
 
   @override
   Stream<VideoPlayerEvent> events(int playerId) {
-    // TODO: Implement using Pigeon FlutterApi for callbacks
-    // For now, return an empty stream
     _eventStreamControllers[playerId] ??= StreamController<VideoPlayerEvent>.broadcast();
     return _eventStreamControllers[playerId]!.stream;
+  }
+
+  /// Adds an event to the stream for the given player.
+  void _addEvent(int playerId, VideoPlayerEvent event) {
+    _eventStreamControllers[playerId]?.add(event);
+  }
+
+  // ==================== ProVideoPlayerFlutterApi Implementation ====================
+  // Low-frequency events received from native platforms via Pigeon @FlutterApi
+
+  @override
+  void onEvent(int playerId, VideoPlayerEventMessage event) {
+    // Legacy method - kept for EventChannel compatibility
+    // High-frequency events (position, buffering, state) use EventChannel
+  }
+
+  @override
+  void onError(int playerId, String errorCode, String errorMessage) {
+    _addEvent(playerId, ErrorEvent(errorMessage, code: errorCode));
+  }
+
+  @override
+  void onMetadataExtracted(int playerId, VideoMetadataMessage metadata) {
+    final videoMetadata = VideoMetadata(
+      duration: metadata.duration != null ? Duration(milliseconds: metadata.duration!) : null,
+      width: metadata.width,
+      height: metadata.height,
+      videoCodec: metadata.videoCodec,
+      audioCodec: metadata.audioCodec,
+      videoBitrate: metadata.bitrate,
+      frameRate: metadata.frameRate,
+    );
+    _addEvent(playerId, VideoMetadataExtractedEvent(videoMetadata));
+  }
+
+  @override
+  void onPlaybackCompleted(int playerId) {
+    _addEvent(playerId, const PlaybackCompletedEvent());
+  }
+
+  @override
+  void onPipActionTriggered(int playerId, String action) {
+    // Convert string action to PipActionType enum
+    final actionType = switch (action) {
+      'playPause' => PipActionType.playPause,
+      'skipPrevious' => PipActionType.skipPrevious,
+      'skipNext' => PipActionType.skipNext,
+      'skipBackward' => PipActionType.skipBackward,
+      'skipForward' => PipActionType.skipForward,
+      _ => PipActionType.playPause, // Default fallback
+    };
+    _addEvent(playerId, PipActionTriggeredEvent(action: actionType));
+  }
+
+  @override
+  void onCastStateChanged(int playerId, CastStateEnum state, CastDeviceMessage? device) {
+    final castState = switch (state) {
+      CastStateEnum.notConnected => CastState.notConnected,
+      CastStateEnum.connecting => CastState.connecting,
+      CastStateEnum.connected => CastState.connected,
+      CastStateEnum.disconnecting => CastState.disconnecting,
+    };
+
+    CastDevice? castDevice;
+    if (device != null) {
+      final type = switch (device.type) {
+        CastDeviceTypeEnum.airPlay => CastDeviceType.airPlay,
+        CastDeviceTypeEnum.chromecast => CastDeviceType.chromecast,
+        CastDeviceTypeEnum.webRemotePlayback => CastDeviceType.webRemotePlayback,
+        CastDeviceTypeEnum.unknown => CastDeviceType.unknown,
+      };
+      castDevice = CastDevice(id: device.id, name: device.name, type: type);
+    }
+
+    _addEvent(playerId, CastStateChangedEvent(state: castState, device: castDevice));
+  }
+
+  @override
+  void onSubtitleTracksChanged(int playerId, List<SubtitleTrackMessage?> tracks) {
+    final subtitleTracks = tracks
+        .whereType<SubtitleTrackMessage>()
+        .map(
+          (t) => SubtitleTrack(
+            id: t.id,
+            label: t.label ?? '', // SubtitleTrack requires non-null label
+            language: t.language,
+            isDefault: t.isDefault ?? false,
+          ),
+        )
+        .toList();
+    _addEvent(playerId, SubtitleTracksChangedEvent(subtitleTracks));
+  }
+
+  @override
+  void onAudioTracksChanged(int playerId, List<AudioTrackMessage?> tracks) {
+    final audioTracks = tracks
+        .whereType<AudioTrackMessage>()
+        .map(
+          (t) => AudioTrack(
+            id: t.id,
+            label: t.label ?? '', // AudioTrack requires non-null label
+            language: t.language,
+            isDefault: t.isDefault ?? false,
+          ),
+        )
+        .toList();
+    _addEvent(playerId, AudioTracksChangedEvent(audioTracks));
+  }
+
+  @override
+  void onBatteryInfoChanged(BatteryInfoMessage batteryInfo) {
+    final battery = BatteryInfo(percentage: batteryInfo.percentage, isCharging: batteryInfo.isCharging);
+    _batteryStreamController.add(battery);
   }
 
   // ==================== Conversion Helpers ====================

@@ -49,8 +49,7 @@ class VideoSourceManager with WebManagerCallbacks {
   ///
   /// This is used for regular video files and Safari HLS playback.
   void setNativeSource(String url) {
-    final element = videoElement as dynamic;
-    element.src = url;
+    videoElement.src = url;
     verboseLog('Native source set: $url', tag: 'VideoSourceManager');
   }
 

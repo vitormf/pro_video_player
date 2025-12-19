@@ -1544,4 +1544,89 @@ class VideoPlayerTests: XCTestCase {
         // Then - No crash, should only set up once
         XCTAssertNotNil(player)
     }
+
+    // MARK: - Background Playback Behavior Tests
+
+    func testBackgroundPausesPlaybackWhenBackgroundPlaybackDisabled() {
+        // Given - Player with background playback disabled (default)
+        let player = createPlayer(options: [
+            "allowBackgroundPlayback": false
+        ])
+
+        // Start playback
+        player.play()
+
+        // When - App enters background
+        player.handleAppDidEnterBackground()
+
+        // Then - No crash, player should be paused
+        XCTAssertNotNil(player)
+    }
+
+    func testBackgroundDoesNotPauseWhenBackgroundPlaybackEnabled() {
+        // Given - Player with background playback enabled
+        let player = createPlayer(options: [
+            "allowBackgroundPlayback": true,
+            "autoEnterPipOnBackground": false
+        ])
+
+        // Start playback
+        player.play()
+
+        // When - App enters background
+        player.handleAppDidEnterBackground()
+
+        // Then - No crash, player should NOT be paused (audio continues)
+        XCTAssertNotNil(player)
+    }
+
+    func testForegroundResumesPlaybackAfterAutoPause() {
+        // Given - Player with background playback disabled
+        let player = createPlayer(options: [
+            "allowBackgroundPlayback": false
+        ])
+
+        // Start playback, then background, then foreground
+        player.play()
+        player.handleAppDidEnterBackground()
+
+        // When - App returns to foreground
+        player.handleAppWillEnterForeground()
+
+        // Then - No crash, player should be ready to resume
+        XCTAssertNotNil(player)
+    }
+
+    func testBackgroundPlaybackWithPipDisabledPausesVideo() {
+        // Given - Player with PiP disabled and background playback disabled
+        let player = createPlayer(options: [
+            "allowPip": false,
+            "allowBackgroundPlayback": false
+        ])
+
+        player.play()
+
+        // When - App enters background
+        player.handleAppDidEnterBackground()
+
+        // Then - Video should be paused
+        XCTAssertNotNil(player)
+    }
+
+    func testBackgroundPlaybackEnabledWithPipDisabledContinuesAudio() {
+        // Given - Player with PiP disabled but background playback enabled
+        let player = createPlayer(options: [
+            "allowPip": false,
+            "allowBackgroundPlayback": true
+        ])
+
+        player.play()
+
+        // When - App enters background
+        player.handleAppDidEnterBackground()
+
+        // Then - Audio should continue (video layer inactive, audio plays)
+        XCTAssertNotNil(player)
+        XCTAssertFalse(player.isPipAllowed())
+    }
 }

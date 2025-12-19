@@ -6,7 +6,7 @@ import FlutterMacOS
 class VideoPlayer: SharedVideoPlayerWrapper {
     init(playerId: Int, registrar: FlutterPluginRegistrar, source: [String: Any], options: [String: Any]) {
         let platformAdapter = macOSPlatformAdapter(registrar: registrar)
-        
+
         super.init(
             playerId: playerId,
             registrar: registrar,
@@ -16,7 +16,7 @@ class VideoPlayer: SharedVideoPlayerWrapper {
             source: source,
             options: options
         )
-        
+
         // Set the video player reference for fullscreen handling
         platformAdapter.setVideoPlayer(sharedPlayer)
     }

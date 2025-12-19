@@ -7,6 +7,8 @@ import '../verbose_logging.dart';
 
 /// Base class for streaming managers (HLS, DASH, etc.).
 ///
+/// Type parameter [T] is the player interface type (e.g., HlsPlayerInterface).
+///
 /// Provides common infrastructure for adaptive streaming managers:
 /// - Lifecycle management (initialization, disposal)
 /// - Quality track management (available tracks, current selection)
@@ -14,7 +16,7 @@ import '../verbose_logging.dart';
 /// - Error recovery
 ///
 /// Subclasses implement format-specific details via template methods.
-abstract class StreamingManager with WebManagerCallbacks {
+abstract class StreamingManager<T> with WebManagerCallbacks {
   /// Creates a streaming manager.
   StreamingManager({required this.emitEvent, required this.videoElement});
 
@@ -24,10 +26,10 @@ abstract class StreamingManager with WebManagerCallbacks {
   @override
   final VideoElementInterface videoElement;
 
-  /// The streaming player instance (dynamic to support mocking).
+  /// The streaming player instance.
   ///
   /// Subclasses should store their player (HLS.js, DASH.js) here.
-  dynamic _player;
+  T? _player;
 
   /// Available quality tracks.
   List<VideoQualityTrack> _availableQualities = [];
@@ -44,13 +46,13 @@ abstract class StreamingManager with WebManagerCallbacks {
   /// Gets the player instance (for coordination with other managers).
   ///
   /// Returns the format-specific player (HLS.js or DASH.js).
-  dynamic get player => _player;
+  T? get player => _player;
 
   /// Sets the player instance.
   ///
   /// Called by subclasses during initialization to store their player.
   @protected
-  set player(dynamic value) => _player = value;
+  set player(T? value) => _player = value;
 
   /// Marks the manager as initialized.
   ///

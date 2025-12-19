@@ -1,9 +1,27 @@
 /// Utility class for parsing video player events from native platform data.
 ///
 /// This class provides static methods to convert Map-based event data from
-/// native platforms into type-safe [VideoPlayerEvent] objects. Used by
-/// platform implementations (iOS, Android, macOS) to parse events received
-/// via EventChannel.
+/// native platforms into type-safe [VideoPlayerEvent] objects.
+///
+/// ## Hybrid Event System
+///
+/// The video player uses a hybrid event system for optimal performance and type safety:
+///
+/// **High-frequency events** (position updates, buffering, playback state changes) are
+/// sent via EventChannel and parsed by this class. EventChannel provides low overhead
+/// for streaming events at high rates (10-30 Hz).
+///
+/// **Low-frequency events** (errors, metadata extraction, completion, PiP actions, cast
+/// state, track changes) are sent via Pigeon @FlutterApi callbacks, providing type-safe
+/// communication. When FlutterApi is unavailable, these events fall back to EventChannel
+/// and are also parsed by this class.
+///
+/// Platform implementations (iOS, Android, macOS) route events based on frequency:
+/// - High-frequency → EventChannel (always)
+/// - Low-frequency → Pigeon FlutterApi (preferred) or EventChannel (fallback)
+///
+/// This ensures the best of both worlds: performance for high-frequency events and
+/// type safety for important but infrequent events.
 library;
 
 import 'types/types.dart';

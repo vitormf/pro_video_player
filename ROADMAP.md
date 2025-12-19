@@ -199,10 +199,12 @@ This document tracks the development progress and planned features for the Pro V
 - Comprehensive migration guide and validation documentation
 
 ### Pigeon Type-Safe Platform Channel Communication
-- iOS, macOS, Android platforms migrated to PigeonMethodChannelBase
-- Type-safe method calls (50+ methods) with generated code
-- Event streaming via EventChannel overrides
-- Shared EventParser eliminates duplication
+- Complete migration to Pigeon-based type-safe platform communication
+- Bridge layer eliminated (~1,962 lines removed across iOS/macOS/Android)
+- iOS/macOS/Android implement ProVideoPlayerHostApi directly
+- Type-safe method calls (50+ methods) with compile-time checking
+- Hybrid event system infrastructure (EventChannel + Pigeon FlutterApi)
+- Battery updates migrated to Pigeon FlutterApi
 - MethodChannelBase deprecated for Windows/Linux
 
 ### Platform Capabilities Async Migration & Legacy Code Cleanup
@@ -457,6 +459,8 @@ This document tracks the development progress and planned features for the Pro V
 
 ## In Progress 🚧
 
+(No tasks currently in progress)
+
 ---
 
 ## Planned (High Priority) 🔥
@@ -705,81 +709,6 @@ This document tracks the development progress and planned features for the Pro V
 
 </details>
 
-<details>
-<summary><strong>Complete Pigeon Migration - Eliminate Bridge Layer</strong></summary>
-
-- [ ] **Complete Pigeon Migration (Phases 7-9)**
-  - **Rationale:** Current Pigeon implementation is a temporary bridge that defeats the purpose of type-safe communication by manually converting Pigeon types back to `[String: Any]` dictionaries
-  - **Current Architecture (Bridge Layer - Anti-Pattern):**
-    ```swift
-    // PigeonHostApiHandler receives type-safe Pigeon calls
-    func setSubtitleTrack(playerId: Int64, track: SubtitleTrackMessage?, ...) {
-        // Manually degrades to untyped dictionaries
-        args["track"] = [
-            "id": track.id,
-            "label": track.label as Any,  // ← Code smell: need `as Any` casts
-            "language": track.language as Any,
-            "isDefault": track.isDefault as Any
-        ]
-        // Wraps in old-style FlutterMethodCall
-        let call = FlutterMethodCall(methodName: "setSubtitleTrack", arguments: args)
-        sharedBase.handle(call) { result in ... }
-    }
-    ```
-  - **Target Architecture (Pure Pigeon - Proper Pattern):**
-    ```swift
-    // SharedPluginBase implements Pigeon protocol DIRECTLY
-    class SharedPluginBase: ProVideoPlayerHostApi {
-        func setSubtitleTrack(playerId: Int64, track: SubtitleTrackMessage?, ...) {
-            // Work directly with type-safe Pigeon objects
-            // NO dictionary conversion needed!
-            videoPlayer.selectSubtitleTrack(trackId: track?.id)
-        }
-    }
-    ```
-  - **Implementation Phases:**
-    - [ ] **Phase 7:** Update main package to use Pigeon-based platform implementations
-      - Migrate `pro_video_player` package to call Pigeon APIs directly
-      - Update `ProVideoPlayerController` to use `ProVideoPlayerHostApi` instead of MethodChannel
-      - Remove legacy Map-based API calls from main package
-      - Update all tests to work with new Pigeon-based communication
-    - [ ] **Phase 8:** Deprecate and remove old MethodChannelBase
-      - Remove `PigeonHostApiHandler` bridge classes (iOS/macOS/Android)
-      - Make `SharedPluginBase` and platform implementations directly implement `ProVideoPlayerHostApi`
-      - Eliminate all `[String: Any]` dictionary conversions
-      - Remove legacy `FlutterMethodCall` handling code
-      - Update Windows/Linux to use Pigeon (currently still using MethodChannelBase)
-    - [ ] **Phase 9:** Event streaming migration to FlutterApi callbacks
-      - Replace EventChannel with Pigeon `@FlutterApi` callbacks
-      - Implement `ProVideoPlayerFlutterApi` for native → Dart events
-      - Type-safe event messages (no more Map-based events)
-      - Update event listeners in main package
-      - Remove legacy EventChannel infrastructure
-  - **Benefits:**
-    - **True type safety:** Compile-time checking for all platform communication
-    - **Eliminate code smell:** No more `as Any` casts for optional values
-    - **Reduced code:** Remove entire bridge layer (~838 lines in Android, ~600 lines in iOS/macOS)
-    - **Better errors:** Type mismatches caught at compile time, not runtime
-    - **Improved maintainability:** Single source of truth for API definitions
-    - **Consistent patterns:** Same type-safe approach across all platforms
-  - **Code Elimination:**
-    - Remove `PigeonHostApiHandler.kt` (838 lines)
-    - Remove `shared_apple_sources/PigeonHostApiHandler.swift` (600+ lines)
-    - Remove dictionary conversion utilities (200+ lines across platforms)
-    - Remove legacy MethodChannelBase from Windows/Linux after Pigeon migration
-    - Total: ~2,000+ lines of bridge code eliminated
-  - **Testing Requirements:**
-    - All existing tests must continue passing
-    - Add Pigeon-specific integration tests
-    - Verify type safety with compilation checks
-    - Test event streaming with FlutterApi callbacks
-  - **References:**
-    - See `pro_video_player_platform_interface/PIGEON_MIGRATION.md` for detailed architecture
-    - See `contributing/pigeon-guide.md` for Pigeon configuration and troubleshooting
-  - **Current Status:** Phases 1-6 complete (infrastructure, API definitions, native handlers)
-  - **Priority:** HIGH - Current bridge layer defeats Pigeon's purpose and adds unnecessary complexity
-
-</details>
 
 
 ---

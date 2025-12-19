@@ -349,10 +349,12 @@ class MockNavigator implements NavigatorInterface {
       if (handler is Function) {
         // Call handler with mock event
         try {
+          // ignore: avoid_dynamic_calls
           handler(mockEvent);
         } catch (e) {
           // Ignore errors - handler might not need the event object
           try {
+            // ignore: avoid_dynamic_calls
             handler();
           } catch (_) {
             // Also ignore this

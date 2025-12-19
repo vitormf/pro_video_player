@@ -31,9 +31,11 @@ analyzer:
     exhaustive_cases: error
     cast_nullable_to_non_nullable: error
     # Type Safety
-    # Note: Both avoid_annotating_with_dynamic and avoid_dynamic_calls are lint rules (info)
-    # but not errors because JS interop with external libraries (HLS.js, DASH.js, browser APIs)
+    # Note: Both avoid_annotating_with_dynamic and avoid_dynamic_calls are warnings
+    # (not errors) because JS interop with external libraries (HLS.js, DASH.js, browser APIs)
     # requires explicit dynamic annotations for event handlers and callback parameters
+    avoid_annotating_with_dynamic: warning
+    avoid_dynamic_calls: warning
     # Library Structure
     library_private_types_in_public_api: error
     library_prefixes: error

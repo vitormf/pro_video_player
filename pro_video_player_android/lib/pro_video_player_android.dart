@@ -68,35 +68,6 @@ class ProVideoPlayerAndroid extends PigeonMethodChannelBase {
     );
   }
 
-  Stream<BatteryInfo>? _batteryUpdatesStream;
-
-  @override
-  Stream<BatteryInfo> get batteryUpdates {
-    _batteryUpdatesStream ??= EventChannel('dev.pro_video_player.$channelPrefix/batteryUpdates')
-        .receiveBroadcastStream()
-        .transform(
-          StreamTransformer<dynamic, BatteryInfo>.fromHandlers(
-            handleData: (event, sink) {
-              if (event is Map<dynamic, dynamic>) {
-                try {
-                  final batteryInfo = BatteryInfo.fromJson(Map<String, dynamic>.from(event));
-                  sink.add(batteryInfo);
-                } catch (e) {
-                  // Ignore malformed events
-                }
-              }
-            },
-            handleError: (error, stackTrace, sink) {
-              // Battery monitoring not supported - complete the stream
-              sink.close();
-            },
-          ),
-        )
-        .asBroadcastStream();
-
-    return _batteryUpdatesStream!;
-  }
-
   @override
   Widget buildView(int playerId, {ControlsMode controlsMode = ControlsMode.none}) =>
       // Use PlatformViewLink with Hybrid Composition to avoid race condition crashes

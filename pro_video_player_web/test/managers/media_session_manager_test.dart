@@ -286,6 +286,7 @@ class MockMediaSession implements MediaSessionInterface {
   void triggerAction(String action) {
     final handler = actionHandlers[action];
     if (handler != null) {
+      // ignore: avoid_dynamic_calls
       handler();
     }
   }

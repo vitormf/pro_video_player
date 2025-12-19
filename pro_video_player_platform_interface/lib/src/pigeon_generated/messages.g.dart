@@ -2805,11 +2805,47 @@ class ProVideoPlayerHostApi {
 ///
 /// This API is implemented in Dart and called from the native platform
 /// to send events.
+///
+/// HYBRID EVENT SYSTEM:
+/// - High-frequency events (position, buffering, state) use EventChannel
+/// - Low-frequency events (errors, metadata, completion) use @FlutterApi for type safety
 abstract class ProVideoPlayerFlutterApi {
   static const MessageCodec<Object?> pigeonChannelCodec = _PigeonCodec();
 
-  /// Called when a video player event occurs.
+  /// Called when a video player event occurs (deprecated - kept for EventChannel compatibility).
+  ///
+  /// High-frequency events still use EventChannel:
+  /// - positionChanged, bufferedPositionChanged
+  /// - playbackStateChanged, durationChanged
+  /// - videoSizeChanged, bufferingStarted, bufferingEnded
   void onEvent(int playerId, VideoPlayerEventMessage event);
+
+  /// Called when an error occurs during playback.
+  void onError(int playerId, String errorCode, String errorMessage);
+
+  /// Called when video metadata is extracted.
+  void onMetadataExtracted(int playerId, VideoMetadataMessage metadata);
+
+  /// Called when playback completes.
+  void onPlaybackCompleted(int playerId);
+
+  /// Called when a PiP action is triggered by the user.
+  void onPipActionTriggered(int playerId, String action);
+
+  /// Called when cast state changes.
+  void onCastStateChanged(int playerId, CastStateEnum state, CastDeviceMessage? device);
+
+  /// Called when subtitle tracks change.
+  void onSubtitleTracksChanged(int playerId, List<SubtitleTrackMessage?> tracks);
+
+  /// Called when audio tracks change.
+  void onAudioTracksChanged(int playerId, List<AudioTrackMessage?> tracks);
+
+  /// Called when battery information changes.
+  ///
+  /// Emitted when the device's battery level or charging state changes.
+  /// Platform availability varies (see getBatteryInfo documentation).
+  void onBatteryInfoChanged(BatteryInfoMessage batteryInfo);
 
   static void setUp(
     ProVideoPlayerFlutterApi? api, {
@@ -2844,6 +2880,306 @@ abstract class ProVideoPlayerFlutterApi {
           );
           try {
             api.onEvent(arg_playerId!, arg_event!);
+            return wrapResponse(empty: true);
+          } on PlatformException catch (e) {
+            return wrapResponse(error: e);
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
+          }
+        });
+      }
+    }
+    {
+      final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onError$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
+      if (api == null) {
+        pigeonVar_channel.setMessageHandler(null);
+      } else {
+        pigeonVar_channel.setMessageHandler((Object? message) async {
+          assert(
+            message != null,
+            'Argument for dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onError was null.',
+          );
+          final List<Object?> args = (message as List<Object?>?)!;
+          final int? arg_playerId = (args[0] as int?);
+          assert(
+            arg_playerId != null,
+            'Argument for dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onError was null, expected non-null int.',
+          );
+          final String? arg_errorCode = (args[1] as String?);
+          assert(
+            arg_errorCode != null,
+            'Argument for dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onError was null, expected non-null String.',
+          );
+          final String? arg_errorMessage = (args[2] as String?);
+          assert(
+            arg_errorMessage != null,
+            'Argument for dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onError was null, expected non-null String.',
+          );
+          try {
+            api.onError(arg_playerId!, arg_errorCode!, arg_errorMessage!);
+            return wrapResponse(empty: true);
+          } on PlatformException catch (e) {
+            return wrapResponse(error: e);
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
+          }
+        });
+      }
+    }
+    {
+      final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onMetadataExtracted$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
+      if (api == null) {
+        pigeonVar_channel.setMessageHandler(null);
+      } else {
+        pigeonVar_channel.setMessageHandler((Object? message) async {
+          assert(
+            message != null,
+            'Argument for dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onMetadataExtracted was null.',
+          );
+          final List<Object?> args = (message as List<Object?>?)!;
+          final int? arg_playerId = (args[0] as int?);
+          assert(
+            arg_playerId != null,
+            'Argument for dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onMetadataExtracted was null, expected non-null int.',
+          );
+          final VideoMetadataMessage? arg_metadata = (args[1] as VideoMetadataMessage?);
+          assert(
+            arg_metadata != null,
+            'Argument for dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onMetadataExtracted was null, expected non-null VideoMetadataMessage.',
+          );
+          try {
+            api.onMetadataExtracted(arg_playerId!, arg_metadata!);
+            return wrapResponse(empty: true);
+          } on PlatformException catch (e) {
+            return wrapResponse(error: e);
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
+          }
+        });
+      }
+    }
+    {
+      final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onPlaybackCompleted$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
+      if (api == null) {
+        pigeonVar_channel.setMessageHandler(null);
+      } else {
+        pigeonVar_channel.setMessageHandler((Object? message) async {
+          assert(
+            message != null,
+            'Argument for dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onPlaybackCompleted was null.',
+          );
+          final List<Object?> args = (message as List<Object?>?)!;
+          final int? arg_playerId = (args[0] as int?);
+          assert(
+            arg_playerId != null,
+            'Argument for dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onPlaybackCompleted was null, expected non-null int.',
+          );
+          try {
+            api.onPlaybackCompleted(arg_playerId!);
+            return wrapResponse(empty: true);
+          } on PlatformException catch (e) {
+            return wrapResponse(error: e);
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
+          }
+        });
+      }
+    }
+    {
+      final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onPipActionTriggered$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
+      if (api == null) {
+        pigeonVar_channel.setMessageHandler(null);
+      } else {
+        pigeonVar_channel.setMessageHandler((Object? message) async {
+          assert(
+            message != null,
+            'Argument for dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onPipActionTriggered was null.',
+          );
+          final List<Object?> args = (message as List<Object?>?)!;
+          final int? arg_playerId = (args[0] as int?);
+          assert(
+            arg_playerId != null,
+            'Argument for dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onPipActionTriggered was null, expected non-null int.',
+          );
+          final String? arg_action = (args[1] as String?);
+          assert(
+            arg_action != null,
+            'Argument for dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onPipActionTriggered was null, expected non-null String.',
+          );
+          try {
+            api.onPipActionTriggered(arg_playerId!, arg_action!);
+            return wrapResponse(empty: true);
+          } on PlatformException catch (e) {
+            return wrapResponse(error: e);
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
+          }
+        });
+      }
+    }
+    {
+      final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onCastStateChanged$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
+      if (api == null) {
+        pigeonVar_channel.setMessageHandler(null);
+      } else {
+        pigeonVar_channel.setMessageHandler((Object? message) async {
+          assert(
+            message != null,
+            'Argument for dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onCastStateChanged was null.',
+          );
+          final List<Object?> args = (message as List<Object?>?)!;
+          final int? arg_playerId = (args[0] as int?);
+          assert(
+            arg_playerId != null,
+            'Argument for dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onCastStateChanged was null, expected non-null int.',
+          );
+          final CastStateEnum? arg_state = (args[1] as CastStateEnum?);
+          assert(
+            arg_state != null,
+            'Argument for dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onCastStateChanged was null, expected non-null CastStateEnum.',
+          );
+          final CastDeviceMessage? arg_device = (args[2] as CastDeviceMessage?);
+          try {
+            api.onCastStateChanged(arg_playerId!, arg_state!, arg_device);
+            return wrapResponse(empty: true);
+          } on PlatformException catch (e) {
+            return wrapResponse(error: e);
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
+          }
+        });
+      }
+    }
+    {
+      final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onSubtitleTracksChanged$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
+      if (api == null) {
+        pigeonVar_channel.setMessageHandler(null);
+      } else {
+        pigeonVar_channel.setMessageHandler((Object? message) async {
+          assert(
+            message != null,
+            'Argument for dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onSubtitleTracksChanged was null.',
+          );
+          final List<Object?> args = (message as List<Object?>?)!;
+          final int? arg_playerId = (args[0] as int?);
+          assert(
+            arg_playerId != null,
+            'Argument for dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onSubtitleTracksChanged was null, expected non-null int.',
+          );
+          final List<SubtitleTrackMessage?>? arg_tracks = (args[1] as List<Object?>?)?.cast<SubtitleTrackMessage?>();
+          assert(
+            arg_tracks != null,
+            'Argument for dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onSubtitleTracksChanged was null, expected non-null List<SubtitleTrackMessage?>.',
+          );
+          try {
+            api.onSubtitleTracksChanged(arg_playerId!, arg_tracks!);
+            return wrapResponse(empty: true);
+          } on PlatformException catch (e) {
+            return wrapResponse(error: e);
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
+          }
+        });
+      }
+    }
+    {
+      final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onAudioTracksChanged$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
+      if (api == null) {
+        pigeonVar_channel.setMessageHandler(null);
+      } else {
+        pigeonVar_channel.setMessageHandler((Object? message) async {
+          assert(
+            message != null,
+            'Argument for dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onAudioTracksChanged was null.',
+          );
+          final List<Object?> args = (message as List<Object?>?)!;
+          final int? arg_playerId = (args[0] as int?);
+          assert(
+            arg_playerId != null,
+            'Argument for dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onAudioTracksChanged was null, expected non-null int.',
+          );
+          final List<AudioTrackMessage?>? arg_tracks = (args[1] as List<Object?>?)?.cast<AudioTrackMessage?>();
+          assert(
+            arg_tracks != null,
+            'Argument for dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onAudioTracksChanged was null, expected non-null List<AudioTrackMessage?>.',
+          );
+          try {
+            api.onAudioTracksChanged(arg_playerId!, arg_tracks!);
+            return wrapResponse(empty: true);
+          } on PlatformException catch (e) {
+            return wrapResponse(error: e);
+          } catch (e) {
+            return wrapResponse(
+              error: PlatformException(code: 'error', message: e.toString()),
+            );
+          }
+        });
+      }
+    }
+    {
+      final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+        'dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onBatteryInfoChanged$messageChannelSuffix',
+        pigeonChannelCodec,
+        binaryMessenger: binaryMessenger,
+      );
+      if (api == null) {
+        pigeonVar_channel.setMessageHandler(null);
+      } else {
+        pigeonVar_channel.setMessageHandler((Object? message) async {
+          assert(
+            message != null,
+            'Argument for dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onBatteryInfoChanged was null.',
+          );
+          final List<Object?> args = (message as List<Object?>?)!;
+          final BatteryInfoMessage? arg_batteryInfo = (args[0] as BatteryInfoMessage?);
+          assert(
+            arg_batteryInfo != null,
+            'Argument for dev.flutter.pigeon.pro_video_player_platform_interface.ProVideoPlayerFlutterApi.onBatteryInfoChanged was null, expected non-null BatteryInfoMessage.',
+          );
+          try {
+            api.onBatteryInfoChanged(arg_batteryInfo!);
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);

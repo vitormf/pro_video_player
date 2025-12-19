@@ -153,17 +153,20 @@ class WebVideoPlayer {
       final loaded = await loadDashJs();
 
       if (loaded && isDashJsSupported) {
-        _isUsingDashJs = true;
         final dashPlayer = DashPlayer.create();
-        await dashManager.initialize(
-          sourceUrl: sourceUrl,
-          dashPlayer: dashPlayer,
-          autoPlay: options.autoPlay,
-          abrMode: options.abrMode,
-          minBitrate: options.minBitrate,
-          maxBitrate: options.maxBitrate,
-        );
-        return;
+        if (dashPlayer != null) {
+          _isUsingDashJs = true;
+          await dashManager.initialize(
+            sourceUrl: sourceUrl,
+            dashPlayer: dashPlayer,
+            autoPlay: options.autoPlay,
+            abrMode: options.abrMode,
+            minBitrate: options.minBitrate,
+            maxBitrate: options.maxBitrate,
+          );
+          return;
+        }
+        verboseLog('Failed to create DASH player', tag: 'WebVideoPlayer');
       } else {
         verboseLog('dash.js not available, DASH playback may not work', tag: 'WebVideoPlayer');
       }
@@ -173,7 +176,6 @@ class WebVideoPlayer {
       final loaded = await loadHlsJs();
 
       if (loaded && isHlsJsSupported) {
-        _isUsingHlsJs = true;
         final config = <String, dynamic>{
           'enableWorker': true,
           'lowLatencyMode': false,
@@ -186,8 +188,12 @@ class WebVideoPlayer {
         }
 
         final hlsPlayer = HlsPlayer.create(config: config);
-        await hlsManager.initialize(sourceUrl: sourceUrl, hlsPlayer: hlsPlayer, maxBitrate: options.maxBitrate);
-        return;
+        if (hlsPlayer != null) {
+          _isUsingHlsJs = true;
+          await hlsManager.initialize(sourceUrl: sourceUrl, hlsPlayer: hlsPlayer, maxBitrate: options.maxBitrate);
+          return;
+        }
+        verboseLog('Failed to create HLS player', tag: 'WebVideoPlayer');
       } else {
         verboseLog('HLS.js not available, falling back to native', tag: 'WebVideoPlayer');
       }

@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:pro_video_player_web/src/abstractions/dash_player_interface.dart';
+import 'package:pro_video_player_web/src/abstractions/hls_player_interface.dart';
 import 'package:pro_video_player_web/src/abstractions/video_element_interface.dart';
 
 /// Mock HTMLVideoElement for testing without actual DOM.
@@ -103,19 +105,29 @@ class MockHTMLVideoElement implements VideoElementInterface {
   set controls(Object? value) => _controls = value! as bool;
 
   /// Mock audio tracks (for testing audio track selection).
+  @override
   List<MockAudioTrack> mockAudioTracks = [];
 
   /// Mock text tracks (for testing subtitle selection).
+  @override
   List<MockTextTrack> mockTextTracks = [];
 
   /// Mock remote playback (for testing casting).
   MockRemotePlayback? mockRemotePlayback;
 
+  @override
+  RemotePlaybackInterface? get remotePlayback => mockRemotePlayback;
+
   /// Map of event listeners.
   final Map<String, List<Function>> _eventListeners = {};
 
-  /// Adds an event listener.
-  void addEventListener(String event, Function handler) {
+  @override
+  void addEventListener(String event, void Function(Object? event) callback) {
+    _eventListeners.putIfAbsent(event, () => []).add(callback);
+  }
+
+  /// Adds an event listener (legacy overload for tests).
+  void addEventListenerLegacy(String event, Function handler) {
     _eventListeners.putIfAbsent(event, () => []).add(handler);
   }
 
@@ -132,6 +144,7 @@ class MockHTMLVideoElement implements VideoElementInterface {
     final handlers = _eventListeners[event] ?? [];
     final eventData = data ?? {}; // Always pass at least empty object
     for (final handler in handlers) {
+      // ignore: avoid_dynamic_calls
       handler(eventData);
     }
   }
@@ -178,7 +191,7 @@ class MockTimeRanges {
 }
 
 /// Mock HLS.js player for testing.
-class MockHlsPlayer {
+class MockHlsPlayer implements HlsPlayerInterface {
   /// Whether player is attached to media element.
   bool isAttached = false;
 
@@ -186,25 +199,34 @@ class MockHlsPlayer {
   String? sourceUrl;
 
   /// Available quality levels.
-  List<MockHlsLevel> levels = [];
+  List<MockHlsLevel> _levels = [];
+
+  /// Setter for levels (used in tests).
+  set levels(List<MockHlsLevel> value) => _levels = value;
 
   /// Current quality level index (-1 = auto).
-  int currentLevel = -1;
+  int _currentLevel = -1;
 
   /// Maximum bitrate in bits per second (0 = unlimited).
   int maxBitrate = 0;
 
   /// Available audio tracks.
-  List<MockHlsAudioTrack> audioTracks = [];
+  List<MockHlsAudioTrack> _audioTracks = [];
+
+  /// Setter for audioTracks (used in tests).
+  set audioTracks(List<MockHlsAudioTrack> value) => _audioTracks = value;
 
   /// Available subtitle tracks.
-  List<MockHlsSubtitleTrack> subtitleTracks = [];
+  List<MockHlsSubtitleTrack> _subtitleTracks = [];
+
+  /// Setter for subtitleTracks (used in tests).
+  set subtitleTracks(List<MockHlsSubtitleTrack> value) => _subtitleTracks = value;
 
   /// Current audio track index.
-  int audioTrack = -1;
+  int _audioTrack = -1;
 
   /// Current subtitle track index.
-  int subtitleTrack = -1;
+  int _subtitleTrack = -1;
 
   /// Event listeners.
   final Map<String, List<Function>> _eventListeners = {};
@@ -212,28 +234,80 @@ class MockHlsPlayer {
   /// Callback for startLoad() - used in tests.
   void Function()? onStartLoad;
 
-  /// Attaches player to media element.
-  void attachMedia(media) {
+  @override
+  void attachMedia(Object video) {
     isAttached = true;
   }
 
-  /// Loads a source URL.
+  @override
+  void detachMedia() {
+    isAttached = false;
+  }
+
+  @override
   void loadSource(String url) {
     sourceUrl = url;
-    // Simulate manifest parsed event
     Future<void>.delayed(const Duration(milliseconds: 50), () {
       triggerEvent('manifestParsed');
     });
   }
 
-  /// Starts loading (used for recovery).
-  void startLoad() {
+  @override
+  void startLoad([int startPosition = -1]) {
     onStartLoad?.call();
   }
 
-  /// Adds an event listener.
-  void on(String event, Function handler) {
-    _eventListeners.putIfAbsent(event, () => []).add(handler);
+  @override
+  void stopLoad() {}
+
+  @override
+  int get currentLevel => _currentLevel;
+
+  @override
+  set currentLevel(int level) => _currentLevel = level;
+
+  @override
+  int get nextLevel => _currentLevel;
+
+  @override
+  set nextLevel(int level) => _currentLevel = level;
+
+  @override
+  int get autoLevelCapping => -1;
+
+  @override
+  set autoLevelCapping(int level) {}
+
+  @override
+  bool get autoLevelEnabled => _currentLevel == -1;
+
+  @override
+  List<MockHlsLevel> get levels => _levels;
+
+  @override
+  int get audioTrack => _audioTrack;
+
+  @override
+  set audioTrack(int index) => _audioTrack = index;
+
+  @override
+  List<MockHlsAudioTrack> get audioTracks => _audioTracks;
+
+  @override
+  int get subtitleTrack => _subtitleTrack;
+
+  @override
+  set subtitleTrack(int index) => _subtitleTrack = index;
+
+  @override
+  List<MockHlsSubtitleTrack> get subtitleTracks => _subtitleTracks;
+
+  @override
+  double get bandwidthEstimate => 0;
+
+  @override
+  void on(String event, void Function(String event, Object? data) callback) {
+    _eventListeners.putIfAbsent(event, () => []).add(callback);
   }
 
   /// Removes an event listener.
@@ -253,52 +327,117 @@ class MockHlsPlayer {
     final handlers = _eventListeners[event] ?? [];
     for (final handler in handlers) {
       if (data != null) {
-        handler(event, data);
+        (handler as void Function(String, Object?))(event, data);
       } else {
-        handler(event);
+        (handler as void Function(String, Object?))(event, null);
       }
     }
   }
 
-  /// Destroys the player.
+  @override
+  void offAll() {
+    _eventListeners.clear();
+  }
+
+  @override
   void destroy() {
     isAttached = false;
     sourceUrl = null;
     _eventListeners.clear();
   }
+
+  @override
+  void recoverMediaError() {}
+
+  @override
+  void swapAudioCodec() {}
 }
 
 /// Mock HLS quality level.
-class MockHlsLevel {
-  MockHlsLevel({required this.height, required this.bitrate, this.width, this.name, this.codecs});
+class MockHlsLevel implements HlsLevelInterface {
+  MockHlsLevel({required this.height, required this.bitrate, int? width, this.name, this.codecs, this.index = 0})
+    : width = width ?? 0;
 
+  @override
+  final int index;
+
+  @override
   final int height;
+
+  @override
   final int bitrate;
-  final int? width;
+
+  @override
+  final int width;
+
+  @override
   final String? name;
+
+  @override
   final String? codecs;
+
+  @override
+  String get label => '${height}p';
 }
 
 /// Mock HLS audio track.
-class MockHlsAudioTrack {
-  MockHlsAudioTrack({required this.id, required this.name, this.lang});
+class MockHlsAudioTrack implements HlsAudioTrackInterface {
+  MockHlsAudioTrack({required this.id, required this.name, this.lang, this.index = 0, this.isDefault = false});
 
-  final int id;
-  final String name;
+  @override
+  final int index;
+
+  @override
+  final int? id;
+
+  @override
+  final String? name;
+
+  @override
   final String? lang;
+
+  @override
+  final bool isDefault;
+
+  @override
+  String get label => name ?? 'Audio ${index + 1}';
 }
 
 /// Mock HLS subtitle track.
-class MockHlsSubtitleTrack {
-  MockHlsSubtitleTrack({required this.id, required this.name, this.lang});
+class MockHlsSubtitleTrack implements HlsSubtitleTrackInterface {
+  MockHlsSubtitleTrack({
+    required this.id,
+    required this.name,
+    this.lang,
+    this.index = 0,
+    this.isDefault = false,
+    this.forced = false,
+  });
 
-  final int id;
-  final String name;
+  @override
+  final int index;
+
+  @override
+  final int? id;
+
+  @override
+  final String? name;
+
+  @override
   final String? lang;
+
+  @override
+  final bool isDefault;
+
+  @override
+  final bool forced;
+
+  @override
+  String get label => name ?? 'Subtitle ${index + 1}';
 }
 
 /// Mock DASH.js MediaPlayer for testing.
-class MockDashPlayer {
+class MockDashPlayer implements DashPlayerInterface {
   /// Whether player is initialized.
   bool isInitialized = false;
 
@@ -315,13 +454,19 @@ class MockDashPlayer {
   bool abrEnabled = true;
 
   /// Available audio tracks.
-  List<MockDashAudioTrack> audioTracks = [];
+  List<MockDashAudioTrack> _audioTracks = [];
+
+  /// Setter for audioTracks (used in tests).
+  set audioTracks(List<MockDashAudioTrack> value) => _audioTracks = value;
 
   /// Current audio track index.
   int currentAudioTrack = 0;
 
   /// Available text tracks.
-  List<MockDashTextTrack> textTracks = [];
+  List<MockDashTextTrack> _textTracks = [];
+
+  /// Setter for textTracks (used in tests).
+  set textTracks(List<MockDashTextTrack> value) => _textTracks = value;
 
   /// Current text track index.
   int currentTextTrack = 0;
@@ -341,101 +486,87 @@ class MockDashPlayer {
   /// Callback for attachSource() - used in tests.
   void Function()? onAttachSource;
 
-  /// Initializes player with video element.
-  void initialize(videoElement, [String? source, bool? autoPlay]) {
+  @override
+  void initialize({required Object view, required String url, bool autoPlay = false}) {
     isInitialized = true;
-    if (source != null) {
-      sourceUrl = source;
-    }
-  }
-
-  /// Sets the source URL.
-  void setSource(String url) {
     sourceUrl = url;
-    // Simulate stream initialized event
-    Future.delayed(const Duration(milliseconds: 50), () {
-      triggerEvent('streamInitialized');
-    });
   }
 
-  /// Gets bitrate info for a media type.
-  List<MockDashBitrateInfo> getBitrateInfoListFor(String type) => bitrateInfos;
+  @override
+  void attachView(Object view) {}
 
-  /// Gets video bitrate info list.
-  List<MockDashBitrateInfo> getVideoBitrateInfoList() => bitrateInfos;
-
-  /// Sets quality for a media type.
-  void setQualityFor(String type, int value) {
-    currentQuality = value;
-  }
-
-  /// Gets current quality for a media type.
-  int getQualityFor(String type) => currentQuality;
-
-  /// Sets auto switch quality for a media type.
-  void setAutoSwitchQualityFor(String type, {required bool enabled}) {
-    abrEnabled = enabled;
-  }
-
-  /// Gets auto switch quality for a media type.
-  bool getAutoSwitchQualityFor(String type) => abrEnabled;
-
-  /// Sets ABR (Adaptive Bitrate) enabled state.
-  void setABREnabled(bool enabled) {
-    abrEnabled = enabled;
-  }
-
-  /// Sets minimum bitrate in bps.
-  void setMinBitrate(int bitrate) {
-    // Store for testing verification if needed
-  }
-
-  /// Sets maximum bitrate in bps.
-  void setMaxBitrate(int bitrate) {
-    // Store for testing verification if needed
-  }
-
-  /// Gets audio tracks.
-  List<MockDashAudioTrack> getAudioTracks() => audioTracks;
-
-  /// Gets text tracks.
-  List<MockDashTextTrack> getTextTracks() => textTracks;
-
-  /// Sets audio track by index.
-  void setAudioTrack(int index) {
-    currentAudioTrack = index;
-  }
-
-  /// Sets text track by index.
-  void setTextTrack(int index) {
-    currentTextTrack = index;
-  }
-
-  /// Sets text track visibility.
-  void setTextTrackVisibility({required bool visible}) {
-    textTrackVisible = visible;
-  }
-
-  /// Gets average throughput in kbps.
-  double getAverageThroughput() => averageThroughputKbps;
-
-  /// Attaches source to player.
+  @override
   void attachSource(String url) {
     sourceUrl = url;
     onAttachSource?.call();
   }
 
-  /// Gets current track for a media type.
-  dynamic getCurrentTrackFor(String type) {
-    return null; // Simplified for testing
+  /// Sets the source URL (for testing).
+  void setSource(String url) {
+    sourceUrl = url;
+    Future<void>.delayed(const Duration(milliseconds: 50), () {
+      triggerEvent('streamInitialized');
+    });
   }
 
-  /// Sets current track for a media type.
-  void setCurrentTrack(track) {
-    // Simplified for testing
+  @override
+  List<MockDashBitrateInfo> getVideoBitrateInfoList() => bitrateInfos;
+
+  @override
+  List<MockDashBitrateInfo> getAudioBitrateInfoList() => bitrateInfos;
+
+  @override
+  void setQualityFor(String type, int quality) {
+    currentQuality = quality;
   }
 
-  /// Updates settings with ABR config.
+  @override
+  int getQualityFor(String type) => currentQuality;
+
+  @override
+  void setAutoSwitchQualityFor(String type, {required bool enabled}) {
+    abrEnabled = enabled;
+  }
+
+  @override
+  bool getAutoSwitchQualityFor(String type) => abrEnabled;
+
+  /// Sets ABR (Adaptive Bitrate) enabled state (for testing).
+  void setABREnabled(bool enabled) {
+    abrEnabled = enabled;
+  }
+
+  /// Sets minimum bitrate in bps (for testing).
+  void setMinBitrate(int bitrate) {}
+
+  /// Sets maximum bitrate in bps (for testing).
+  void setMaxBitrate(int bitrate) {}
+
+  @override
+  List<MockDashAudioTrack> getAudioTracks() => _audioTracks;
+
+  @override
+  List<MockDashTextTrack> getTextTracks() => _textTracks;
+
+  @override
+  void setAudioTrack(int index) {
+    currentAudioTrack = index;
+  }
+
+  @override
+  void setTextTrack(int index) {
+    currentTextTrack = index;
+  }
+
+  @override
+  void setTextTrackVisibility({required bool visible}) {
+    textTrackVisible = visible;
+  }
+
+  @override
+  double getAverageThroughput() => averageThroughputKbps;
+
+  @override
   void updateSettings(Map<String, dynamic> settings) {
     if (settings.containsKey('streaming')) {
       final streaming = settings['streaming'] as Map<String, dynamic>;
@@ -449,9 +580,9 @@ class MockDashPlayer {
     }
   }
 
-  /// Adds an event listener.
-  void on(String event, Function handler) {
-    _eventListeners.putIfAbsent(event, () => []).add(handler);
+  @override
+  void on(String event, void Function(Object? data) callback) {
+    _eventListeners.putIfAbsent(event, () => []).add(callback);
   }
 
   /// Removes an event listener.
@@ -470,49 +601,106 @@ class MockDashPlayer {
   void triggerEvent(String event, [Object? data]) {
     final handlers = _eventListeners[event] ?? [];
     for (final handler in handlers) {
-      if (data != null) {
-        handler(data);
-      } else {
-        handler();
-      }
+      (handler as void Function(Object?))(data);
     }
   }
 
-  /// Resets the player.
+  @override
+  void offAll() {
+    _eventListeners.clear();
+  }
+
+  @override
   void reset() {
     onReset?.call();
     isInitialized = false;
     sourceUrl = null;
     _eventListeners.clear();
   }
+
+  @override
+  void destroy() {
+    offAll();
+    reset();
+  }
 }
 
 /// Mock DASH bitrate info.
-class MockDashBitrateInfo {
-  MockDashBitrateInfo({required this.bitrate, required this.width, required this.height, this.qualityIndex});
+class MockDashBitrateInfo implements DashBitrateInfoInterface {
+  MockDashBitrateInfo({required this.bitrate, required this.width, required this.height, int? qualityIndex})
+    : index = qualityIndex ?? 0;
 
+  @override
+  final int index;
+
+  @override
   final int bitrate;
+
+  @override
   final int width;
+
+  @override
   final int height;
-  final int? qualityIndex;
+
+  @override
+  String? get mediaType => 'video';
+
+  @override
+  String get label => '${height}p';
 }
 
 /// Mock DASH audio track.
-class MockDashAudioTrack {
-  MockDashAudioTrack({required this.index, required this.lang, required this.label});
+class MockDashAudioTrack implements DashAudioTrackInterface {
+  MockDashAudioTrack({required this.index, required String lang, required String label, this.isDefault = false})
+    : lang = lang,
+      _label = label;
 
+  @override
   final int index;
-  final String lang;
-  final String label;
+
+  @override
+  String? get id => index.toString();
+
+  @override
+  final String? lang;
+
+  final String _label;
+
+  @override
+  String get label => _label;
+
+  @override
+  List<String>? get roles => null;
+
+  @override
+  final bool isDefault;
 }
 
 /// Mock DASH text track.
-class MockDashTextTrack {
-  MockDashTextTrack({required this.index, required this.lang, required this.label});
+class MockDashTextTrack implements DashTextTrackInterface {
+  MockDashTextTrack({required this.index, required String lang, required String label, this.isDefault = false})
+    : lang = lang,
+      _label = label;
 
+  @override
   final int index;
-  final String lang;
-  final String label;
+
+  @override
+  String? get id => index.toString();
+
+  @override
+  final String? lang;
+
+  final String _label;
+
+  @override
+  String get label => _label;
+
+  @override
+  List<String>? get roles => null;
+
+  @override
+  final bool isDefault;
 }
 
 /// Mock HTML5 audio track.
@@ -580,9 +768,16 @@ class MockWakeLock {
 }
 
 /// Mock Remote Playback API for testing casting.
-class MockRemotePlayback {
+class MockRemotePlayback implements RemotePlaybackInterface {
   /// Current state ('disconnected', 'connecting', 'connected').
-  String state = 'disconnected';
+  String _state = 'disconnected';
+
+  @override
+  String? get state => _state;
+
+  /// Setter for state (used in tests).
+  // ignore: avoid_setters_without_getters
+  set mockState(String value) => _state = value;
 
   /// Event listeners.
   final Map<String, List<Function>> _eventListeners = {};
@@ -590,9 +785,9 @@ class MockRemotePlayback {
   /// Callback for prompt() - used in tests.
   void Function()? onPrompt;
 
-  /// Adds an event listener.
-  void addEventListener(String event, Function handler) {
-    _eventListeners.putIfAbsent(event, () => []).add(handler);
+  @override
+  void addEventListener(String event, void Function(Object? event) callback) {
+    _eventListeners.putIfAbsent(event, () => []).add(callback);
   }
 
   /// Removes an event listener.
@@ -607,11 +802,12 @@ class MockRemotePlayback {
   void triggerEvent(String event) {
     final handlers = _eventListeners[event] ?? [];
     for (final handler in handlers) {
-      handler(<String, dynamic>{}); // Pass dummy event object
+      (handler as void Function(Object?))(<String, dynamic>{}); // Pass dummy event object
     }
   }
 
   /// Shows the device picker prompt.
+  @override
   Future<void> prompt() async {
     onPrompt?.call();
   }

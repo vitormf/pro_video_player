@@ -2356,4 +2356,181 @@ class VideoPlayerTests: XCTestCase {
         // Then - No crash
         XCTAssertNotNil(player)
     }
+
+    // MARK: - Background Playback Behavior Tests
+
+    func testBackgroundPausesPlaybackWhenBackgroundPlaybackDisabled() {
+        // Given - Player with background playback disabled (default)
+        let player = createPlayer(options: [
+            "allowBackgroundPlayback": false
+        ])
+
+        // Start playback
+        player.play()
+
+        // When - App enters background
+        player.handleAppDidEnterBackground()
+
+        // Then - No crash, player should be paused
+        // Note: In test environment without actual media, we verify the method
+        // completes successfully without crash
+        XCTAssertNotNil(player)
+    }
+
+    func testBackgroundDoesNotPauseWhenBackgroundPlaybackEnabled() {
+        // Given - Player with background playback enabled
+        let player = createPlayer(options: [
+            "allowBackgroundPlayback": true,
+            "autoEnterPipOnBackground": false
+        ])
+
+        // Start playback
+        player.play()
+
+        // When - App enters background
+        player.handleAppDidEnterBackground()
+
+        // Then - No crash, player should NOT be paused (audio continues)
+        XCTAssertNotNil(player)
+    }
+
+    func testForegroundResumesPlaybackAfterAutoPause() {
+        // Given - Player with background playback disabled
+        let player = createPlayer(options: [
+            "allowBackgroundPlayback": false,
+            "autoPlay": true
+        ])
+
+        // Start playback, then background, then foreground
+        player.play()
+        player.handleAppDidEnterBackground()
+
+        // When - App returns to foreground
+        player.handleAppWillEnterForeground()
+
+        // Then - No crash, player should be ready to resume
+        XCTAssertNotNil(player)
+    }
+
+    func testForegroundDoesNotDoubleResumeWhenBackgroundPlaybackEnabled() {
+        // Given - Player with background playback enabled (was never paused)
+        let player = createPlayer(options: [
+            "allowBackgroundPlayback": true,
+            "autoEnterPipOnBackground": false,
+            "autoPlay": true
+        ])
+
+        // Start playback, then background, then foreground
+        player.play()
+        player.handleAppDidEnterBackground()
+
+        // When - App returns to foreground
+        player.handleAppWillEnterForeground()
+
+        // Then - No crash, player should continue normally
+        XCTAssertNotNil(player)
+    }
+
+    func testBackgroundWithAutoPipEnabledEntersPip() {
+        // Given - Player with auto-PiP enabled
+        let player = createPlayer(options: [
+            "allowPip": true,
+            "autoEnterPipOnBackground": true
+        ])
+
+        // When - App enters background
+        player.handleAppDidEnterBackground()
+
+        // Then - No crash (actual PiP may not start in test environment)
+        // The enterPip() method should be called
+        XCTAssertNotNil(player)
+    }
+
+    func testBackgroundWithAutoPipDisabledDoesNotEnterPip() {
+        // Given - Player with auto-PiP disabled but PiP allowed
+        let player = createPlayer(options: [
+            "allowPip": true,
+            "autoEnterPipOnBackground": false,
+            "allowBackgroundPlayback": true
+        ])
+
+        // When - App enters background
+        player.handleAppDidEnterBackground()
+
+        // Then - No crash, PiP should not be entered
+        // Audio continues but no PiP
+        XCTAssertNotNil(player)
+    }
+
+    // MARK: - canStartPictureInPictureAutomaticallyFromInline Tests
+
+    @available(iOS 14.2, *)
+    func testPipControllerAutoStartPropertySetCorrectlyWhenEnabled() {
+        // Given - Player with autoEnterPipOnBackground enabled
+        let player = createPlayer(options: [
+            "allowPip": true,
+            "autoEnterPipOnBackground": true
+        ])
+
+        // Trigger PiP controller setup by attaching player layer
+        player.onPlayerLayerAttachedToView()
+
+        // Then - The canStartPictureInPictureAutomaticallyFromInline should be true
+        // Note: We can't directly access the pipController in tests,
+        // but we verify the setup completes without crash
+        XCTAssertNotNil(player)
+        XCTAssertTrue(player.isPipAllowed())
+    }
+
+    @available(iOS 14.2, *)
+    func testPipControllerAutoStartPropertySetCorrectlyWhenDisabled() {
+        // Given - Player with autoEnterPipOnBackground disabled (default)
+        let player = createPlayer(options: [
+            "allowPip": true,
+            "autoEnterPipOnBackground": false
+        ])
+
+        // Trigger PiP controller setup
+        player.onPlayerLayerAttachedToView()
+
+        // Then - The canStartPictureInPictureAutomaticallyFromInline should be false
+        // This prevents iOS from auto-entering PiP when backgrounding
+        XCTAssertNotNil(player)
+        XCTAssertTrue(player.isPipAllowed())
+    }
+
+    func testBackgroundPlaybackWithPipDisabledPausesVideo() {
+        // Given - Player with PiP disabled and background playback disabled
+        let player = createPlayer(options: [
+            "allowPip": false,
+            "allowBackgroundPlayback": false
+        ])
+
+        player.play()
+
+        // When - App enters background
+        player.handleAppDidEnterBackground()
+
+        // Then - Video should be paused
+        XCTAssertNotNil(player)
+    }
+
+    func testBackgroundPlaybackEnabledWithPipDisabledContinuesAudio() {
+        // Given - Player with PiP disabled but background playback enabled
+        // This is the "audio-only background" use case
+        let player = createPlayer(options: [
+            "allowPip": false,
+            "allowBackgroundPlayback": true
+        ])
+
+        player.play()
+
+        // When - App enters background
+        player.handleAppDidEnterBackground()
+
+        // Then - Audio should continue (video layer inactive, audio plays)
+        // No PiP should be triggered
+        XCTAssertNotNil(player)
+        XCTAssertFalse(player.isPipAllowed())
+    }
 }

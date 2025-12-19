@@ -1,3 +1,8 @@
+// SubtitleManager requires dynamic access for native HTML5 TextTrack API
+// and HLS.js/DASH.js subtitle track properties. The external-facing API
+// returns typed SubtitleTrack objects.
+// ignore_for_file: avoid_dynamic_calls
+
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
 import '../abstractions/video_element_interface.dart';
@@ -59,12 +64,16 @@ class SubtitleManager with WebManagerCallbacks {
       final tracks = <SubtitleTrack>[];
 
       for (var i = 0; i < textTracks.length; i++) {
-        final textTrack = textTracks[i] as dynamic;
+        // Native text tracks require dynamic access as they come from browser API
+        final textTrack = textTracks[i];
+        final trackId = textTrack.id as String? ?? i.toString();
+        final trackLabel = textTrack.label as String?;
+        final trackLanguage = textTrack.language as String?;
         tracks.add(
           SubtitleTrack(
-            id: textTrack.id as String? ?? i.toString(),
-            label: (textTrack.label as String?)?.isNotEmpty ?? false ? textTrack.label as String : 'Track ${i + 1}',
-            language: (textTrack.language as String?)?.isNotEmpty ?? false ? textTrack.language as String? : null,
+            id: trackId,
+            label: trackLabel?.isNotEmpty ?? false ? trackLabel! : 'Track ${i + 1}',
+            language: trackLanguage?.isNotEmpty ?? false ? trackLanguage : null,
           ),
         );
       }
@@ -167,7 +176,7 @@ class SubtitleManager with WebManagerCallbacks {
       if (track == null) {
         // Disable all tracks
         for (var i = 0; i < textTracks.length; i++) {
-          final textTrack = textTracks[i] as dynamic;
+          final textTrack = textTracks[i];
           textTrack.mode = 'disabled';
         }
         verboseLog('Disabled all native text tracks', tag: 'SubtitleManager');
@@ -176,7 +185,7 @@ class SubtitleManager with WebManagerCallbacks {
 
       // Enable the selected track, disable others
       for (var i = 0; i < textTracks.length; i++) {
-        final textTrack = textTracks[i] as dynamic;
+        final textTrack = textTracks[i];
         final trackId = textTrack.id as String? ?? i.toString();
         textTrack.mode = trackId == track.id ? 'showing' : 'disabled';
       }

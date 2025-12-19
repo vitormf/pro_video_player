@@ -1,5 +1,6 @@
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
+import '../abstractions/hls_player_interface.dart';
 import '../verbose_logging.dart';
 import 'streaming_manager.dart';
 
@@ -12,10 +13,7 @@ import 'streaming_manager.dart';
 /// - Audio and subtitle track management
 /// - Error handling and recovery
 /// - Event emission for quality/track changes
-///
-/// The manager uses dynamic typing for the HLS player to support both
-/// production (real HLS.js) and test (mock) implementations.
-class HlsManager extends StreamingManager {
+class HlsManager extends StreamingManager<HlsPlayerInterface> {
   /// Creates an HLS manager.
   HlsManager({required super.emitEvent, required super.videoElement});
 
@@ -23,20 +21,20 @@ class HlsManager extends StreamingManager {
   String get logTag => 'HlsManager';
 
   /// Gets the HLS player instance (for coordination with other managers).
-  dynamic get hlsPlayer => player;
+  HlsPlayerInterface? get hlsPlayer => player;
 
   /// Initializes the HLS player and sets up event handlers.
   ///
   /// [sourceUrl] is the HLS playlist URL (.m3u8).
   /// [hlsPlayer] is the HLS.js player instance to use.
   /// [maxBitrate] is the optional maximum bitrate in bits per second.
-  Future<void> initialize({required String sourceUrl, required dynamic hlsPlayer, int? maxBitrate}) async {
+  Future<void> initialize({required String sourceUrl, required HlsPlayerInterface hlsPlayer, int? maxBitrate}) async {
     player = hlsPlayer;
     markInitialized();
 
     // Apply max bitrate if specified
     if (maxBitrate != null && maxBitrate > 0) {
-      hlsPlayer.maxBitrate = maxBitrate;
+      hlsPlayer.autoLevelCapping = _findLevelForBitrate(maxBitrate, hlsPlayer.levels);
       verboseLog('Set HLS max bitrate: $maxBitrate bps', tag: logTag);
     }
 
@@ -48,6 +46,16 @@ class HlsManager extends StreamingManager {
     hlsPlayer.loadSource(sourceUrl);
 
     verboseLog('HLS.js player initialized: $sourceUrl', tag: logTag);
+  }
+
+  /// Finds the level index that matches the given bitrate.
+  int _findLevelForBitrate(int maxBitrate, List<HlsLevelInterface> levels) {
+    for (var i = levels.length - 1; i >= 0; i--) {
+      if (levels[i].bitrate <= maxBitrate) {
+        return i;
+      }
+    }
+    return -1; // No cap
   }
 
   /// Sets up HLS.js event handlers.
@@ -75,19 +83,19 @@ class HlsManager extends StreamingManager {
   }
 
   /// Event handler for manifest parsed.
-  void _onManifestParsed(dynamic event, [dynamic data]) => _handleManifestParsed();
+  void _onManifestParsed(String event, Object? data) => _handleManifestParsed();
 
   /// Event handler for level switched.
-  void _onLevelSwitched(dynamic event, [dynamic data]) => _handleLevelSwitched();
+  void _onLevelSwitched(String event, Object? data) => _handleLevelSwitched();
 
   /// Event handler for audio tracks updated.
-  void _onAudioTracksUpdated(dynamic event, [dynamic data]) => _handleAudioTracksUpdated();
+  void _onAudioTracksUpdated(String event, Object? data) => _handleAudioTracksUpdated();
 
   /// Event handler for subtitle tracks updated.
-  void _onSubtitleTracksUpdated(dynamic event, [dynamic data]) => _handleSubtitleTracksUpdated();
+  void _onSubtitleTracksUpdated(String event, Object? data) => _handleSubtitleTracksUpdated();
 
   /// Event handler for errors.
-  void _onError(dynamic event, [dynamic data]) => _handleError(data);
+  void _onError(String event, Object? data) => _handleError(data);
 
   /// Handles manifest parsed event.
   void _handleManifestParsed() {
@@ -98,7 +106,7 @@ class HlsManager extends StreamingManager {
 
   /// Handles level switched event.
   void _handleLevelSwitched() {
-    final currentLevel = player?.currentLevel as int? ?? -1;
+    final currentLevel = player?.currentLevel ?? -1;
     verboseLog('HLS level switched to $currentLevel', tag: logTag);
 
     final quality = getCurrentQuality();
@@ -110,10 +118,10 @@ class HlsManager extends StreamingManager {
     verboseLog('HLS audio tracks updated', tag: logTag);
 
     final tracks = <AudioTrack>[];
-    final hlsAudioTracks = player?.audioTracks as List? ?? [];
+    final hlsAudioTracks = player?.audioTracks ?? [];
 
     for (final t in hlsAudioTracks) {
-      tracks.add(AudioTrack(id: t.id.toString(), label: t.name as String? ?? 'Unknown', language: t.lang as String?));
+      tracks.add(AudioTrack(id: t.id.toString(), label: t.name ?? 'Unknown', language: t.lang));
     }
 
     emitEvent(AudioTracksChangedEvent(tracks));
@@ -124,19 +132,17 @@ class HlsManager extends StreamingManager {
     verboseLog('HLS subtitle tracks updated', tag: logTag);
 
     final tracks = <SubtitleTrack>[];
-    final hlsSubtitleTracks = player?.subtitleTracks as List? ?? [];
+    final hlsSubtitleTracks = player?.subtitleTracks ?? [];
 
     for (final t in hlsSubtitleTracks) {
-      tracks.add(
-        SubtitleTrack(id: t.id.toString(), label: t.name as String? ?? 'Unknown', language: t.lang as String?),
-      );
+      tracks.add(SubtitleTrack(id: t.id.toString(), label: t.name ?? 'Unknown', language: t.lang));
     }
 
     emitEvent(SubtitleTracksChangedEvent(tracks));
   }
 
   /// Handles HLS error event.
-  void _handleError(dynamic data) {
+  void _handleError(Object? data) {
     verboseLog('HLS error: $data', tag: logTag);
 
     // Extract error details if available
@@ -150,7 +156,7 @@ class HlsManager extends StreamingManager {
 
   /// Updates available quality tracks from HLS.js levels.
   void _updateAvailableQualities() {
-    final levels = player?.levels as List? ?? [];
+    final levels = player?.levels ?? [];
     final qualities = <VideoQualityTrack>[];
 
     // Add auto quality option
@@ -159,9 +165,9 @@ class HlsManager extends StreamingManager {
     // Add each quality level
     for (var i = 0; i < levels.length; i++) {
       final level = levels[i];
-      final height = (level.height as int?) ?? 0;
-      final bitrate = (level.bitrate as int?) ?? 0;
-      final width = (level.width as int?) ?? 0;
+      final height = level.height;
+      final bitrate = level.bitrate;
+      final width = level.width;
 
       qualities.add(
         VideoQualityTrack(id: i.toString(), label: '${height}p', width: width, height: height, bitrate: bitrate),
@@ -176,10 +182,11 @@ class HlsManager extends StreamingManager {
   /// Returns true if the quality was set successfully.
   @override
   bool setQuality(VideoQualityTrack track) {
-    if (player == null) return false;
+    final p = player;
+    if (p == null) return false;
 
     if (track.isAuto) {
-      player.currentLevel = -1;
+      p.currentLevel = -1;
       verboseLog('Set HLS quality to auto', tag: logTag);
       return true;
     }
@@ -187,12 +194,12 @@ class HlsManager extends StreamingManager {
     final index = int.tryParse(track.id);
     if (index == null) return false;
 
-    final levels = player.levels as List? ?? [];
+    final levels = p.levels;
     if (index < 0 || index >= levels.length) {
       return false;
     }
 
-    player.currentLevel = index;
+    p.currentLevel = index;
     verboseLog('Set HLS quality to level $index', tag: logTag);
     return true;
   }
@@ -200,9 +207,10 @@ class HlsManager extends StreamingManager {
   /// Gets the current quality track.
   @override
   VideoQualityTrack getCurrentQuality() {
-    if (player == null) return VideoQualityTrack.auto;
+    final p = player;
+    if (p == null) return VideoQualityTrack.auto;
 
-    final currentLevel = player.currentLevel as int? ?? -1;
+    final currentLevel = p.currentLevel;
     final availableQualities = getAvailableQualities();
 
     if (currentLevel < 0 || currentLevel >= availableQualities.length - 1) {
@@ -216,10 +224,11 @@ class HlsManager extends StreamingManager {
   /// Recovers from an error by calling startLoad().
   @override
   Future<void> recover() async {
-    if (player == null) return;
+    final p = player;
+    if (p == null) return;
 
     try {
-      player.startLoad();
+      p.startLoad();
       verboseLog('HLS recovery: startLoad() called', tag: logTag);
     } catch (e) {
       verboseLog('HLS recovery failed: $e', tag: logTag);

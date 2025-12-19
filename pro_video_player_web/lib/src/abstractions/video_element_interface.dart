@@ -2,6 +2,28 @@ import 'dart:js_interop';
 
 import 'package:web/web.dart' as web;
 
+/// Interface for Remote Playback API.
+///
+/// Abstracts the RemotePlayback object to allow for testing without actual
+/// browser APIs. Provides access to remote playback state and methods.
+abstract interface class RemotePlaybackInterface {
+  /// Current state of the remote playback connection.
+  ///
+  /// Values: 'disconnected', 'connecting', 'connected'
+  String? get state;
+
+  /// Prompts the user to select a remote playback device.
+  ///
+  /// Shows the browser's device picker dialog. Returns a Future that completes
+  /// when a device is selected or the user cancels.
+  Future<void> prompt();
+
+  /// Adds an event listener for remote playback events.
+  ///
+  /// Supported events: 'connecting', 'connect', 'disconnect'
+  void addEventListener(String event, void Function(Object? event) callback);
+}
+
 /// Interface for HTML Video Element.
 ///
 /// Abstracts the HTMLVideoElement to allow for testing without actual browser
@@ -92,6 +114,17 @@ abstract interface class VideoElementInterface {
   /// Returns TextTrackList containing all text tracks (subtitles, captions, etc).
   /// Managers use this for native HTML5 subtitle support.
   List<dynamic>? get mockTextTracks;
+
+  /// Remote playback interface (for casting).
+  ///
+  /// Returns the Remote Playback API object if supported by the browser,
+  /// or null if not available.
+  RemotePlaybackInterface? get remotePlayback;
+
+  /// Adds an event listener to the video element.
+  ///
+  /// Used for listening to media events like 'canplay', 'ended', etc.
+  void addEventListener(String event, void Function(Object? event) callback);
 }
 
 /// Browser implementation of [VideoElementInterface].
@@ -219,5 +252,73 @@ class BrowserVideoElement implements VideoElementInterface {
     } catch (_) {
       return null;
     }
+  }
+
+  @override
+  RemotePlaybackInterface? get remotePlayback {
+    try {
+      // Check if Remote Playback API is available
+      // The Remote Playback API is not fully typed in the web package,
+      // so we access it via dynamic interop
+      // ignore: avoid_dynamic_calls
+      final remote = (_element as dynamic).remote;
+      if (remote == null) return null;
+      return _BrowserRemotePlayback(remote as web.EventTarget);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  void addEventListener(String event, void Function(Object? event) callback) {
+    _element.addEventListener(
+      event,
+      (web.Event e) {
+        callback(e);
+      }.toJS,
+    );
+  }
+}
+
+/// Browser implementation of [RemotePlaybackInterface].
+///
+/// This class wraps the browser's RemotePlayback API which is accessed
+/// via dynamic interop since it's not fully typed in the web package.
+class _BrowserRemotePlayback implements RemotePlaybackInterface {
+  _BrowserRemotePlayback(this._remote);
+
+  final web.EventTarget _remote;
+
+  @override
+  String? get state {
+    try {
+      // ignore: avoid_dynamic_calls
+      return (_remote as dynamic).state as String?;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Future<void> prompt() async {
+    try {
+      // ignore: avoid_dynamic_calls
+      final result = (_remote as dynamic).prompt();
+      if (result != null) {
+        await (result as JSPromise).toDart;
+      }
+    } catch (_) {
+      rethrow;
+    }
+  }
+
+  @override
+  void addEventListener(String event, void Function(Object? event) callback) {
+    _remote.addEventListener(
+      event,
+      (web.Event e) {
+        callback(e);
+      }.toJS,
+    );
   }
 }

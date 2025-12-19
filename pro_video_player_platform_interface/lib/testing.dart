@@ -9,5 +9,4 @@
 /// ```
 library pro_video_player_platform_interface_testing;
 
-export 'src/testing/method_channel_test_helpers.dart';
 export 'src/testing/pigeon_test_harness.dart';
