@@ -1,13 +1,22 @@
-import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
 
-import '../pro_video_player.dart' show SubtitleOverlay;
+import 'controller/controller_base.dart';
 import 'controller/controller_services.dart';
 import 'controller/initialization_coordinator.dart';
-import 'subtitle_overlay.dart' show SubtitleOverlay;
+import 'controller/mixins/casting_mixin.dart';
+import 'controller/mixins/compatibility_mixin.dart';
+import 'controller/mixins/configuration_mixin.dart';
+import 'controller/mixins/device_controls_mixin.dart';
+import 'controller/mixins/error_recovery_mixin.dart';
+import 'controller/mixins/fullscreen_mixin.dart';
+import 'controller/mixins/metadata_mixin.dart';
+import 'controller/mixins/pip_mixin.dart';
+import 'controller/mixins/platform_capabilities_mixin.dart';
+import 'controller/mixins/playback_mixin.dart';
+import 'controller/mixins/playlist_mixin.dart';
+import 'controller/mixins/tracks_mixin.dart';
 
 // Alias for cleaner code
 typedef _Logger = ProVideoPlayerLogger;
@@ -39,7 +48,20 @@ typedef _Logger = ProVideoPlayerLogger;
 ///   options: VideoPlayerOptions(autoPlay: true),
 /// );
 /// ```
-class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
+class ProVideoPlayerController extends ProVideoPlayerControllerBase
+    with
+        PlaybackMixin,
+        TracksMixin,
+        PipMixin,
+        FullscreenMixin,
+        CastingMixin,
+        PlaylistMixin,
+        PlatformCapabilitiesMixin,
+        CompatibilityMixin,
+        ConfigurationMixin,
+        MetadataMixin,
+        DeviceControlsMixin,
+        ErrorRecoveryMixin {
   /// Creates a new video player controller.
   ///
   /// For compatibility with the video_player library, prefer using named
@@ -51,8 +73,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   ProVideoPlayerController({ErrorRecoveryOptions errorRecoveryOptions = ErrorRecoveryOptions.defaultOptions})
     : _errorRecoveryOptions = errorRecoveryOptions,
       _initialSource = null,
-      _initialOptions = null,
-      super(const VideoPlayerValue());
+      _initialOptions = null;
 
   /// Creates a video player controller for a network video.
   ///
@@ -63,16 +84,6 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// provided to configure player behavior.
   ///
   /// Call [initialize] after construction to load the video.
-  ///
-  /// Example:
-  /// ```dart
-  /// final controller = ProVideoPlayerController.network(
-  ///   'https://example.com/video.mp4',
-  ///   httpHeaders: {'Authorization': 'Bearer token'},
-  ///   videoPlayerOptions: VideoPlayerOptions(autoPlay: true),
-  /// );
-  /// await controller.initialize();
-  /// ```
   ProVideoPlayerController.network(
     String dataSource, {
     Map<String, String>? httpHeaders,
@@ -80,8 +91,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     ErrorRecoveryOptions errorRecoveryOptions = ErrorRecoveryOptions.defaultOptions,
   }) : _errorRecoveryOptions = errorRecoveryOptions,
        _initialSource = VideoSource.network(dataSource, headers: httpHeaders),
-       _initialOptions = videoPlayerOptions,
-       super(const VideoPlayerValue());
+       _initialOptions = videoPlayerOptions;
 
   /// Creates a video player controller for a local file.
   ///
@@ -91,22 +101,13 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// provided to configure player behavior.
   ///
   /// Call [initialize] after construction to load the video.
-  ///
-  /// Example:
-  /// ```dart
-  /// final controller = ProVideoPlayerController.file(
-  ///   File('/path/to/video.mp4'),
-  /// );
-  /// await controller.initialize();
-  /// ```
   ProVideoPlayerController.file(
     File file, {
     VideoPlayerOptions? videoPlayerOptions,
     ErrorRecoveryOptions errorRecoveryOptions = ErrorRecoveryOptions.defaultOptions,
   }) : _errorRecoveryOptions = errorRecoveryOptions,
        _initialSource = VideoSource.file(file.path),
-       _initialOptions = videoPlayerOptions,
-       super(const VideoPlayerValue());
+       _initialOptions = videoPlayerOptions;
 
   /// Creates a video player controller for an asset video.
   ///
@@ -117,14 +118,6 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// [videoPlayerOptions] can be provided to configure player behavior.
   ///
   /// Call [initialize] after construction to load the video.
-  ///
-  /// Example:
-  /// ```dart
-  /// final controller = ProVideoPlayerController.asset(
-  ///   'assets/video.mp4',
-  /// );
-  /// await controller.initialize();
-  /// ```
   ProVideoPlayerController.asset(
     String dataSource, {
     String? package,
@@ -132,8 +125,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     ErrorRecoveryOptions errorRecoveryOptions = ErrorRecoveryOptions.defaultOptions,
   }) : _errorRecoveryOptions = errorRecoveryOptions,
        _initialSource = VideoSource.asset(package != null ? 'packages/$package/$dataSource' : dataSource),
-       _initialOptions = videoPlayerOptions,
-       super(const VideoPlayerValue());
+       _initialOptions = videoPlayerOptions;
 
   int? _playerId;
   VideoSource? _source;
@@ -145,89 +137,44 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   bool _isDisposed = false;
   bool _isRetrying = false;
 
+  // ==================== Base Class Overrides ====================
+
+  @override
+  ControllerServices get services => _services;
+
+  @override
+  VideoSource? get sourceInternal => _source;
+
+  @override
+  int? get playerId => _playerId;
+
+  @override
+  VideoPlayerOptions get options => _options;
+
+  @override
+  bool get isDisposed => _isDisposed;
+
+  @override
+  bool get isRetryingInternal => _isRetrying;
+
+  @override
+  set isRetryingInternal(bool value) => _isRetrying = value;
+
+  @override
+  void ensureInitializedInternal() => _ensureInitialized();
+
+  @override
+  ErrorRecoveryOptions get errorRecoveryOptions => _errorRecoveryOptions;
+
+  // ==================== Public Properties ====================
+
   /// The current video source, or null if not initialized.
   VideoSource? get source => _source;
-
-  /// The unique ID of this player instance.
-  ///
-  /// Returns `null` if the player has not been initialized.
-  int? get playerId => _playerId;
 
   /// Whether the player has been initialized.
   bool get isInitialized => _playerId != null && value.isInitialized;
 
-  /// Whether the player has been disposed.
-  bool get isDisposed => _isDisposed;
-
-  /// The configuration options for this player.
-  ///
-  /// These are the options passed during [initialize].
-  VideoPlayerOptions get options => _options;
-
-  // ==================== video_player Compatibility Properties ====================
-
-  /// The data source URL or path.
-  ///
-  /// This property is provided for compatibility with Flutter's video_player
-  /// library. Returns the string representation of the current [source].
-  ///
-  /// For more detailed source information, use the [source] property instead.
-  String? get dataSource {
-    final src = source;
-    if (src == null) return null;
-    if (src is NetworkVideoSource) return src.url;
-    if (src is FileVideoSource) return src.path;
-    if (src is AssetVideoSource) return src.assetPath;
-    if (src is PlaylistVideoSource) return src.url;
-    return null;
-  }
-
-  /// The type of data source.
-  ///
-  /// This property is provided for compatibility with Flutter's video_player
-  /// library. Returns the type based on the current [source].
-  DataSourceType? get dataSourceType {
-    final src = source;
-    if (src == null) return null;
-    if (src is NetworkVideoSource) return DataSourceType.network;
-    if (src is FileVideoSource) {
-      // Check if it's a content URI (Android)
-      if (src.path.startsWith('content://')) {
-        return DataSourceType.contentUri;
-      }
-      return DataSourceType.file;
-    }
-    if (src is AssetVideoSource) return DataSourceType.asset;
-    if (src is PlaylistVideoSource) return DataSourceType.network;
-    return null;
-  }
-
-  /// HTTP headers for network requests.
-  ///
-  /// This property is provided for compatibility with Flutter's video_player
-  /// library. Returns headers if the current source is a network source.
-  Map<String, String>? get httpHeaders {
-    final src = source;
-    if (src is NetworkVideoSource) return src.headers;
-    return null;
-  }
-
-  /// The current playback position.
-  ///
-  /// This property is provided for compatibility with Flutter's video_player
-  /// library, which returns position as a Future. However, the position is
-  /// also available synchronously via `value.position`.
-  ///
-  /// For UI code, prefer using `value.position` directly for synchronous
-  /// access. This getter is provided for code migrating from video_player.
-  Future<Duration> get position async {
-    _ensureInitialized();
-    // Could optionally fetch fresh from platform here, but value.position
-    // is kept up-to-date via events, so returning it is sufficient
-    return value.position;
-  }
-
-  ProVideoPlayerPlatform get _platform => ProVideoPlayerPlatform.instance;
+  // ==================== Initialization ====================
 
   /// Initializes the video player with the given [source].
   ///
@@ -271,7 +218,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
       isDisposed: () => _isDisposed,
       isRetrying: () => _isRetrying,
       setRetrying: ({required isRetrying}) => _isRetrying = isRetrying,
-      platform: _platform,
+      platform: platform,
       errorRecoveryOptions: _errorRecoveryOptions,
       ensureInitialized: _ensureInitialized,
       onRetry: _performRetryPlayback,
@@ -308,1012 +255,6 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     }
   }
 
-  /// Starts or resumes video playback.
-  Future<void> play() async {
-    _ensureInitialized();
-    return _services.playbackManager.play();
-  }
-
-  /// Pauses video playback.
-  Future<void> pause() async {
-    _ensureInitialized();
-    return _services.playbackManager.pause();
-  }
-
-  /// Stops playback and resets position to the beginning.
-  Future<void> stop() async {
-    _ensureInitialized();
-    return _services.playbackManager.stop();
-  }
-
-  /// Seeks to the specified [position].
-  Future<void> seekTo(Duration position) async {
-    _ensureInitialized();
-    return _services.playbackManager.seekTo(position);
-  }
-
-  /// Seeks forward by [duration].
-  Future<void> seekForward(Duration duration) async {
-    _ensureInitialized();
-    return _services.playbackManager.seekForward(duration);
-  }
-
-  /// Seeks backward by [duration].
-  Future<void> seekBackward(Duration duration) async {
-    _ensureInitialized();
-    return _services.playbackManager.seekBackward(duration);
-  }
-
-  /// Sets the playback speed.
-  ///
-  /// [speed] must be greater than 0.
-  Future<void> setPlaybackSpeed(double speed) async {
-    _ensureInitialized();
-    return _services.playbackManager.setPlaybackSpeed(speed);
-  }
-
-  /// Sets the player volume.
-  ///
-  /// [volume] must be between 0.0 (muted) and 1.0 (full volume).
-  /// This controls the player's internal volume, not the device volume.
-  /// Use [setDeviceVolume] to control the device's media volume.
-  Future<void> setVolume(double volume) async {
-    _ensureInitialized();
-    return _services.playbackManager.setVolume(volume);
-  }
-
-  /// Gets the current device media volume.
-  ///
-  /// Returns a value between 0.0 (muted) and 1.0 (max volume).
-  /// This is the device's media/music stream volume, not the player's internal volume.
-  Future<double> getDeviceVolume() {
-    _ensureInitialized();
-    return _services.deviceControlsManager.getDeviceVolume();
-  }
-
-  /// Sets the device media volume.
-  ///
-  /// [volume] must be between 0.0 (muted) and 1.0 (max volume).
-  /// This controls the device's media/music stream volume directly, which affects
-  /// all media playback on the device.
-  ///
-  /// On iOS, this uses AVAudioSession to control the output volume.
-  /// On Android, this uses AudioManager to control the STREAM_MUSIC volume.
-  ///
-  /// Note: The system volume UI may be shown briefly when changing volume.
-  Future<void> setDeviceVolume(double volume) async {
-    _ensureInitialized();
-    await _services.deviceControlsManager.setDeviceVolume(volume);
-  }
-
-  /// Gets the current screen brightness.
-  ///
-  /// Returns a value between 0.0 (dimmest) and 1.0 (brightest).
-  /// On iOS/Android, this returns the current screen brightness setting.
-  /// On other platforms, returns 1.0 as a default.
-  Future<double> getScreenBrightness() {
-    _ensureInitialized();
-    return _services.deviceControlsManager.getScreenBrightness();
-  }
-
-  /// Sets the screen brightness.
-  ///
-  /// [brightness] must be between 0.0 (dimmest) and 1.0 (brightest).
-  /// On iOS, this sets UIScreen.main.brightness.
-  /// On Android, this sets WindowManager.LayoutParams.screenBrightness.
-  ///
-  /// The change is temporary and will be reset when the app is closed or
-  /// when fullscreen mode is exited.
-  Future<void> setScreenBrightness(double brightness) async {
-    _ensureInitialized();
-    await _services.deviceControlsManager.setScreenBrightness(brightness);
-  }
-
-  /// Sets whether the video should loop.
-  Future<void> setLooping(bool looping) async {
-    _ensureInitialized();
-    return _services.configurationManager.setLooping(looping);
-  }
-
-  /// Sets the video scaling mode.
-  ///
-  /// Determines how the video fills the player viewport:
-  /// - [VideoScalingMode.fit]: Letterbox mode, shows entire video with black bars
-  /// - [VideoScalingMode.fill]: Crop mode, fills viewport while maintaining aspect ratio
-  /// - [VideoScalingMode.stretch]: Stretch mode, ignores aspect ratio
-  Future<void> setScalingMode(VideoScalingMode mode) async {
-    _ensureInitialized();
-    return _services.configurationManager.setScalingMode(mode);
-  }
-
-  /// Selects a subtitle track.
-  ///
-  /// Pass `null` to disable subtitles.
-  ///
-  /// Returns immediately without effect if [VideoPlayerOptions.subtitlesEnabled]
-  /// was set to `false` during initialization.
-  Future<void> setSubtitleTrack(SubtitleTrack? track) async {
-    _ensureInitialized();
-    await _services.trackManager.setSubtitleTrack(track);
-  }
-
-  /// Sets the subtitle rendering mode at runtime.
-  ///
-  /// This allows switching between native and Flutter subtitle rendering
-  /// during playback without restarting the video.
-  ///
-  /// - [SubtitleRenderMode.native]: Native platform renders subtitles
-  /// - [SubtitleRenderMode.flutter]: Flutter renders subtitles via overlay
-  /// - [SubtitleRenderMode.auto]: Automatically select based on controls mode
-  ///
-  /// When switching to [SubtitleRenderMode.flutter], embedded subtitle cues
-  /// will start being streamed to Flutter for rendering. When switching to
-  /// [SubtitleRenderMode.native], the native player will handle rendering.
-  ///
-  /// External subtitles are always rendered in Flutter regardless of this setting.
-  ///
-  /// Returns immediately without effect if [VideoPlayerOptions.subtitlesEnabled]
-  /// is `false`.
-  ///
-  /// Example:
-  /// ```dart
-  /// // Switch to Flutter rendering for custom styling
-  /// await controller.setSubtitleRenderMode(SubtitleRenderMode.flutter);
-  ///
-  /// // Switch back to native rendering
-  /// await controller.setSubtitleRenderMode(SubtitleRenderMode.native);
-  ///
-  /// // Use auto mode (resolves based on controls mode)
-  /// await controller.setSubtitleRenderMode(SubtitleRenderMode.auto);
-  /// ```
-  Future<void> setSubtitleRenderMode(SubtitleRenderMode mode) async {
-    _ensureInitialized();
-    await _services.trackManager.setSubtitleRenderMode(mode);
-  }
-
-  /// Adds an external subtitle track from a [SubtitleSource].
-  ///
-  /// This method loads and validates the subtitle file from the given source
-  /// and adds it as a selectable subtitle track. The subtitle can then be
-  /// selected using [setSubtitleTrack].
-  ///
-  /// Supports multiple source types:
-  /// - [SubtitleSource.network] — Load from HTTP/HTTPS URL
-  /// - [SubtitleSource.file] — Load from local file path
-  /// - [SubtitleSource.asset] — Load from Flutter asset
-  /// - [SubtitleSource.from] — Auto-detect source type from string
-  ///
-  /// The subtitle format is auto-detected from the file extension if not
-  /// provided. Supported formats: VTT, SRT, ASS, SSA, TTML.
-  ///
-  /// Returns the created [ExternalSubtitleTrack] on success, or `null` if
-  /// loading failed (e.g., invalid path, network error, file not found).
-  ///
-  /// Example:
-  /// ```dart
-  /// // From URL
-  /// final track = await controller.addExternalSubtitle(
-  ///   SubtitleSource.network(
-  ///     'https://example.com/subtitles/english.vtt',
-  ///     label: 'English',
-  ///     language: 'en',
-  ///   ),
-  /// );
-  ///
-  /// // From local file
-  /// final track = await controller.addExternalSubtitle(
-  ///   SubtitleSource.file('/path/to/subtitles.srt', label: 'Spanish'),
-  /// );
-  ///
-  /// // Auto-detect source type
-  /// final track = await controller.addExternalSubtitle(
-  ///   SubtitleSource.from('https://example.com/subs.vtt'),
-  /// );
-  ///
-  /// if (track != null) {
-  ///   await controller.setSubtitleTrack(track);
-  /// }
-  /// ```
-  Future<ExternalSubtitleTrack?> addExternalSubtitle(SubtitleSource source) async {
-    _ensureInitialized();
-    return _services.subtitleManager.addExternalSubtitle(source);
-  }
-
-  /// Removes an external subtitle track.
-  ///
-  /// The [trackId] should be the ID of a track previously added via
-  /// [addExternalSubtitle]. If this track is currently selected, subtitles
-  /// will be disabled.
-  ///
-  /// Returns `true` if the track was removed successfully, `false` if the
-  /// track was not found.
-  Future<bool> removeExternalSubtitle(String trackId) async {
-    _ensureInitialized();
-    return _services.subtitleManager.removeExternalSubtitle(trackId);
-  }
-
-  /// Gets all external subtitle tracks that have been added.
-  ///
-  /// Returns a list of [ExternalSubtitleTrack] objects representing all
-  /// external subtitles that have been loaded via [addExternalSubtitle].
-  /// This does not include embedded subtitle tracks from the video file.
-  Future<List<ExternalSubtitleTrack>> getExternalSubtitles() async {
-    _ensureInitialized();
-    return _services.subtitleManager.getExternalSubtitles();
-  }
-
-  /// Selects an audio track.
-  ///
-  /// Pass `null` to reset to the default audio track.
-  Future<void> setAudioTrack(AudioTrack? track) async {
-    _ensureInitialized();
-    await _services.trackManager.setAudioTrack(track);
-  }
-
-  /// Sets the video quality for adaptive streams.
-  ///
-  /// Pass [VideoQualityTrack.auto] to enable automatic quality selection (ABR).
-  /// Pass a specific track from [VideoPlayerValue.qualityTracks] to lock to
-  /// that quality level.
-  ///
-  /// This only has effect for adaptive streaming content (HLS, DASH).
-  /// For non-adaptive content, this method has no effect.
-  ///
-  /// Returns `true` if the quality was successfully set.
-  Future<bool> setVideoQuality(VideoQualityTrack track) async {
-    _ensureInitialized();
-    return _services.trackManager.setVideoQuality(track);
-  }
-
-  /// Returns the available video quality tracks.
-  ///
-  /// For adaptive streaming content (HLS, DASH), this returns a list of
-  /// available quality options. The list always includes [VideoQualityTrack.auto]
-  /// as the first option.
-  ///
-  /// For non-adaptive content, returns a list with only [VideoQualityTrack.auto].
-  Future<List<VideoQualityTrack>> getVideoQualities() async {
-    _ensureInitialized();
-    return _services.trackManager.getVideoQualities();
-  }
-
-  /// Returns the currently selected video quality track.
-  ///
-  /// Returns [VideoQualityTrack.auto] if automatic quality selection is active.
-  Future<VideoQualityTrack> getCurrentVideoQuality() async {
-    _ensureInitialized();
-    return _services.trackManager.getCurrentVideoQuality();
-  }
-
-  /// Returns whether manual quality selection is supported for the current content.
-  ///
-  /// This returns `true` for adaptive streaming content (HLS, DASH) where
-  /// multiple quality levels are available.
-  Future<bool> isQualitySelectionSupported() async {
-    _ensureInitialized();
-    return _services.trackManager.isQualitySelectionSupported();
-  }
-
-  /// Sets whether background playback is enabled.
-  ///
-  /// Enables or disables background playback for the current player.
-  ///
-  /// When enabled, audio continues playing when the app is backgrounded.
-  /// The video will pause but audio will continue.
-  ///
-  /// **Platform behavior:**
-  /// - **iOS**: Requires `UIBackgroundModes` with `audio` in Info.plist
-  /// - **Android**: Requires foreground service permission (Android 14+)
-  /// - **macOS**: Background playback is **always enabled** by default.
-  ///   Calling this method on macOS is a no-op and always returns `true`.
-  ///   The background playback toggle button is hidden on macOS.
-  /// - **Web/Windows/Linux**: Not supported
-  ///
-  /// Returns `true` if background playback was successfully enabled/disabled,
-  /// `false` if the platform doesn't support it or isn't configured correctly.
-  ///
-  /// Example:
-  /// ```dart
-  /// // Enable background playback
-  /// final success = await controller.setBackgroundPlayback(enabled: true);
-  /// if (!success) {
-  ///   print('Background playback not available');
-  /// }
-  /// ```
-  Future<bool> setBackgroundPlayback({required bool enabled}) async {
-    _ensureInitialized();
-    return _services.configurationManager.setBackgroundPlayback(enabled: enabled);
-  }
-
-  /// Returns whether background playback is supported on this platform.
-  ///
-  /// **Note:** This method does NOT require the player to be initialized since
-  /// it only checks platform capabilities, not player state.
-  ///
-  /// **Platform support:**
-  /// - **iOS**: `true` (requires proper Info.plist configuration)
-  /// - **Android**: `true` (requires proper manifest configuration)
-  /// - **macOS**: Always `true`. Background playback is always enabled on macOS
-  ///   by default and cannot be disabled. The toggle button is hidden in the UI.
-  /// - **Web/Windows/Linux**: `false`
-  Future<bool> isBackgroundPlaybackSupported() async {
-    // Note: Does NOT call _ensureInitialized() because this is a platform
-    // capability check, not a player operation. Can be called before initialization.
-    return _services.configurationManager.isBackgroundPlaybackSupported();
-  }
-
-  /// Returns whether background playback is available for this player.
-  ///
-  /// Returns `true` if the platform supports background playback and it's
-  /// currently enabled.
-  bool get isBackgroundPlaybackEnabled => value.isBackgroundPlaybackEnabled;
-
-  // ==================== Platform Capabilities API ====================
-
-  /// Gets static platform information.
-  ///
-  /// Returns metadata about the platform (name, player type, additional info).
-  Future<PlatformInfo> getPlatformInfo() {
-    return _platform.getPlatformInfo();
-  }
-
-  /// Checks if Picture-in-Picture mode is supported.
-  Future<bool> supportsPictureInPicture() {
-    return _platform.supportsPictureInPicture();
-  }
-
-  /// Checks if fullscreen mode is supported.
-  Future<bool> supportsFullscreen() {
-    return _platform.supportsFullscreen();
-  }
-
-  /// Checks if background playback is supported.
-  Future<bool> supportsBackgroundPlayback() {
-    return _platform.supportsBackgroundPlayback();
-  }
-
-  /// Checks if any form of casting is supported.
-  Future<bool> supportsCasting() {
-    return _platform.supportsCasting();
-  }
-
-  /// Checks if AirPlay is supported.
-  Future<bool> supportsAirPlay() {
-    return _platform.supportsAirPlay();
-  }
-
-  /// Checks if Chromecast is supported.
-  Future<bool> supportsChromecast() {
-    return _platform.supportsChromecast();
-  }
-
-  /// Checks if Remote Playback API is supported.
-  Future<bool> supportsRemotePlayback() {
-    return _platform.supportsRemotePlayback();
-  }
-
-  /// Checks if quality selection is supported.
-  Future<bool> supportsQualitySelection() {
-    return _platform.supportsQualitySelection();
-  }
-
-  /// Checks if playback speed control is supported.
-  Future<bool> supportsPlaybackSpeedControl() {
-    return _platform.supportsPlaybackSpeedControl();
-  }
-
-  /// Checks if subtitles are supported.
-  Future<bool> supportsSubtitles() {
-    return _platform.supportsSubtitles();
-  }
-
-  /// Checks if external subtitles are supported.
-  Future<bool> supportsExternalSubtitles() {
-    return _platform.supportsExternalSubtitles();
-  }
-
-  /// Checks if audio track selection is supported.
-  Future<bool> supportsAudioTrackSelection() {
-    return _platform.supportsAudioTrackSelection();
-  }
-
-  /// Checks if chapters are supported.
-  Future<bool> supportsChapters() {
-    return _platform.supportsChapters();
-  }
-
-  /// Checks if video metadata extraction is supported.
-  Future<bool> supportsVideoMetadataExtraction() {
-    return _platform.supportsVideoMetadataExtraction();
-  }
-
-  /// Checks if network monitoring is supported.
-  Future<bool> supportsNetworkMonitoring() {
-    return _platform.supportsNetworkMonitoring();
-  }
-
-  /// Checks if bandwidth estimation is supported.
-  Future<bool> supportsBandwidthEstimation() {
-    return _platform.supportsBandwidthEstimation();
-  }
-
-  /// Checks if adaptive bitrate streaming is supported.
-  Future<bool> supportsAdaptiveBitrate() {
-    return _platform.supportsAdaptiveBitrate();
-  }
-
-  /// Checks if HLS is supported.
-  Future<bool> supportsHLS() {
-    return _platform.supportsHLS();
-  }
-
-  /// Checks if DASH is supported.
-  Future<bool> supportsDASH() {
-    return _platform.supportsDASH();
-  }
-
-  /// Checks if device volume control is supported.
-  Future<bool> supportsDeviceVolumeControl() {
-    return _platform.supportsDeviceVolumeControl();
-  }
-
-  /// Checks if screen brightness control is supported.
-  Future<bool> supportsScreenBrightnessControl() {
-    return _platform.supportsScreenBrightnessControl();
-  }
-
-  // ==================== Battery API ====================
-
-  /// Gets the current battery information.
-  ///
-  /// Returns battery level (0-100) and charging state, or `null` if battery
-  /// information is not available on this platform/device.
-  ///
-  /// ## Platform Support
-  ///
-  /// - **iOS**: Full support via UIDevice battery APIs
-  /// - **Android**: Full support via BatteryManager
-  /// - **macOS**: Supported on MacBooks with battery (null on desktops)
-  /// - **Web**: Supported in browsers with Battery Status API (Chrome, Edge)
-  /// - **Windows/Linux**: Not currently implemented, returns null
-  ///
-  /// Example:
-  /// ```dart
-  /// final batteryInfo = await controller.getBatteryInfo();
-  /// if (batteryInfo != null) {
-  ///   print('Battery: ${batteryInfo.percentage}%');
-  ///   print('Charging: ${batteryInfo.isCharging}');
-  /// }
-  /// ```
-  Future<BatteryInfo?> getBatteryInfo() => _platform.getBatteryInfo();
-
-  /// Stream of battery state changes.
-  ///
-  /// Emits [BatteryInfo] whenever the battery level or charging state changes.
-  /// The stream gracefully completes if battery monitoring is not supported.
-  ///
-  /// Platform support is the same as [getBatteryInfo].
-  ///
-  /// Example:
-  /// ```dart
-  /// controller.batteryUpdates.listen((batteryInfo) {
-  ///   print('Battery: ${batteryInfo.percentage}%');
-  /// });
-  /// ```
-  Stream<BatteryInfo> get batteryUpdates => _platform.batteryUpdates;
-
-  // ==================== Casting API ====================
-
-  /// Returns whether casting is supported on this platform.
-  ///
-  /// ## Platform Support
-  ///
-  /// - **iOS/macOS**: Returns `true` (AirPlay is built-in)
-  /// - **Android**: Returns `true` if Google Cast SDK is properly configured
-  /// - **Web**: Returns `true` if the browser supports the Remote Playback API
-  /// - **Windows/Linux**: Returns `false`
-  Future<bool> isCastingSupported() async {
-    _ensureInitialized();
-    return _services.castingManager.isCastingSupported();
-  }
-
-  /// Returns the list of available cast devices.
-  ///
-  /// This returns the cached list from [VideoPlayerValue.availableCastDevices].
-  /// The list is updated automatically via device discovery events.
-  ///
-  /// For real-time discovery, listen to [CastDevicesChangedEvent] via the
-  /// platform event stream.
-  ///
-  /// Note: On some platforms (e.g., web), this list may be empty even when
-  /// casting is supported, as device discovery happens during the casting
-  /// prompt rather than continuously.
-  List<CastDevice> get availableCastDevices => value.availableCastDevices;
-
-  /// Starts casting to the specified device.
-  ///
-  /// If [device] is `null`, the platform will show a device picker dialog
-  /// allowing the user to select a device. This is the recommended approach
-  /// for most use cases.
-  ///
-  /// Returns `true` if casting started successfully, `false` if casting
-  /// is not supported, not allowed (via [VideoPlayerOptions.allowCasting]),
-  /// or failed to connect.
-  ///
-  /// ## Platform Behavior
-  ///
-  /// - **iOS/macOS**: Shows the AirPlay route picker (device parameter is ignored)
-  /// - **Android**: If device is `null`, shows the Cast dialog; otherwise connects to the specified device
-  /// - **Web**: Uses the Remote Playback API prompt
-  ///
-  /// Example:
-  /// ```dart
-  /// // Show device picker
-  /// final success = await controller.startCasting();
-  ///
-  /// // Or connect to a specific device
-  /// final devices = controller.availableCastDevices;
-  /// if (devices.isNotEmpty) {
-  ///   await controller.startCasting(device: devices.first);
-  /// }
-  /// ```
-  Future<bool> startCasting({CastDevice? device}) async {
-    _ensureInitialized();
-    return _services.castingManager.startCasting(device: device);
-  }
-
-  /// Stops casting and returns playback to the local device.
-  ///
-  /// This disconnects from the current cast device (if any) and resumes
-  /// local playback. The current playback position is preserved.
-  ///
-  /// Returns `true` if casting was stopped successfully, `false` if not
-  /// currently casting or if the operation failed.
-  Future<bool> stopCasting() async {
-    _ensureInitialized();
-    return _services.castingManager.stopCasting();
-  }
-
-  /// Returns the current casting state.
-  ///
-  /// This returns the cached state from [VideoPlayerValue.castState].
-  /// Listen to [CastStateChangedEvent] via the platform event stream
-  /// for state changes.
-  CastState get castState => value.castState;
-
-  /// Returns the currently connected cast device, if any.
-  ///
-  /// Returns `null` if not currently casting.
-  CastDevice? get currentCastDevice => value.currentCastDevice;
-
-  /// Returns whether the player is currently casting.
-  bool get isCasting => value.isCasting;
-
-  /// Returns video metadata (codec, resolution, bitrate, etc.).
-  ///
-  /// This returns the cached metadata from [VideoPlayerValue.videoMetadata]
-  /// if available. To fetch fresh metadata from the platform, use
-  /// [fetchVideoMetadata].
-  ///
-  /// Returns `null` if metadata is not available yet (player not ready or
-  /// metadata not extracted).
-  VideoMetadata? get videoMetadata => value.videoMetadata;
-
-  /// Fetches video metadata from the platform.
-  ///
-  /// This calls the platform to get metadata directly, which is useful if
-  /// you need metadata before the automatic extraction event is received.
-  ///
-  /// Returns `null` if the player is not ready or metadata cannot be extracted.
-  Future<VideoMetadata?> fetchVideoMetadata() async {
-    final metadata = await _services.metadataManager.fetchVideoMetadata();
-    if (metadata != null) {
-      value = value.copyWith(videoMetadata: metadata);
-    }
-    return metadata;
-  }
-
-  /// Enters Picture-in-Picture mode.
-  ///
-  /// Returns `true` if PiP was entered successfully, `false` if PiP is not
-  /// supported, not allowed (via [VideoPlayerOptions.allowPip]), or failed.
-  ///
-  /// ## Platform Setup Required
-  ///
-  /// **Android:** Requires `android:supportsPictureInPicture="true"` in your
-  /// `AndroidManifest.xml` activity declaration. When PiP is active on Android,
-  /// the entire app is shown in the small PiP window. Your app should respond
-  /// to `value.isPipActive` to show only the video player. Without the manifest
-  /// attribute, PiP will not work and this method returns `false`.
-  ///
-  /// **iOS:** Requires "Audio, AirPlay, and Picture in Picture" in your app's
-  /// Background Modes capability (or `UIBackgroundModes` with `audio` in
-  /// `Info.plist`). iOS uses true video-only PiP where the video floats in a
-  /// system-controlled window independently from the app. Without this
-  /// capability, PiP will not work and this method returns `false`.
-  ///
-  /// See the package README for detailed setup instructions.
-  Future<bool> enterPip({PipOptions options = const PipOptions()}) async {
-    _ensureInitialized();
-    return _services.pipManager.enterPip(options: options);
-  }
-
-  /// Exits Picture-in-Picture mode.
-  Future<void> exitPip() async {
-    _ensureInitialized();
-    await _services.pipManager.exitPip();
-  }
-
-  /// Sets the PiP remote action buttons.
-  ///
-  /// These actions appear as buttons in the PiP window, allowing users to
-  /// control playback without leaving the PiP view.
-  ///
-  /// **Platform support:**
-  /// - **Android**: Full support via `RemoteAction` in `PictureInPictureParams`.
-  ///   Actions appear as icon buttons in the PiP window overlay.
-  /// - **iOS**: Limited support. iOS 15+ supports skip forward/backward buttons
-  ///   via `AVPictureInPictureController`. Play/pause is handled automatically.
-  /// - **macOS/Web/Windows/Linux**: Not supported.
-  ///
-  /// Pass `null` or an empty list to clear all custom actions.
-  ///
-  /// ## Example
-  ///
-  /// ```dart
-  /// // Standard video controls
-  /// await controller.setPipActions(PipActions.standard);
-  ///
-  /// // Or configure manually
-  /// await controller.setPipActions([
-  ///   PipAction(type: PipActionType.skipBackward, skipInterval: Duration(seconds: 10)),
-  ///   PipAction(type: PipActionType.playPause),
-  ///   PipAction(type: PipActionType.skipForward, skipInterval: Duration(seconds: 10)),
-  /// ]);
-  /// ```
-  ///
-  /// When an action button is tapped, a [PipActionTriggeredEvent] is emitted
-  /// via the platform event stream. The controller logs these events and you
-  /// can handle them in your app as needed.
-  Future<void> setPipActions(List<PipAction>? actions) async {
-    _ensureInitialized();
-    await _services.pipManager.setPipActions(actions);
-  }
-
-  /// Returns whether Picture-in-Picture is supported on this device.
-  ///
-  /// This only checks device/platform support, not whether PiP is allowed
-  /// for this player (see [VideoPlayerOptions.allowPip]). To check both,
-  /// use [isPipAvailable].
-  ///
-  /// **Note:** This method does NOT require the player to be initialized since
-  /// it only checks platform capabilities, not player state.
-  ///
-  /// ## Platform Behavior
-  ///
-  /// **Android:** Returns `false` if the app's `AndroidManifest.xml` is missing
-  /// `android:supportsPictureInPicture="true"` on the activity, or if the device
-  /// is running Android 7.1 (API 25) or lower.
-  ///
-  /// **iOS:** Returns `false` if the device doesn't support PiP, or if the app
-  /// is missing the "Audio, AirPlay, and Picture in Picture" Background Mode
-  /// capability (or `UIBackgroundModes` with `audio` in `Info.plist`).
-  ///
-  /// See the package README for detailed setup instructions.
-  Future<bool> isPipSupported() {
-    // Note: Does NOT call _ensureInitialized() because this is a platform
-    // capability check, not a player operation. Can be called before initialization.
-    return _services.pipManager.isPipSupported();
-  }
-
-  /// Returns whether Picture-in-Picture is available for this player.
-  ///
-  /// Returns `true` if both the device supports PiP (see [isPipSupported]) and
-  /// [VideoPlayerOptions.allowPip] is `true`.
-  ///
-  /// This is a convenience method that combines both checks. Use this to determine
-  /// whether to show PiP controls in your UI.
-  ///
-  /// ## Platform Setup Required
-  ///
-  /// PiP requires platform-specific setup. See [enterPip] documentation for
-  /// details on configuring each platform, or check the package README.
-  Future<bool> isPipAvailable() {
-    _ensureInitialized();
-    return _services.pipManager.isPipAvailable();
-  }
-
-  /// Returns whether subtitles are enabled for this player.
-  ///
-  /// This reflects the [VideoPlayerOptions.subtitlesEnabled] setting.
-  bool get subtitlesEnabled => _options.subtitlesEnabled;
-
-  /// Sets the subtitle timing offset for synchronization.
-  ///
-  /// A positive [offset] delays subtitles (shows them later), while a negative
-  /// [offset] shows subtitles earlier. This is useful for fixing subtitle sync
-  /// issues where subtitles appear too early or too late.
-  ///
-  /// This adjustment is applied immediately without reloading the video.
-  /// Only affects external subtitle tracks rendered by [SubtitleOverlay].
-  /// Embedded subtitles rendered by native players are not affected.
-  ///
-  /// Example:
-  /// ```dart
-  /// // Subtitles appear 2 seconds too early - delay them
-  /// controller.setSubtitleOffset(const Duration(seconds: 2));
-  ///
-  /// // Subtitles appear 1 second too late - show them earlier
-  /// controller.setSubtitleOffset(const Duration(seconds: -1));
-  ///
-  /// // Reset to no offset
-  /// controller.setSubtitleOffset(Duration.zero);
-  /// ```
-  void setSubtitleOffset(Duration offset) {
-    value = value.copyWith(subtitleOffset: offset);
-  }
-
-  /// Returns the current subtitle timing offset.
-  ///
-  /// See [setSubtitleOffset] for details on how the offset affects subtitle display.
-  Duration get subtitleOffset => value.subtitleOffset;
-
-  /// Enters fullscreen mode.
-  ///
-  /// This hides the system UI (status bar, navigation bar) and sets
-  /// the orientation based on [orientation] parameter or the
-  /// `fullscreenOrientation` option if not specified.
-  ///
-  /// The app should respond to `value.isFullscreen` to expand the video
-  /// widget to fill the screen.
-  ///
-  /// Returns `true` if fullscreen was entered successfully.
-  Future<bool> enterFullscreen({FullscreenOrientation? orientation}) async {
-    _ensureInitialized();
-    return _services.fullscreenManager.enterFullscreen(orientation: orientation);
-  }
-
-  /// Exits fullscreen mode.
-  ///
-  /// This restores the system UI and orientation to normal.
-  Future<void> exitFullscreen() async {
-    _ensureInitialized();
-    await _services.fullscreenManager.exitFullscreen();
-  }
-
-  /// Toggles fullscreen mode.
-  Future<void> toggleFullscreen() async {
-    _ensureInitialized();
-    await _services.fullscreenManager.toggleFullscreen();
-  }
-
-  /// Sets the fullscreen state for Flutter-managed fullscreen (no native call).
-  ///
-  /// Use this on desktop platforms where Flutter controls handle fullscreen
-  /// via route navigation rather than native fullscreen windows.
-  ///
-  /// This updates the [VideoPlayerValue.isFullscreen] state without triggering
-  /// native fullscreen behavior (like creating a separate window on macOS).
-  void setFlutterFullscreenState({required bool isFullscreen}) {
-    _services.fullscreenManager.setFlutterFullscreenState(isFullscreen: isFullscreen);
-  }
-
-  // ==================== Orientation Lock API ====================
-
-  /// Locks the screen orientation to the specified [orientation].
-  ///
-  /// This is typically used in fullscreen mode to allow users to lock the
-  /// screen to a specific orientation (e.g., landscape only).
-  ///
-  /// The orientation lock persists until [unlockOrientation] is called or
-  /// fullscreen mode is exited.
-  ///
-  /// Example:
-  /// ```dart
-  /// // Lock to landscape only
-  /// await controller.lockOrientation(FullscreenOrientation.landscapeBoth);
-  ///
-  /// // Lock to portrait only
-  /// await controller.lockOrientation(FullscreenOrientation.portraitBoth);
-  /// ```
-  Future<void> lockOrientation(FullscreenOrientation orientation) async {
-    _ensureInitialized();
-    await _services.fullscreenManager.lockOrientation(orientation);
-  }
-
-  /// Unlocks the screen orientation.
-  ///
-  /// When unlocked in fullscreen mode, the orientation follows the
-  /// [VideoPlayerOptions.fullscreenOrientation] setting.
-  /// When unlocked outside fullscreen, all orientations are allowed.
-  Future<void> unlockOrientation() async {
-    _ensureInitialized();
-    await _services.fullscreenManager.unlockOrientation();
-  }
-
-  /// Toggles the orientation lock.
-  ///
-  /// If currently unlocked, locks to [FullscreenOrientation.landscapeBoth].
-  /// If currently locked, unlocks the orientation.
-  Future<void> toggleOrientationLock() async {
-    _ensureInitialized();
-    await _services.fullscreenManager.toggleOrientationLock();
-  }
-
-  /// Cycles through orientation lock options.
-  ///
-  /// Cycles through: Unlocked → Landscape Both → Landscape Left → Landscape Right → Unlocked
-  ///
-  /// This is useful for a toolbar button that cycles through lock states.
-  Future<void> cycleOrientationLock() async {
-    _ensureInitialized();
-    await _services.fullscreenManager.cycleOrientationLock();
-  }
-
-  /// Whether the screen orientation is currently locked.
-  bool get isOrientationLocked => value.isOrientationLocked;
-
-  /// The currently locked orientation, or `null` if not locked.
-  FullscreenOrientation? get lockedOrientation => value.lockedOrientation;
-
-  /// Toggles between play and pause.
-  Future<void> togglePlayPause() async {
-    _ensureInitialized();
-    return _services.playbackManager.togglePlayPause();
-  }
-
-  // ==================== Error Recovery API ====================
-
-  /// The error recovery options for this controller.
-  ErrorRecoveryOptions get errorRecoveryOptions => _errorRecoveryOptions;
-
-  /// Whether an automatic retry is currently in progress.
-  bool get isRetrying => _isRetrying;
-
-  /// Clears the current error state and resets to ready state.
-  ///
-  /// This does not retry the failed operation. Use [retry] or [reinitialize]
-  /// to attempt recovery.
-  void clearError() {
-    if (!value.hasError) return;
-    value = value.copyWith(playbackState: PlaybackState.ready, clearError: true);
-  }
-
-  /// Retries the last failed operation.
-  ///
-  /// If the player failed during initialization, this will reinitialize.
-  /// If the player failed during playback, this will attempt to resume.
-  ///
-  /// Returns `true` if the retry was successful, `false` otherwise.
-  ///
-  /// Throws [StateError] if there is no error to retry, or if the controller
-  /// is disposed.
-  Future<bool> retry() async {
-    if (_isDisposed) {
-      throw StateError('Cannot retry on a disposed controller');
-    }
-    if (!value.hasError) {
-      throw StateError('No error to retry');
-    }
-
-    final error = value.error;
-    if (error != null && !error.canRetry) {
-      _Logger.log('Cannot retry: max retries exceeded', tag: 'Controller');
-      return false;
-    }
-
-    _Logger.log(
-      'Retrying after error (attempt ${(error?.retryCount ?? 0) + 1}/${error?.maxRetries ?? _errorRecoveryOptions.maxAutoRetries})',
-      tag: 'Controller',
-    );
-
-    // Increment retry count
-    final updatedError = error?.incrementRetry();
-
-    try {
-      // If player was never created, reinitialize
-      if (_playerId == null && _source != null) {
-        await reinitialize();
-        return true;
-      }
-
-      // Otherwise, try to resume playback
-      clearError();
-      await play();
-      return true;
-    } catch (e) {
-      _Logger.error('Retry failed', tag: 'Controller', error: e);
-      final newError =
-          updatedError?.copyWith(message: e.toString(), originalError: e) ??
-          VideoPlayerError.fromCode(message: e.toString());
-      value = value.copyWith(playbackState: PlaybackState.error, errorMessage: e.toString(), error: newError);
-      return false;
-    }
-  }
-
-  /// Cancels any pending automatic retry.
-  ///
-  /// This stops any scheduled retry attempts and resets the retrying state.
-  void cancelAutoRetry() {
-    _services.errorRecovery.cancelRetryTimer();
-    _isRetrying = false;
-  }
-
-  /// Reinitializes the player with the original source.
-  ///
-  /// This disposes the current player and creates a new one with the same
-  /// source and options that were used in the initial [initialize] call.
-  ///
-  /// Use this for complete recovery from fatal errors or when the player
-  /// is in an unrecoverable state.
-  ///
-  /// Throws [StateError] if the controller was never initialized or is disposed.
-  Future<void> reinitialize() async {
-    if (_isDisposed) {
-      throw StateError('Cannot reinitialize a disposed controller');
-    }
-    if (_source == null) {
-      throw StateError('Cannot reinitialize: no source available');
-    }
-
-    _Logger.log('Reinitializing player', tag: 'Controller');
-
-    // Clean up existing player
-    _services.errorRecovery.cancelRetryTimer();
-    if (_playerId != null) {
-      await _services.eventCoordinator.dispose();
-    }
-
-    if (_playerId != null) {
-      try {
-        await _platform.dispose(_playerId!);
-      } catch (e) {
-        _Logger.error('Error disposing player during reinitialize', tag: 'Controller', error: e);
-      }
-      _playerId = null;
-    }
-
-    // Reset state
-    value = const VideoPlayerValue();
-
-    // Reinitialize with original source and options
-    await initialize(source: _source, options: _options);
-  }
-
-  void _ensureInitialized() {
-    if (_isDisposed) {
-      throw StateError('Controller has been disposed');
-    }
-    if (_playerId == null) {
-      throw StateError('Controller has not been initialized');
-    }
-  }
-
-  /// Performs the actual playback retry - called by ErrorRecoveryManager.
-  Future<void> _performRetryPlayback() async {
-    if (_isDisposed || _playerId == null) return;
-    if (_isRetrying) return; // Prevent concurrent retries
-
-    _isRetrying = true;
-    _Logger.log('Attempting network recovery (retry ${value.networkRetryCount})', tag: 'Controller');
-
-    try {
-      // Seek to current position to trigger a reload
-      final currentPosition = value.position;
-      await _platform.seekTo(_playerId!, currentPosition);
-
-      // Try to resume playback
-      await _platform.play(_playerId!);
-    } catch (e) {
-      _Logger.log('Retry attempt failed: $e', tag: 'Controller');
-      // The native layer will send another NetworkErrorEvent if it fails
-    } finally {
-      _isRetrying = false;
-    }
-  }
-
-  // Playlist management
-
   /// Initializes the player with a playlist.
   ///
   /// The playlist will start playing from [Playlist.initialIndex].
@@ -1328,7 +269,7 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
 
     // Initialize all managers using the service container
     _services = ControllerServices.create(
-      platform: _platform,
+      platform: platform,
       errorRecoveryOptions: _errorRecoveryOptions,
       getValue: () => value,
       setValue: (v) => value = v,
@@ -1350,121 +291,73 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     await _services.playlistManager.initializeWithPlaylist(playlist: playlist, options: options);
   }
 
-  /// Moves to the next track in the playlist.
-  ///
-  /// Returns `true` if moved to next track, `false` if at end of playlist
-  /// (and repeat mode is [PlaylistRepeatMode.none]).
-  Future<bool> playlistNext() async {
-    _ensureInitialized();
-    return _services.playlistManager.playlistNext();
+  // ==================== Error Recovery ====================
+
+  @override
+  Future<void> reinitialize() async {
+    if (_isDisposed) {
+      throw StateError('Cannot reinitialize a disposed controller');
+    }
+    if (_source == null) {
+      throw StateError('Cannot reinitialize: no source available');
+    }
+
+    _Logger.log('Reinitializing player', tag: 'Controller');
+
+    // Clean up existing player
+    _services.errorRecovery.cancelRetryTimer();
+    if (_playerId != null) {
+      await _services.eventCoordinator.dispose();
+    }
+
+    if (_playerId != null) {
+      try {
+        await platform.dispose(_playerId!);
+      } catch (e) {
+        _Logger.error('Error disposing player during reinitialize', tag: 'Controller', error: e);
+      }
+      _playerId = null;
+    }
+
+    // Reset state
+    value = const VideoPlayerValue();
+
+    // Reinitialize with original source and options
+    await initialize(source: _source, options: _options);
   }
 
-  /// Moves to the previous track in the playlist.
-  ///
-  /// Returns `true` if moved to previous track, `false` if already at
-  /// beginning of playlist.
-  Future<bool> playlistPrevious() async {
-    _ensureInitialized();
-    return _services.playlistManager.playlistPrevious();
+  // ==================== Private Methods ====================
+
+  void _ensureInitialized() {
+    if (_isDisposed) {
+      throw StateError('Controller has been disposed');
+    }
+    if (_playerId == null) {
+      throw StateError('Controller has not been initialized');
+    }
   }
 
-  /// Jumps to a specific track in the playlist by index.
-  Future<void> playlistJumpTo(int index) async {
-    _ensureInitialized();
-    return _services.playlistManager.playlistJumpTo(index);
-  }
+  /// Performs the actual playback retry - called by ErrorRecoveryManager.
+  Future<void> _performRetryPlayback() async {
+    if (_isDisposed || _playerId == null) return;
+    if (_isRetrying) return; // Prevent concurrent retries
 
-  /// Sets the playlist repeat mode.
-  void setPlaylistRepeatMode(PlaylistRepeatMode mode) {
-    _ensureInitialized();
-    _services.playlistManager.setPlaylistRepeatMode(mode);
-  }
+    _isRetrying = true;
+    _Logger.log('Attempting network recovery (retry ${value.networkRetryCount})', tag: 'Controller');
 
-  /// Toggles playlist shuffle mode.
-  ///
-  /// When shuffle is enabled, tracks play in random order.
-  /// When disabled, tracks play in original order.
-  void setPlaylistShuffle({required bool enabled}) {
-    _ensureInitialized();
-    _services.playlistManager.setPlaylistShuffle(enabled: enabled);
-  }
+    try {
+      // Seek to current position to trigger a reload
+      final currentPosition = value.position;
+      await platform.seekTo(_playerId!, currentPosition);
 
-  /// Sets the media metadata for platform media controls.
-  ///
-  /// This metadata is displayed in:
-  /// - iOS/macOS: Control Center and Lock Screen (via MPNowPlayingInfoCenter)
-  /// - Android: Media notification and Lock Screen (via MediaSession)
-  /// - Web: Browser media controls (via Media Session API)
-  ///
-  /// The metadata is only shown when background playback is enabled
-  /// ([VideoPlayerOptions.allowBackgroundPlayback] is `true`).
-  ///
-  /// Pass [MediaMetadata.empty] to clear any previously set metadata.
-  ///
-  /// Example:
-  /// ```dart
-  /// await controller.setMediaMetadata(const MediaMetadata(
-  ///   title: 'My Video',
-  ///   artist: 'Channel Name',
-  ///   artworkUrl: 'https://example.com/thumbnail.jpg',
-  /// ));
-  /// ```
-  Future<void> setMediaMetadata(MediaMetadata metadata) async {
-    _ensureInitialized();
-    await _services.metadataManager.setMediaMetadata(metadata);
-  }
-
-  // ==================== Chapter Navigation ====================
-
-  /// Available chapters in the video.
-  ///
-  /// Returns an empty list if no chapters are available.
-  /// Chapters are sorted by [Chapter.startTime] in ascending order.
-  List<Chapter> get chapters => value.chapters;
-
-  /// The chapter at the current playback position.
-  ///
-  /// Returns `null` if no chapters are available or if the current position
-  /// is before the first chapter.
-  Chapter? get currentChapter => value.currentChapter;
-
-  /// Whether the video has chapter information available.
-  bool get hasChapters => value.hasChapters;
-
-  /// Seeks to the start of the specified chapter.
-  ///
-  /// This is a convenience method equivalent to calling
-  /// `seekTo(chapter.startTime)`.
-  ///
-  /// Example:
-  /// ```dart
-  /// if (controller.hasChapters) {
-  ///   // Seek to the first chapter
-  ///   await controller.seekToChapter(controller.chapters.first);
-  /// }
-  /// ```
-  Future<void> seekToChapter(Chapter chapter) async {
-    _ensureInitialized();
-    await _services.metadataManager.seekToChapter(chapter);
-  }
-
-  /// Seeks to the next chapter, if available.
-  ///
-  /// If already in the last chapter or no chapters are available, does nothing.
-  /// Returns `true` if a seek was performed, `false` otherwise.
-  Future<bool> seekToNextChapter() async {
-    _ensureInitialized();
-    return _services.metadataManager.seekToNextChapter();
-  }
-
-  /// Seeks to the previous chapter, if available.
-  ///
-  /// If at the beginning of a chapter (within first 3 seconds), seeks to the
-  /// previous chapter. Otherwise, seeks to the start of the current chapter.
-  /// Returns `true` if a seek was performed, `false` otherwise.
-  Future<bool> seekToPreviousChapter() async {
-    _ensureInitialized();
-    return _services.metadataManager.seekToPreviousChapter();
+      // Try to resume playback
+      await platform.play(_playerId!);
+    } catch (e) {
+      _Logger.log('Retry attempt failed: $e', tag: 'Controller');
+      // The native layer will send another NetworkErrorEvent if it fails
+    } finally {
+      _isRetrying = false;
+    }
   }
 
   @override
@@ -1478,62 +371,11 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
       await _services.dispose();
 
       // Dispose platform player
-      await _platform.dispose(_playerId!);
+      await platform.dispose(_playerId!);
     }
 
     _playerId = null;
     value = value.copyWith(playbackState: PlaybackState.disposed);
     super.dispose();
-  }
-
-  // ============================================================================
-  // Caption Compatibility Layer (video_player compatibility)
-  // ============================================================================
-
-  /// Sets closed captions for the video.
-  ///
-  /// This method is provided for compatibility with Flutter's video_player library.
-  /// Pass `null` to disable captions, or a [Future<ClosedCaptionFile>] to enable them.
-  ///
-  /// **Note**: This is a compatibility stub. Full implementation requires converting
-  /// the caption data to a subtitle format and loading it. For production use,
-  /// prefer using [addExternalSubtitle] with a proper [SubtitleSource] which
-  /// provides more features and format support.
-  ///
-  /// Throws [StateError] if the controller is not initialized.
-  Future<void> setClosedCaptionFile(Future<ClosedCaptionFile>? closedCaptionFile) async {
-    _ensureInitialized();
-
-    if (closedCaptionFile == null) {
-      await setSubtitleTrack(null);
-      return;
-    }
-
-    // Wait for captions to load (for API compatibility)
-    await closedCaptionFile;
-
-    // TODO(pro_video_player): Implement full caption loading.
-    // This would require either:
-    // 1. Adding SubtitleSource.memory() constructor for in-memory content
-    // 2. Writing captions to a temporary file and using SubtitleSource.file()
-    // 3. Adding a new platform method for loading caption data directly
-    //
-    // For now, this is a compatibility stub that succeeds without actually
-    // loading the captions. Users migrating from video_player should use
-    // addExternalSubtitle() with a proper SubtitleSource instead.
-  }
-
-  /// Sets the caption offset.
-  ///
-  /// This adjusts the timing of captions by the given [offset].
-  /// Positive values delay captions, negative values advance them.
-  ///
-  /// This method is provided for compatibility with Flutter's video_player library.
-  /// For new code, the method name is the same so you can use it directly.
-  ///
-  /// Throws [StateError] if the controller is not initialized.
-  Future<void> setCaptionOffset(Duration offset) async {
-    _ensureInitialized();
-    await _platform.setSubtitleOffset(_playerId!, offset);
   }
 }

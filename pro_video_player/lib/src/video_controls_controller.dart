@@ -1,21 +1,19 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 
-import 'package:flutter/foundation.dart' show ChangeNotifier, ValueNotifier, kIsWeb;
+import 'package:flutter/foundation.dart' show ChangeNotifier, ValueNotifier, kIsWeb, visibleForTesting;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'
-    show HardwareKeyboard, KeyDownEvent, KeyEvent, KeyRepeatEvent, LogicalKeyboardKey, SystemChrome, SystemUiMode;
-import 'package:pro_video_player_platform_interface/pro_video_player_platform_interface.dart';
+import 'package:flutter/services.dart' show KeyEvent, SystemChrome, SystemUiMode;
 
+import 'controls/context_menu_builder.dart';
 import 'controls/dialogs/audio_picker_dialog.dart';
 import 'controls/dialogs/chapters_picker_dialog.dart';
-import 'controls/dialogs/keyboard_shortcuts_dialog.dart';
 import 'controls/dialogs/orientation_lock_picker_dialog.dart';
 import 'controls/dialogs/quality_picker_dialog.dart';
 import 'controls/dialogs/scaling_mode_picker_dialog.dart';
 import 'controls/dialogs/speed_picker_dialog.dart';
 import 'controls/dialogs/subtitle_picker_dialog.dart';
-import 'controls/video_controls_utils.dart';
+import 'controls/keyboard_shortcut_handler.dart';
 import 'pro_video_player_controller.dart';
 import 'video_controls_config.dart';
 import 'video_controls_state.dart';
@@ -53,15 +51,35 @@ class VideoControlsController extends ChangeNotifier {
     _videoController.addListener(_onPlayerValueChanged);
     _resetHideTimer();
 
+    // Initialize keyboard handler
+    _keyboardHandler = KeyboardShortcutHandler(
+      videoController: _videoController,
+      keyboardSeekDuration: behaviorConfig.keyboardSeekDuration,
+      onShowOverlay: _showKeyboardOverlay,
+      onResetHideTimer: _resetHideTimer,
+      onShowKeyboardShortcuts: onShowKeyboardShortcuts,
+    );
+
+    // Initialize capability checks
+    _initializeCapabilityChecks(
+      testIsPipAvailable: testIsPipAvailable,
+      testIsBackgroundPlaybackSupported: testIsBackgroundPlaybackSupported,
+      testIsCastingSupported: testIsCastingSupported,
+    );
+  }
+
+  void _initializeCapabilityChecks({
+    bool? testIsPipAvailable,
+    bool? testIsBackgroundPlaybackSupported,
+    bool? testIsCastingSupported,
+  }) {
     // Use test values if provided (test-only path)
     if (testIsPipAvailable != null) {
       _controlsState.setIsPipAvailable(available: testIsPipAvailable);
     } else if (enablePipCheck) {
-      // If cached, use immediately; otherwise start async check
       if (_cachedPipSupported != null) {
         _controlsState.setIsPipAvailable(available: _cachedPipSupported!);
       } else {
-        // Start async check without blocking constructor
         unawaited(_checkPipAvailability());
       }
     }
@@ -69,7 +87,6 @@ class VideoControlsController extends ChangeNotifier {
     if (testIsBackgroundPlaybackSupported != null) {
       _controlsState.setIsBackgroundPlaybackSupported(supported: testIsBackgroundPlaybackSupported);
     } else if (enableBackgroundCheck) {
-      // If cached, use immediately; otherwise start async check
       if (_cachedBackgroundPlaybackSupported != null) {
         _controlsState.setIsBackgroundPlaybackSupported(supported: _cachedBackgroundPlaybackSupported!);
       } else {
@@ -80,7 +97,6 @@ class VideoControlsController extends ChangeNotifier {
     if (testIsCastingSupported != null) {
       _controlsState.setIsCastingSupported(supported: testIsCastingSupported);
     } else if (enableCastingCheck) {
-      // If cached, use immediately; otherwise start async check
       if (_cachedCastingSupported != null) {
         _controlsState.setIsCastingSupported(supported: _cachedCastingSupported!);
       } else {
@@ -90,6 +106,7 @@ class VideoControlsController extends ChangeNotifier {
   }
 
   final ProVideoPlayerController _videoController;
+  late final KeyboardShortcutHandler _keyboardHandler;
 
   /// Configuration for button visibility in controls.
   final ButtonsConfig buttonsConfig;
@@ -110,20 +127,14 @@ class VideoControlsController extends ChangeNotifier {
   final VoidCallback? onShowKeyboardShortcuts;
 
   /// Whether to check PiP availability asynchronously.
-  ///
-  /// This should only be set to false in tests to avoid async issues.
   @visibleForTesting
   final bool enablePipCheck;
 
   /// Whether to check background playback support asynchronously.
-  ///
-  /// This should only be set to false in tests to avoid async issues.
   @visibleForTesting
   final bool enableBackgroundCheck;
 
   /// Whether to check casting support asynchronously.
-  ///
-  /// This should only be set to false in tests to avoid async issues.
   @visibleForTesting
   final bool enableCastingCheck;
 
@@ -134,9 +145,6 @@ class VideoControlsController extends ChangeNotifier {
   // Notifiers for reactive UI
   final ValueNotifier<Duration?> _dragStartPosition = ValueNotifier(null);
   final ValueNotifier<Duration?> _gestureSeekPosition = ValueNotifier(null);
-
-  // Track previous volume for mute/unmute toggle
-  double _previousVolume = 1;
 
   // Track whether video was playing before dragging started
   bool _wasPlayingBeforeDrag = false;
@@ -177,45 +185,46 @@ class VideoControlsController extends ChangeNotifier {
   static bool? _cachedBackgroundPlaybackSupported;
   static bool? _cachedCastingSupported;
 
+  // ==================== Capability Checks ====================
+
   Future<void> _checkPipAvailability() async {
     if (!buttonsConfig.showPipButton) return;
 
-    // Use cached value if available
     if (_cachedPipSupported != null) {
       _controlsState.setIsPipAvailable(available: _cachedPipSupported!);
       return;
     }
 
     final available = await _videoController.isPipAvailable();
-    _cachedPipSupported = available; // Cache for future controllers
+    _cachedPipSupported = available;
     _controlsState.setIsPipAvailable(available: available);
   }
 
   Future<void> _checkBackgroundPlaybackSupport() async {
     if (!buttonsConfig.showBackgroundPlaybackButton) return;
 
-    // Use cached value if available
     if (_cachedBackgroundPlaybackSupported != null) {
       _controlsState.setIsBackgroundPlaybackSupported(supported: _cachedBackgroundPlaybackSupported!);
       return;
     }
 
     final supported = await _videoController.isBackgroundPlaybackSupported();
-    _cachedBackgroundPlaybackSupported = supported; // Cache for future controllers
+    _cachedBackgroundPlaybackSupported = supported;
     _controlsState.setIsBackgroundPlaybackSupported(supported: supported);
   }
 
   Future<void> _checkCastingSupport() async {
-    // Use cached value if available
     if (_cachedCastingSupported != null) {
       _controlsState.setIsCastingSupported(supported: _cachedCastingSupported!);
       return;
     }
 
     final supported = await _videoController.isCastingSupported();
-    _cachedCastingSupported = supported; // Cache for future controllers
+    _cachedCastingSupported = supported;
     _controlsState.setIsCastingSupported(supported: supported);
   }
+
+  // ==================== Player Event Handling ====================
 
   void _onPlayerValueChanged() {
     final isPlaying = _videoController.value.isPlaying;
@@ -223,7 +232,6 @@ class VideoControlsController extends ChangeNotifier {
     final isFullscreen = _videoController.value.isFullscreen;
     final isPipActive = _videoController.value.isPipActive;
 
-    // Track state changes that should trigger listener notifications
     var stateChanged = false;
 
     // During casting, always ensure controls are visible
@@ -255,6 +263,8 @@ class VideoControlsController extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  // ==================== Hide Timer Management ====================
 
   void _resetHideTimer() {
     _controlsState.cancelHideTimer();
@@ -289,7 +299,6 @@ class VideoControlsController extends ChangeNotifier {
         }
       });
     } else if (!_videoController.value.isPlaying) {
-      // When video is paused, show controls
       if (!_controlsState.visible) {
         _controlsState.showControls();
         notifyListeners();
@@ -298,9 +307,9 @@ class VideoControlsController extends ChangeNotifier {
   }
 
   /// Resets the auto-hide timer (called from UI on user interaction).
-  void resetHideTimer() {
-    _resetHideTimer();
-  }
+  void resetHideTimer() => _resetHideTimer();
+
+  // ==================== Controls Visibility ====================
 
   /// Shows controls.
   void showControls() {
@@ -311,9 +320,6 @@ class VideoControlsController extends ChangeNotifier {
   }
 
   /// Hides controls.
-  ///
-  /// If [instantly] is true, controls will hide without animation.
-  /// This is used during gestures to hide controls immediately.
   void hideControls({bool instantly = false}) {
     _controlsState.hideControls(instantly: instantly);
     notifyListeners();
@@ -345,26 +351,27 @@ class VideoControlsController extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ==================== Keyboard Overlay ====================
+
   /// Shows keyboard overlay for feedback (public API for external components).
   void showKeyboardOverlay(KeyboardOverlayType type, double value) {
+    _showKeyboardOverlay(type, value);
+  }
+
+  void _showKeyboardOverlay(KeyboardOverlayType type, double value) {
     _controlsState.showKeyboardOverlay(type, value, const Duration(milliseconds: 800), () {
       _controlsState.hideKeyboardOverlay();
     });
-    // Notify listeners to show overlay
     notifyListeners();
   }
 
-  /// Shows keyboard overlay for feedback (internal use).
-  void _showKeyboardOverlay(KeyboardOverlayType type, double value) {
-    showKeyboardOverlay(type, value);
-  }
+  // ==================== Drag State ====================
 
   /// Starts dragging.
   void startDragging() {
     _controlsState.startDragging();
     _dragStartPosition.value = _videoController.value.position;
 
-    // Pause video during seek if it's currently playing
     _wasPlayingBeforeDrag = _videoController.value.isPlaying;
     if (_wasPlayingBeforeDrag) {
       unawaited(_videoController.pause());
@@ -378,7 +385,6 @@ class VideoControlsController extends ChangeNotifier {
     _controlsState.endDragging();
     _dragStartPosition.value = null;
 
-    // Resume playback only if video was playing before drag started
     if (_wasPlayingBeforeDrag) {
       unawaited(_videoController.play());
       _wasPlayingBeforeDrag = false;
@@ -403,164 +409,17 @@ class VideoControlsController extends ChangeNotifier {
     _dragStartPosition.value = position;
   }
 
+  // ==================== Keyboard Handling ====================
+
   /// Handles keyboard events for video player shortcuts.
-  ///
-  /// Works on all platforms including mobile devices with keyboards
-  /// (tablets with keyboard cases, Bluetooth keyboards, etc.).
   KeyEventResult handleKeyEvent(FocusNode node, KeyEvent event) {
     if (!behaviorConfig.enableKeyboardShortcuts) {
       return KeyEventResult.ignored;
     }
-
-    final key = event.logicalKey;
-    final isKeyDown = event is KeyDownEvent;
-    final isKeyRepeat = event is KeyRepeatEvent;
-    final isShiftPressed = HardwareKeyboard.instance.isShiftPressed;
-
-    // Arrow keys: handle both key down and key repeat (for holding)
-    if (isKeyDown || isKeyRepeat) {
-      // Left Arrow: Seek backward (Shift = longer jump)
-      if (key == LogicalKeyboardKey.arrowLeft) {
-        final seekAmount = isShiftPressed
-            ? behaviorConfig.keyboardSeekDuration * 3
-            : behaviorConfig.keyboardSeekDuration;
-        final position = _videoController.value.position;
-        final newPosition = position - seekAmount;
-        unawaited(_videoController.seekTo(newPosition.isNegative ? Duration.zero : newPosition));
-        _showKeyboardOverlay(KeyboardOverlayType.seek, -seekAmount.inSeconds.toDouble());
-        _resetHideTimer();
-        return KeyEventResult.handled;
-      }
-
-      // Right Arrow: Seek forward (Shift = longer jump)
-      if (key == LogicalKeyboardKey.arrowRight) {
-        final seekAmount = isShiftPressed
-            ? behaviorConfig.keyboardSeekDuration * 3
-            : behaviorConfig.keyboardSeekDuration;
-        final position = _videoController.value.position;
-        final duration = _videoController.value.duration;
-        final newPosition = position + seekAmount;
-        unawaited(_videoController.seekTo(newPosition > duration ? duration : newPosition));
-        _showKeyboardOverlay(KeyboardOverlayType.seek, seekAmount.inSeconds.toDouble());
-        _resetHideTimer();
-        return KeyEventResult.handled;
-      }
-
-      // Up Arrow: Increase volume / Shift+Up: Increase playback speed
-      if (key == LogicalKeyboardKey.arrowUp) {
-        if (isShiftPressed) {
-          final currentSpeed = _videoController.value.playbackSpeed;
-          final newSpeed = (currentSpeed + 0.25).clamp(0.25, 2.0);
-          unawaited(_videoController.setPlaybackSpeed(newSpeed));
-          _showKeyboardOverlay(KeyboardOverlayType.speed, newSpeed);
-        } else {
-          final currentVolume = _videoController.value.volume;
-          final newVolume = (currentVolume + 0.05).clamp(0.0, 1.0);
-          unawaited(_videoController.setVolume(newVolume));
-          _showKeyboardOverlay(KeyboardOverlayType.volume, newVolume);
-        }
-        _resetHideTimer();
-        return KeyEventResult.handled;
-      }
-
-      // Down Arrow: Decrease volume / Shift+Down: Decrease playback speed
-      if (key == LogicalKeyboardKey.arrowDown) {
-        if (isShiftPressed) {
-          final currentSpeed = _videoController.value.playbackSpeed;
-          final newSpeed = (currentSpeed - 0.25).clamp(0.25, 2.0);
-          unawaited(_videoController.setPlaybackSpeed(newSpeed));
-          _showKeyboardOverlay(KeyboardOverlayType.speed, newSpeed);
-        } else {
-          final currentVolume = _videoController.value.volume;
-          final newVolume = (currentVolume - 0.05).clamp(0.0, 1.0);
-          unawaited(_videoController.setVolume(newVolume));
-          _showKeyboardOverlay(KeyboardOverlayType.volume, newVolume);
-        }
-        _resetHideTimer();
-        return KeyEventResult.handled;
-      }
-    }
-
-    // Only handle key down for toggle actions (not repeat)
-    if (!isKeyDown) {
-      return KeyEventResult.ignored;
-    }
-
-    // Space: Toggle play/pause
-    if (key == LogicalKeyboardKey.space) {
-      if (_videoController.value.isPlaying) {
-        unawaited(_videoController.pause());
-      } else {
-        unawaited(_videoController.play());
-      }
-      _resetHideTimer();
-      return KeyEventResult.handled;
-    }
-
-    // M: Toggle mute
-    if (key == LogicalKeyboardKey.keyM) {
-      final currentVolume = _videoController.value.volume;
-      if (currentVolume > 0) {
-        // Mute: save current volume and set to 0
-        _previousVolume = currentVolume;
-        unawaited(_videoController.setVolume(0));
-      } else {
-        // Unmute: restore previous volume
-        unawaited(_videoController.setVolume(_previousVolume));
-      }
-      _resetHideTimer();
-      return KeyEventResult.handled;
-    }
-
-    // ?: Show keyboard shortcuts help
-    if (key == LogicalKeyboardKey.slash && isShiftPressed) {
-      onShowKeyboardShortcuts?.call();
-      return KeyEventResult.handled;
-    }
-
-    // F and Escape keys are handled by the widget for fullscreen
-    // (skipped here because they require navigation/routing)
-
-    // Media keys: Play/Pause
-    if (key == LogicalKeyboardKey.mediaPlayPause ||
-        key == LogicalKeyboardKey.mediaPlay ||
-        key == LogicalKeyboardKey.mediaPause) {
-      if (_videoController.value.isPlaying) {
-        unawaited(_videoController.pause());
-      } else {
-        unawaited(_videoController.play());
-      }
-      _resetHideTimer();
-      return KeyEventResult.handled;
-    }
-
-    // Media keys: Stop
-    if (key == LogicalKeyboardKey.mediaStop) {
-      unawaited(_videoController.pause());
-      unawaited(_videoController.seekTo(Duration.zero));
-      _resetHideTimer();
-      return KeyEventResult.handled;
-    }
-
-    // Media keys: Next/Previous track (for playlists)
-    if (key == LogicalKeyboardKey.mediaTrackNext) {
-      if (_videoController.value.playlist != null) {
-        unawaited(_videoController.playlistNext());
-      }
-      _resetHideTimer();
-      return KeyEventResult.handled;
-    }
-
-    if (key == LogicalKeyboardKey.mediaTrackPrevious) {
-      if (_videoController.value.playlist != null) {
-        unawaited(_videoController.playlistPrevious());
-      }
-      _resetHideTimer();
-      return KeyEventResult.handled;
-    }
-
-    return KeyEventResult.ignored;
+    return _keyboardHandler.handleKeyEvent(event);
   }
+
+  // ==================== Context Menu ====================
 
   /// Shows context menu at the given position.
   Future<void> showContextMenu({
@@ -573,253 +432,44 @@ class VideoControlsController extends ChangeNotifier {
     if (!behaviorConfig.enableContextMenu || !isDesktopPlatform) return;
 
     _controlsState.lastContextMenuPosition = position;
-    final value = _videoController.value;
-    final isPlaying = value.isPlaying;
-    final isMuted = value.volume == 0;
-    final currentSpeed = value.playbackSpeed;
-    final hasSubtitles = value.subtitleTracks.isNotEmpty;
-    final hasAudioTracks = value.audioTracks.length > 1;
-    final hasQualityTracks = value.qualityTracks.length > 1;
-    final hasChapters = value.chapters.isNotEmpty;
-    final hasPlaylist = value.playlist != null;
-    final isMinimalMode = behaviorConfig.minimalToolbarOnDesktop;
 
-    final selectedValue = await showMenu<String>(
-      context: context,
-      position: RelativeRect.fromLTRB(position.dx, position.dy, position.dx, position.dy),
-      items: [
-        // Basic playback controls
-        PopupMenuItem<String>(
-          value: 'play_pause',
-          child: Row(
-            children: [
-              Icon(isPlaying ? Icons.pause : Icons.play_arrow, size: 20),
-              const SizedBox(width: 12),
-              Text(isPlaying ? 'Pause' : 'Play'),
-            ],
-          ),
-        ),
-        PopupMenuItem<String>(
-          value: 'mute',
-          child: Row(
-            children: [
-              Icon(isMuted ? Icons.volume_up : Icons.volume_off, size: 20),
-              const SizedBox(width: 12),
-              Text(isMuted ? 'Unmute' : 'Mute'),
-            ],
-          ),
-        ),
-
-        // Track selection options (when in minimal mode or tracks available)
-        if (isMinimalMode && (hasSubtitles || hasAudioTracks || hasQualityTracks || hasChapters)) ...[
-          const PopupMenuDivider(),
-          if (hasSubtitles && buttonsConfig.showSubtitleButton)
-            PopupMenuItem<String>(
-              value: 'subtitles',
-              child: Row(
-                children: [
-                  const Icon(Icons.closed_caption, size: 20),
-                  const SizedBox(width: 12),
-                  Text('Subtitles${value.selectedSubtitleTrack != null ? ' (On)' : ''}'),
-                  const Spacer(),
-                  const Icon(Icons.chevron_right, size: 16),
-                ],
-              ),
-            ),
-          if (hasAudioTracks && buttonsConfig.showAudioButton)
-            const PopupMenuItem<String>(
-              value: 'audio',
-              child: Row(
-                children: [
-                  Icon(Icons.audiotrack, size: 20),
-                  SizedBox(width: 12),
-                  Text('Audio Track'),
-                  Spacer(),
-                  Icon(Icons.chevron_right, size: 16),
-                ],
-              ),
-            ),
-          if (hasQualityTracks && buttonsConfig.showQualityButton)
-            const PopupMenuItem<String>(
-              value: 'quality',
-              child: Row(
-                children: [
-                  Icon(Icons.high_quality, size: 20),
-                  SizedBox(width: 12),
-                  Text('Quality'),
-                  Spacer(),
-                  Icon(Icons.chevron_right, size: 16),
-                ],
-              ),
-            ),
-          if (hasChapters)
-            const PopupMenuItem<String>(
-              value: 'chapters',
-              child: Row(
-                children: [
-                  Icon(Icons.list, size: 20),
-                  SizedBox(width: 12),
-                  Text('Chapters'),
-                  Spacer(),
-                  Icon(Icons.chevron_right, size: 16),
-                ],
-              ),
-            ),
-        ],
-
-        // Speed submenu
-        const PopupMenuDivider(),
-        PopupMenuItem<String>(
-          value: 'speed',
-          child: Row(
-            children: [
-              const Icon(Icons.speed, size: 20),
-              const SizedBox(width: 12),
-              Text('Speed (${currentSpeed}x)'),
-              const Spacer(),
-              const Icon(Icons.chevron_right, size: 16),
-            ],
-          ),
-        ),
-
-        // PiP and Fullscreen
-        if (isMinimalMode && (_controlsState.isPipAvailable ?? false) && buttonsConfig.showPipButton ||
-            buttonsConfig.showFullscreenButton) ...[
-          const PopupMenuDivider(),
-          if (isMinimalMode && (_controlsState.isPipAvailable ?? false) && buttonsConfig.showPipButton)
-            PopupMenuItem<String>(
-              value: 'pip',
-              child: Row(
-                children: [
-                  Icon(value.isPipActive ? Icons.picture_in_picture_alt : Icons.picture_in_picture, size: 20),
-                  const SizedBox(width: 12),
-                  Text(value.isPipActive ? 'Exit Picture-in-Picture' : 'Picture-in-Picture'),
-                ],
-              ),
-            ),
-          if (buttonsConfig.showFullscreenButton)
-            PopupMenuItem<String>(
-              value: 'fullscreen',
-              child: Row(
-                children: [
-                  Icon(value.isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen, size: 20),
-                  const SizedBox(width: 12),
-                  Text(value.isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'),
-                ],
-              ),
-            ),
-        ],
-
-        // Playlist controls (when in minimal mode and playlist exists)
-        if (isMinimalMode && hasPlaylist) ...[
-          const PopupMenuDivider(),
-          const PopupMenuItem<String>(
-            value: 'playlist_previous',
-            child: Row(children: [Icon(Icons.skip_previous, size: 20), SizedBox(width: 12), Text('Previous')]),
-          ),
-          const PopupMenuItem<String>(
-            value: 'playlist_next',
-            child: Row(children: [Icon(Icons.skip_next, size: 20), SizedBox(width: 12), Text('Next')]),
-          ),
-          PopupMenuItem<String>(
-            value: 'shuffle',
-            child: Row(
-              children: [
-                Icon(Icons.shuffle, size: 20, color: value.isShuffled ? theme.primaryColor : null),
-                const SizedBox(width: 12),
-                Text('Shuffle${value.isShuffled ? ' (On)' : ''}'),
-              ],
-            ),
-          ),
-          PopupMenuItem<String>(
-            value: 'repeat',
-            child: Row(
-              children: [
-                Icon(
-                  value.playlistRepeatMode == PlaylistRepeatMode.one ? Icons.repeat_one : Icons.repeat,
-                  size: 20,
-                  color: value.playlistRepeatMode != PlaylistRepeatMode.none ? theme.primaryColor : null,
-                ),
-                const SizedBox(width: 12),
-                Text('Repeat${VideoControlsUtils.getRepeatModeLabel(value.playlistRepeatMode)}'),
-              ],
-            ),
-          ),
-        ],
-
-        // Keyboard shortcuts help
-        const PopupMenuDivider(),
-        const PopupMenuItem<String>(
-          value: 'keyboard_shortcuts',
-          child: Row(children: [Icon(Icons.help_outline, size: 20), SizedBox(width: 12), Text('Keyboard Shortcuts')]),
-        ),
-      ],
+    final contextMenuBuilder = ContextMenuBuilder(
+      videoController: _videoController,
+      buttonsConfig: buttonsConfig,
+      isMinimalMode: behaviorConfig.minimalToolbarOnDesktop,
+      isPipAvailable: _controlsState.isPipAvailable,
+      onShowSubtitlePicker: showSubtitlePicker,
+      onShowAudioPicker: showAudioPicker,
+      onShowQualityPicker: showQualityPicker,
+      onShowChaptersPicker: showChaptersPicker,
+      onShowSpeedPicker: showSpeedPicker,
+      onResetHideTimer: _resetHideTimer,
     );
 
-    if (selectedValue == null || !context.mounted) return;
-
-    switch (selectedValue) {
-      case 'play_pause':
-        if (isPlaying) {
-          unawaited(_videoController.pause());
-        } else {
-          unawaited(_videoController.play());
-        }
-      case 'mute':
-        unawaited(_videoController.setVolume(isMuted ? 1 : 0));
-      case 'subtitles':
-        if (context.mounted) showSubtitlePicker(context: context, theme: theme);
-      case 'audio':
-        if (context.mounted) showAudioPicker(context: context, theme: theme);
-      case 'quality':
-        if (context.mounted) showQualityPicker(context: context, theme: theme);
-      case 'chapters':
-        if (context.mounted) showChaptersPicker(context: context, theme: theme);
-      case 'speed':
-        if (context.mounted) showSpeedPicker(context: context, theme: theme);
-      case 'pip':
-        if (value.isPipActive) {
-          unawaited(_videoController.exitPip());
-        } else {
-          unawaited(_videoController.enterPip());
-        }
-      case 'fullscreen':
-        if (value.isFullscreen) {
-          onExitFullscreenCallback();
-        } else {
-          onEnterFullscreenCallback();
-        }
-      case 'playlist_previous':
-        unawaited(_videoController.playlistPrevious());
-      case 'playlist_next':
-        unawaited(_videoController.playlistNext());
-      case 'shuffle':
-        _videoController.setPlaylistShuffle(enabled: !value.isShuffled);
-      case 'repeat':
-        final nextMode = VideoControlsUtils.getNextRepeatMode(value.playlistRepeatMode);
-        _videoController.setPlaylistRepeatMode(nextMode);
-      case 'keyboard_shortcuts':
-        if (context.mounted) {
-          KeyboardShortcutsDialog.show(context: context, theme: theme);
-        }
-    }
-    _resetHideTimer();
+    await contextMenuBuilder.show(
+      context: context,
+      position: position,
+      theme: theme,
+      onEnterFullscreen: onEnterFullscreenCallback,
+      onExitFullscreen: onExitFullscreenCallback,
+    );
   }
+
+  // ==================== System UI ====================
 
   /// Updates system UI visibility for fullscreen mode.
   Future<void> updateSystemUiForFullscreen() async {
-    // Only manage system UI in fullscreen mode on mobile platforms
     if (!_videoController.value.isFullscreen) return;
     if (kIsWeb || isDesktopPlatform) return;
 
     if (_controlsState.visible) {
-      // Show system UI when controls are visible
       await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     } else {
-      // Hide system UI when controls are hidden (leanBack uses fade animation)
       await SystemChrome.setEnabledSystemUIMode(SystemUiMode.leanBack);
     }
   }
+
+  // ==================== Dialog Methods ====================
 
   /// Shows orientation lock picker dialog.
   void showOrientationLockPicker({required BuildContext context, required VideoPlayerTheme theme}) {

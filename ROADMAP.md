@@ -145,6 +145,16 @@ This document tracks the development progress and planned features for the Pro V
 - example-simple-player manifest configuration (singleTop, no taskAffinity)
 
 ### Code Architecture Refactoring
+- ProVideoPlayerController file organization via mixins (1,540 → 381 lines, 75% reduction)
+  - Created base class with protected members for mixin access
+  - Extracted 12 domain mixins: PlaybackMixin, TracksMixin, PipMixin, FullscreenMixin, CastingMixin, PlaylistMixin, PlatformCapabilitiesMixin, CompatibilityMixin, ConfigurationMixin, MetadataMixin, DeviceControlsMixin, ErrorRecoveryMixin
+  - All 85+ public methods preserved with identical API
+  - All tests passing
+- VideoControlsController refactoring (899 → 549 lines, 39% reduction)
+  - Extracted KeyboardShortcutHandler (203 lines) for keyboard input handling
+  - Extracted ContextMenuBuilder (342 lines) for right-click menu construction
+  - Clearer separation: input handling, menu building, state management
+  - All tests passing
 - PlatformVideoPlayerController (1,957 → 1,286 lines)
   - 12 manager classes + 3 coordinators
   - 131 tests passing
@@ -473,173 +483,7 @@ This document tracks the development progress and planned features for the Pro V
 
 ## Planned (High Priority) 🔥
 
-<details>
-<summary><strong>Multi-Browser Test Execution (Parallel)</strong></summary>
-
-- [ ] **Multi-Browser Test Execution (Parallel)**
-  - **Rationale:** Web package tests currently run only on Chrome. Need to verify cross-browser compatibility across Firefox, Safari, and Edge to catch browser-specific issues early.
-  - **Scope:** `pro_video_player_web/test/` directory (all test files)
-  - **Current Status:** Tests working on Chrome after fixing battery_interop.dart JS interop issue
-  - **Test Results:** 67 helper tests passing, 191/221 manager tests passing on Chrome
-  - **Implementation:**
-    - [x] Create parallel test runner script/makefile target (`make test-web-all` ✅)
-    - [ ] Configure test execution for Chrome, Firefox, Safari (macOS), Edge
-    - [ ] Run all browsers in parallel for faster CI/CD
-    - [ ] Add browser-specific test result reporting
-    - [ ] Document any browser-specific compatibility issues found
-    - [ ] Add to CI/CD pipeline (GitHub Actions)
-  - **Supported Browsers:**
-    - Chrome (default, working ✅)
-    - Firefox (`--platform firefox`)
-    - Safari macOS only (`--platform safari`)
-    - Edge (`--platform edge`)
-  - **Expected Outcome:** All web tests passing across all 4 browsers, parallel execution reducing test time
-
-</details>
-
-<details>
-<summary><strong>ProVideoPlayerController Refactoring - Domain Split</strong></summary>
-
-- [ ] **ProVideoPlayerController.dart refactoring** (1,525 lines → target: ~600-800 lines)
-  - **Rationale:** God object managing 15 managers with 100+ public methods, exceeds file size guideline by 52%
-  - **Current Issues:**
-    - Complex initialization with 13 callback parameters in coordinators
-    - Tight coupling to all feature domains (playback, tracks, PiP, casting, playlists, etc.)
-    - Massive public API surface makes it hard to understand and maintain
-    - Deep constructor parameter lists (10-15 parameters common)
-  - **Implementation Approach:**
-    - [ ] Phase 1: Extract `PlaybackController` (play, pause, seek, volume, speed, loop)
-    - [ ] Phase 2: Extract `MediaController` (audio tracks, subtitles, quality, chapters)
-    - [ ] Phase 3: Extract `AdvancedFeaturesController` (PiP, fullscreen, casting)
-    - [ ] Phase 4: Extract `PlaylistController` (playlist navigation, shuffle, repeat)
-    - [ ] Phase 5: Extract `ErrorRecoveryController` (retry logic, network resilience)
-    - [ ] Phase 6: Update `ProVideoPlayerController` to compose extracted controllers
-    - [ ] Phase 7: Create facade API that delegates to domain controllers
-    - [ ] Phase 8: Update all tests to work with new structure
-    - [ ] Phase 9: Update documentation and migration guide
-  - **Target Structure:**
-    ```
-    ProVideoPlayerController (core facade, ~400 lines)
-    ├─ PlaybackController (~250 lines, 20-25 methods)
-    ├─ MediaController (~300 lines, 25-30 methods)
-    ├─ AdvancedFeaturesController (~200 lines, 15-20 methods)
-    ├─ PlaylistController (~200 lines, 15-20 methods)
-    └─ ErrorRecoveryController (~150 lines, 10-15 methods)
-    ```
-  - **Benefits:**
-    - Each controller <400 lines with focused responsibility
-    - Reduced API surface per controller (easier to learn and use)
-    - Users can import only what they need
-    - Improved testability with smaller scope
-    - Follows manager pattern successfully used in web package
-    - Easier onboarding for new contributors
-  - **Testing Requirements:**
-    - All existing 131+ tests must continue passing
-    - Add focused test suites for each domain controller
-    - Maintain 95%+ line coverage target
-  - **Pattern Reference:** Follow web_video_player.dart refactoring (1,981→682 lines, 65% reduction)
-
-</details>
-
-<details>
-<summary><strong>VideoControlsController Refactoring - Extract Handlers</strong></summary>
-
-- [ ] **VideoControlsController.dart refactoring** (894 lines → target: ~400-500 lines)
-  - **Rationale:** Approaches 1,000-line guideline, mixed responsibilities across UI state, input handling, and dialog management
-  - **Current Issues:**
-    - Handles: state management, keyboard shortcuts, context menus, dialogs, timers, mouse tracking
-    - Difficult to test input handlers in isolation (requires widget tests instead of unit tests)
-    - Complex conditional logic across multiple concerns
-  - **Implementation Approach:**
-    - [ ] Phase 1: Extract `KeyboardShortcutHandler` (keyboard events, media keys, shortcut map)
-      - Handle all keyboard input logic
-      - Map keys to actions (space, arrows, M, F, Shift+arrows)
-      - Support mobile keyboard and media keys
-      - Unit testable without widget context
-    - [ ] Phase 2: Extract `DialogCoordinator` (all picker dialogs)
-      - Centralize: speed picker, quality picker, subtitle picker, chapter picker, audio picker
-      - Reduce dialog management duplication
-      - Common dialog presentation logic
-    - [ ] Phase 3: Extract `ContextMenuBuilder` (right-click menu)
-      - Build menu items based on player state
-      - Separate menu structure from state management
-    - [ ] Phase 4: Update `VideoControlsController` (keep core state)
-      - Auto-hide timer logic
-      - Controls visibility state
-      - Latest volume/brightness tracking
-      - Coordinate between extracted handlers
-    - [ ] Phase 5: Update tests for new structure
-    - [ ] Phase 6: Verify all 120 control tests still passing
-  - **Target Structure:**
-    ```
-    VideoControlsController (~400 lines - state & coordination)
-    ├─ KeyboardShortcutHandler (~200 lines - input handling)
-    ├─ DialogCoordinator (~150 lines - picker dialogs)
-    └─ ContextMenuBuilder (~100 lines - menu construction)
-    ```
-  - **Benefits:**
-    - KeyboardShortcutHandler testable with unit tests (faster, more focused)
-    - Centralized dialog management reduces duplication
-    - Clearer separation: input handling vs state management
-    - Easier to add new keyboard shortcuts or menu items
-    - Maintains file size guideline compliance
-  - **Testing Requirements:**
-    - Existing 116+ passing tests must continue passing
-    - Add unit tests for KeyboardShortcutHandler (currently widget tests only)
-    - Add unit tests for ContextMenuBuilder
-    - Maintain test coverage levels
-
-</details>
-
-<details>
-<summary><strong>VideoPlayerControls Widget Refactoring - Extract Routing & Layout</strong></summary>
-
-- [ ] **VideoPlayerControls.dart refactoring** (846 lines → target: ~400-500 lines)
-  - **Rationale:** Exceeds guideline, complex widget handling layout selection, gesture wrapping, fullscreen navigation
-  - **Current Issues:**
-    - Mixed concerns: layout selection, gesture wrapping, fullscreen routing, subtitle rendering
-    - Complex conditional rendering logic
-    - Difficult to test routing logic in isolation
-  - **Implementation Approach:**
-    - [ ] Phase 1: Extract `FullscreenNavigator` (routing logic)
-      - Handle fullscreen route pushing/popping
-      - Build fullscreen route with proper configuration
-      - Manage navigation state transitions
-      - Testable without full widget tree
-    - [ ] Phase 2: Extract `ControlsLayoutBuilder` (layout selection)
-      - Determine desktop vs mobile vs compact
-      - Build appropriate layout for configuration
-      - Centralize layout decision logic
-    - [ ] Phase 3: Extract `GestureWrapperFactory` (wrapper selection)
-      - Create appropriate gesture wrapper based on platform
-      - Desktop vs mobile gesture handling
-      - Configurable gesture enable/disable
-    - [ ] Phase 4: Simplify `VideoPlayerControls` (composition)
-      - Focus on widget composition
-      - Delegate to extracted classes
-      - Reduce conditional logic
-    - [ ] Phase 5: Update tests for new structure
-  - **Target Structure:**
-    ```
-    VideoPlayerControls (~400 lines - composition)
-    ├─ FullscreenNavigator (~150 lines - routing)
-    ├─ ControlsLayoutBuilder (~200 lines - layout logic)
-    └─ GestureWrapperFactory (~100 lines - wrapper selection)
-    ```
-  - **Benefits:**
-    - Fullscreen navigation testable with unit tests
-    - Layout logic can be unit tested with different configurations
-    - Widget focuses on composition, not conditional logic
-    - Easier to add new layouts or gesture modes
-    - Clearer separation of concerns
-  - **Testing Requirements:**
-    - All existing widget tests must continue passing
-    - Add unit tests for navigation and layout logic
-    - Maintain test coverage levels
-
-</details>
-
-
+*(No high priority tasks - architecture refactoring complete)*
 
 ---
 
@@ -721,6 +565,30 @@ This document tracks the development progress and planned features for the Pro V
 ---
 
 ## Planned (Lower Priority) 💡
+
+<details>
+<summary><strong>Multi-Browser Test Execution (Parallel)</strong></summary>
+
+- [ ] **Multi-Browser Test Execution (Parallel)**
+  - **Rationale:** Web package tests currently run only on Chrome. Need to verify cross-browser compatibility across Firefox, Safari, and Edge to catch browser-specific issues early.
+  - **Scope:** `pro_video_player_web/test/` directory (all test files)
+  - **Current Status:** Tests working on Chrome after fixing battery_interop.dart JS interop issue
+  - **Test Results:** 67 helper tests passing, 191/221 manager tests passing on Chrome
+  - **Implementation:**
+    - [x] Create parallel test runner script/makefile target (`make test-web-all` ✅)
+    - [ ] Configure test execution for Chrome, Firefox, Safari (macOS), Edge
+    - [ ] Run all browsers in parallel for faster CI/CD
+    - [ ] Add browser-specific test result reporting
+    - [ ] Document any browser-specific compatibility issues found
+    - [ ] Add to CI/CD pipeline (GitHub Actions)
+  - **Supported Browsers:**
+    - Chrome (default, working ✅)
+    - Firefox (`--platform firefox`)
+    - Safari macOS only (`--platform safari`)
+    - Edge (`--platform edge`)
+  - **Expected Outcome:** All web tests passing across all 4 browsers, parallel execution reducing test time
+
+</details>
 
 <details>
 <summary><strong>Desktop platforms: libmpv for macOS, Windows, and Linux</strong></summary>
