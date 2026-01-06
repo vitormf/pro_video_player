@@ -373,7 +373,7 @@ class _VideoSourcesScreenState extends State<VideoSourcesScreen> {
       key: TestKeys.videoSourcesVideoPlayer,
       controller: _controller!,
       controlsBuilder: (context, controller) =>
-          VideoPlayerControls(controller: controller, showFullscreenButton: false),
+          VideoPlayerControls(controller: controller, buttonsConfig: const ButtonsConfig(showFullscreenButton: false)),
       placeholder: const Center(child: CircularProgressIndicator(color: Colors.white)),
     );
   }

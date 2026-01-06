@@ -223,18 +223,16 @@ class SharedVideoPlayer: NSObject {
 
             let player = AVPlayer(playerItem: playerItem)
 
-
-            // Phase 1: ONLY create the layer - absolute minimum for display
-            DispatchQueue.main.async {
+            // Create the layer synchronously to ensure it's available when buildView() is called
+            DispatchQueue.main.sync {
                 self.playerLayer = AVPlayerLayer(player: player)
-            }
-
-            // Phase 2: Assign player/item and configure (deferred separately)
-            DispatchQueue.main.async {
-
                 self.player = player
                 self.playerItem = playerItem
                 self.playerLayer?.videoGravity = .resizeAspect
+            }
+
+            // Phase 2: Configure remaining options (can be async)
+            DispatchQueue.main.async {
 
 
                     // Apply scaling mode if specified

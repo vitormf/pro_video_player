@@ -1,2 +1,7 @@
 # Use shared analysis options from the root
 include: ../analysis_options.yaml
+
+analyzer:
+  exclude:
+    # Pigeon configuration file requires pigeon dev dependency
+    - pigeons/**

@@ -1326,23 +1326,6 @@ class ProVideoPlayerController extends ValueNotifier<VideoPlayerValue> {
 
     _options = options;
 
-    // Create initialization coordinator
-    final coordinator = InitializationCoordinator(
-      getValue: () => value,
-      setValue: (v) => value = v,
-      getPlayerId: () => _playerId,
-      getOptions: () => _options,
-      isDisposed: () => _isDisposed,
-      isRetrying: () => _isRetrying,
-      setRetrying: ({required isRetrying}) => _isRetrying = isRetrying,
-      platform: _platform,
-      errorRecoveryOptions: _errorRecoveryOptions,
-      ensureInitialized: _ensureInitialized,
-      onRetry: _performRetryPlayback,
-      onPlay: play,
-      onSeekTo: seekTo,
-    );
-
     // Initialize all managers using the service container
     _services = ControllerServices.create(
       platform: _platform,

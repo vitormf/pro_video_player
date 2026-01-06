@@ -73,7 +73,13 @@ void main() {
         await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(forceMobileLayout: true, controller: controller, gestureConfig: const GestureConfig(enableGestures: false))),
+          buildTestWidget(
+            VideoPlayerControls(
+              forceMobileLayout: true,
+              controller: controller,
+              gestureConfig: const GestureConfig(enableGestures: false),
+            ),
+          ),
         );
 
         expect(find.byIcon(Icons.replay_10), findsOneWidget);
@@ -84,7 +90,13 @@ void main() {
         await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(forceMobileLayout: true, controller: controller, gestureConfig: const GestureConfig(enableGestures: false))),
+          buildTestWidget(
+            VideoPlayerControls(
+              forceMobileLayout: true,
+              controller: controller,
+              gestureConfig: const GestureConfig(enableGestures: false),
+            ),
+          ),
         );
 
         expect(find.byIcon(Icons.forward_10), findsOneWidget);
@@ -100,7 +112,13 @@ void main() {
         await tester.pump();
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(forceMobileLayout: true, controller: controller, gestureConfig: const GestureConfig(enableGestures: false))),
+          buildTestWidget(
+            VideoPlayerControls(
+              forceMobileLayout: true,
+              controller: controller,
+              gestureConfig: const GestureConfig(enableGestures: false),
+            ),
+          ),
         );
 
         await tester.tap(find.byIcon(Icons.replay_10));
@@ -120,7 +138,13 @@ void main() {
         await tester.pump();
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(forceMobileLayout: true, controller: controller, gestureConfig: const GestureConfig(enableGestures: false))),
+          buildTestWidget(
+            VideoPlayerControls(
+              forceMobileLayout: true,
+              controller: controller,
+              gestureConfig: const GestureConfig(enableGestures: false),
+            ),
+          ),
         );
 
         await tester.tap(find.byIcon(Icons.forward_10));
@@ -135,7 +159,13 @@ void main() {
         await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(controller: controller, buttonsConfig: const ButtonsConfig(showSkipButtons: false), gestureConfig: const GestureConfig(enableGestures: false))),
+          buildTestWidget(
+            VideoPlayerControls(
+              controller: controller,
+              buttonsConfig: const ButtonsConfig(showSkipButtons: false),
+              gestureConfig: const GestureConfig(enableGestures: false),
+            ),
+          ),
         );
 
         expect(find.byIcon(Icons.replay_10), findsNothing);
@@ -217,7 +247,13 @@ void main() {
         await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(forceMobileLayout: true, controller: controller, gestureConfig: const GestureConfig(enableGestures: false))),
+          buildTestWidget(
+            VideoPlayerControls(
+              forceMobileLayout: true,
+              controller: controller,
+              gestureConfig: const GestureConfig(enableGestures: false),
+            ),
+          ),
         );
 
         eventController.add(const PlaybackSpeedChangedEvent(1.5));
@@ -238,7 +274,13 @@ void main() {
         await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(controller: controller, buttonsConfig: const ButtonsConfig(showSpeedButton: false), gestureConfig: const GestureConfig(enableGestures: false))),
+          buildTestWidget(
+            VideoPlayerControls(
+              controller: controller,
+              buttonsConfig: const ButtonsConfig(showSpeedButton: false),
+              gestureConfig: const GestureConfig(enableGestures: false),
+            ),
+          ),
         );
         await tester.pump();
 
@@ -255,7 +297,13 @@ void main() {
         await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(forceMobileLayout: true, controller: controller, gestureConfig: const GestureConfig(enableGestures: false))),
+          buildTestWidget(
+            VideoPlayerControls(
+              forceMobileLayout: true,
+              controller: controller,
+              gestureConfig: const GestureConfig(enableGestures: false),
+            ),
+          ),
         );
 
         expect(find.byIcon(Icons.closed_caption), findsNothing);
@@ -275,7 +323,13 @@ void main() {
         await tester.pump();
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(forceMobileLayout: true, controller: controller, gestureConfig: const GestureConfig(enableGestures: false))),
+          buildTestWidget(
+            VideoPlayerControls(
+              forceMobileLayout: true,
+              controller: controller,
+              gestureConfig: const GestureConfig(enableGestures: false),
+            ),
+          ),
         );
 
         expect(find.byIcon(Icons.closed_caption_off), findsOneWidget);
@@ -291,7 +345,13 @@ void main() {
         await tester.pump();
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(forceMobileLayout: true, controller: controller, gestureConfig: const GestureConfig(enableGestures: false))),
+          buildTestWidget(
+            VideoPlayerControls(
+              forceMobileLayout: true,
+              controller: controller,
+              gestureConfig: const GestureConfig(enableGestures: false),
+            ),
+          ),
         );
 
         expect(find.byIcon(Icons.closed_caption), findsOneWidget);
@@ -310,7 +370,13 @@ void main() {
         await tester.pump();
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(forceMobileLayout: true, controller: controller, gestureConfig: const GestureConfig(enableGestures: false))),
+          buildTestWidget(
+            VideoPlayerControls(
+              forceMobileLayout: true,
+              controller: controller,
+              gestureConfig: const GestureConfig(enableGestures: false),
+            ),
+          ),
         );
 
         await tester.tap(find.byIcon(Icons.closed_caption_off));
@@ -333,7 +399,13 @@ void main() {
         await tester.pump();
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(forceMobileLayout: true, controller: controller, gestureConfig: const GestureConfig(enableGestures: false))),
+          buildTestWidget(
+            VideoPlayerControls(
+              forceMobileLayout: true,
+              controller: controller,
+              gestureConfig: const GestureConfig(enableGestures: false),
+            ),
+          ),
         );
 
         await tester.tap(find.byIcon(Icons.closed_caption_off));
@@ -356,7 +428,13 @@ void main() {
         await tester.pump();
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(forceMobileLayout: true, controller: controller, gestureConfig: const GestureConfig(enableGestures: false))),
+          buildTestWidget(
+            VideoPlayerControls(
+              forceMobileLayout: true,
+              controller: controller,
+              gestureConfig: const GestureConfig(enableGestures: false),
+            ),
+          ),
         );
 
         await tester.tap(find.byIcon(Icons.closed_caption));
@@ -379,7 +457,11 @@ void main() {
 
         await tester.pumpWidget(
           buildTestWidget(
-            VideoPlayerControls(controller: controller, buttonsConfig: const ButtonsConfig(showSubtitleButton: false), gestureConfig: const GestureConfig(enableGestures: false)),
+            VideoPlayerControls(
+              controller: controller,
+              buttonsConfig: const ButtonsConfig(showSubtitleButton: false),
+              gestureConfig: const GestureConfig(enableGestures: false),
+            ),
           ),
         );
 
@@ -462,7 +544,13 @@ void main() {
         await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(controller: controller, buttonsConfig: const ButtonsConfig(showPipButton: false), gestureConfig: const GestureConfig(enableGestures: false))),
+          buildTestWidget(
+            VideoPlayerControls(
+              controller: controller,
+              buttonsConfig: const ButtonsConfig(showPipButton: false),
+              gestureConfig: const GestureConfig(enableGestures: false),
+            ),
+          ),
         );
         await tester.pump();
 
@@ -477,7 +565,13 @@ void main() {
         );
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(forceMobileLayout: true, controller: controller, gestureConfig: const GestureConfig(enableGestures: false))),
+          buildTestWidget(
+            VideoPlayerControls(
+              forceMobileLayout: true,
+              controller: controller,
+              gestureConfig: const GestureConfig(enableGestures: false),
+            ),
+          ),
         );
         await tester.pump();
 
@@ -527,7 +621,9 @@ void main() {
           buildTestWidget(
             VideoPlayerControls(
               controller: controller,
-              behaviorConfig: const ControlsBehaviorConfig(autoHide: false), // Disable auto-hide timer - test just verifies tap shows controls
+              behaviorConfig: const ControlsBehaviorConfig(
+                autoHide: false,
+              ), // Disable auto-hide timer - test just verifies tap shows controls
             ),
           ),
         );
@@ -617,7 +713,13 @@ void main() {
 
         // Create controls without specifying liveScrubbingMode (should default to adaptive)
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(forceMobileLayout: true, controller: controller, gestureConfig: const GestureConfig(enableGestures: false))),
+          buildTestWidget(
+            VideoPlayerControls(
+              forceMobileLayout: true,
+              controller: controller,
+              gestureConfig: const GestureConfig(enableGestures: false),
+            ),
+          ),
         );
 
         // Find the progress bar
@@ -724,7 +826,13 @@ void main() {
         await tester.pump();
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(forceMobileLayout: true, controller: controller, gestureConfig: const GestureConfig(enableGestures: false))),
+          buildTestWidget(
+            VideoPlayerControls(
+              forceMobileLayout: true,
+              controller: controller,
+              gestureConfig: const GestureConfig(enableGestures: false),
+            ),
+          ),
         );
 
         final layoutBuilderFinder = find.byType(LayoutBuilder);
@@ -746,7 +854,13 @@ void main() {
         await tester.pump();
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(forceMobileLayout: true, controller: controller, gestureConfig: const GestureConfig(enableGestures: false))),
+          buildTestWidget(
+            VideoPlayerControls(
+              forceMobileLayout: true,
+              controller: controller,
+              gestureConfig: const GestureConfig(enableGestures: false),
+            ),
+          ),
         );
 
         final layoutBuilderFinder = find.byType(LayoutBuilder);

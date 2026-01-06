@@ -32,9 +32,36 @@ A Flutter plugin for video playback using native video players across all platfo
 
 ## Migrating from video_player
 
-`pro_video_player` is designed to be **API-compatible** with Flutter's official `video_player` package, making migration straightforward:
+`pro_video_player` is designed to be **API-compatible** with Flutter's official `video_player` package, making migration straightforward.
 
-### Quick Migration
+### Option 1: Zero-Code-Change Migration (Easiest)
+
+Use the compatibility layer for instant migration - **just change the import**:
+
+```dart
+// Before
+import 'package:video_player/video_player.dart';
+
+// After
+import 'package:pro_video_player/video_player_compat.dart';
+```
+
+That's it! All your existing `video_player` code works without changes:
+
+```dart
+// Your existing code continues to work
+final controller = VideoPlayerController.network('https://example.com/video.mp4');
+await controller.initialize();
+controller.play();
+
+// Access pro features when needed
+await controller.proController.enterPictureInPicture();
+final chapters = controller.proController.value.chapters;
+```
+
+### Option 2: Full Migration (Recommended Long-Term)
+
+For a complete migration with the native API:
 
 ```dart
 // 1. Update imports

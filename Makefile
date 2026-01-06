@@ -43,6 +43,7 @@ help:
 	@echo "  make test            - Run all Dart/Flutter tests"
 	@echo "  make test-unit       - Run unit tests only (pro_video_player)"
 	@echo "  make test-widget     - Run widget tests only (pro_video_player)"
+	@echo "  make test-compat     - Verify video_player API compatibility"
 	@echo "  make test-interface  - Test platform_interface package"
 	@echo "  make test-main       - Test main package"
 	@echo "  make test-web        - Test web package (Chrome)"

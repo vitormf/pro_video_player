@@ -58,7 +58,7 @@ make format quick-check
 
 IMPORTANT: Always run from project root, NOT from subdirectories.
 
-Formats code first, then runs all checks in parallel (~17 sec): Dart analyze, Kotlin compile, iOS/macOS Swift compile, format check, shared links verification, logging verification, code duplication.
+Formats code first, then runs all checks in parallel: Dart analyze, Kotlin compile, iOS/macOS Swift compile, format check, logging verification, code duplication, and unit tests.
 
 Do NOT consider task complete until `make format quick-check` passes. If fails: fix errors, run again, repeat until passes.
 

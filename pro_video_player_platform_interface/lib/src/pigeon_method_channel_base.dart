@@ -16,9 +16,19 @@ abstract class PigeonMethodChannelBase extends ProVideoPlayerPlatform implements
   PigeonMethodChannelBase(this.channelPrefix)
     : _hostApi = ProVideoPlayerHostApi(),
       _eventStreamControllers = {},
-      _batteryStreamController = StreamController<BatteryInfo>.broadcast() {
-    // Register this instance as the FlutterApi handler
-    ProVideoPlayerFlutterApi.setUp(this);
+      _batteryStreamController = StreamController<BatteryInfo>.broadcast();
+
+  /// Whether the FlutterApi has been set up.
+  bool _isFlutterApiSetUp = false;
+
+  /// Ensures the FlutterApi is set up before use.
+  ///
+  /// This is called lazily to avoid accessing the binding before it's initialized.
+  void _ensureFlutterApiSetUp() {
+    if (!_isFlutterApiSetUp) {
+      ProVideoPlayerFlutterApi.setUp(this);
+      _isFlutterApiSetUp = true;
+    }
   }
 
   /// The channel prefix used for method and event channels.
@@ -37,6 +47,9 @@ abstract class PigeonMethodChannelBase extends ProVideoPlayerPlatform implements
 
   @override
   Future<int> create({required VideoSource source, VideoPlayerOptions options = const VideoPlayerOptions()}) async {
+    // Ensure FlutterApi is set up before creating a player
+    _ensureFlutterApiSetUp();
+
     final sourceMessage = _convertVideoSource(source);
     final optionsMessage = _convertOptions(options);
 

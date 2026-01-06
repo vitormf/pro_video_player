@@ -141,7 +141,13 @@ void main() {
 
         // Default test surface is 800x600, which is above 300x200 threshold
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true)),
+          buildTestWidget(
+            VideoPlayerControls(
+              controller: controller,
+              gestureConfig: const GestureConfig(enableGestures: false),
+              forceMobileLayout: true,
+            ),
+          ),
         );
 
         // Should show full controls (speed button text in player toolbar, not compact play_circle_filled)
@@ -214,7 +220,9 @@ void main() {
                 controller: controller,
                 gestureConfig: const GestureConfig(enableGestures: false),
                 compactMode: CompactMode.always,
-                behaviorConfig: const ControlsBehaviorConfig(autoHide: false), // Disable auto-hide timer to prevent test hang
+                behaviorConfig: const ControlsBehaviorConfig(
+                  autoHide: false,
+                ), // Disable auto-hide timer to prevent test hang
               ),
             ),
           ),
@@ -270,7 +278,11 @@ void main() {
             SizedBox(
               width: 800, // Large size, but PiP is active
               height: 600,
-              child: VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true),
+              child: VideoPlayerControls(
+                controller: controller,
+                gestureConfig: const GestureConfig(enableGestures: false),
+                forceMobileLayout: true,
+              ),
             ),
           ),
         );
@@ -293,7 +305,13 @@ void main() {
         await tester.pump();
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true)),
+          buildTestWidget(
+            VideoPlayerControls(
+              controller: controller,
+              gestureConfig: const GestureConfig(enableGestures: false),
+              forceMobileLayout: true,
+            ),
+          ),
         );
 
         expect(find.byIcon(Icons.audiotrack), findsNothing);
@@ -313,7 +331,13 @@ void main() {
         await tester.pump();
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true)),
+          buildTestWidget(
+            VideoPlayerControls(
+              controller: controller,
+              gestureConfig: const GestureConfig(enableGestures: false),
+              forceMobileLayout: true,
+            ),
+          ),
         );
 
         expect(find.byIcon(Icons.audiotrack), findsOneWidget);
@@ -360,7 +384,13 @@ void main() {
         await tester.pump();
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true)),
+          buildTestWidget(
+            VideoPlayerControls(
+              controller: controller,
+              gestureConfig: const GestureConfig(enableGestures: false),
+              forceMobileLayout: true,
+            ),
+          ),
         );
 
         await tester.tap(find.byIcon(Icons.audiotrack));
@@ -387,7 +417,13 @@ void main() {
         await tester.pump();
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true)),
+          buildTestWidget(
+            VideoPlayerControls(
+              controller: controller,
+              gestureConfig: const GestureConfig(enableGestures: false),
+              forceMobileLayout: true,
+            ),
+          ),
         );
 
         expect(find.byIcon(Icons.high_quality), findsNothing);
@@ -407,7 +443,13 @@ void main() {
         await tester.pump();
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true)),
+          buildTestWidget(
+            VideoPlayerControls(
+              controller: controller,
+              gestureConfig: const GestureConfig(enableGestures: false),
+              forceMobileLayout: true,
+            ),
+          ),
         );
 
         expect(find.byIcon(Icons.high_quality), findsOneWidget);
@@ -456,7 +498,13 @@ void main() {
         await tester.pump();
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true)),
+          buildTestWidget(
+            VideoPlayerControls(
+              controller: controller,
+              gestureConfig: const GestureConfig(enableGestures: false),
+              forceMobileLayout: true,
+            ),
+          ),
         );
 
         await tester.tap(find.byIcon(Icons.high_quality));
@@ -482,7 +530,13 @@ void main() {
         await tester.pump();
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true)),
+          buildTestWidget(
+            VideoPlayerControls(
+              controller: controller,
+              gestureConfig: const GestureConfig(enableGestures: false),
+              forceMobileLayout: true,
+            ),
+          ),
         );
 
         // Should show "Auto" text next to the icon
@@ -496,7 +550,13 @@ void main() {
         await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true)),
+          buildTestWidget(
+            VideoPlayerControls(
+              controller: controller,
+              gestureConfig: const GestureConfig(enableGestures: false),
+              forceMobileLayout: true,
+            ),
+          ),
         );
 
         expect(find.byIcon(Icons.aspect_ratio), findsOneWidget);
@@ -527,7 +587,13 @@ void main() {
         when(() => mockPlatform.setScalingMode(any(), any())).thenAnswer((_) async {});
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true)),
+          buildTestWidget(
+            VideoPlayerControls(
+              controller: controller,
+              gestureConfig: const GestureConfig(enableGestures: false),
+              forceMobileLayout: true,
+            ),
+          ),
         );
 
         await tester.tap(find.byIcon(Icons.aspect_ratio));
@@ -552,7 +618,13 @@ void main() {
         await tester.pump();
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true)),
+          buildTestWidget(
+            VideoPlayerControls(
+              controller: controller,
+              gestureConfig: const GestureConfig(enableGestures: false),
+              forceMobileLayout: true,
+            ),
+          ),
         );
 
         // Should show total duration
@@ -569,7 +641,13 @@ void main() {
         await tester.pump();
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true)),
+          buildTestWidget(
+            VideoPlayerControls(
+              controller: controller,
+              gestureConfig: const GestureConfig(enableGestures: false),
+              forceMobileLayout: true,
+            ),
+          ),
         );
 
         // Initially shows duration
@@ -595,7 +673,13 @@ void main() {
         await tester.pump();
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true)),
+          buildTestWidget(
+            VideoPlayerControls(
+              controller: controller,
+              gestureConfig: const GestureConfig(enableGestures: false),
+              forceMobileLayout: true,
+            ),
+          ),
         );
 
         // Tap once to switch to remaining time
@@ -852,7 +936,13 @@ void main() {
         await controller.initialize(source: const VideoSource.network(TestMedia.networkUrl));
 
         await tester.pumpWidget(
-          buildTestWidget(VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true)),
+          buildTestWidget(
+            VideoPlayerControls(
+              controller: controller,
+              gestureConfig: const GestureConfig(enableGestures: false),
+              forceMobileLayout: true,
+            ),
+          ),
         );
 
         // Default behavior should show all applicable actions
@@ -928,7 +1018,9 @@ void main() {
                 controller: controller,
                 gestureConfig: const GestureConfig(enableGestures: false),
                 compactMode: CompactMode.always,
-                behaviorConfig: const ControlsBehaviorConfig(autoHide: false), // Disable auto-hide timer to prevent test hang
+                behaviorConfig: const ControlsBehaviorConfig(
+                  autoHide: false,
+                ), // Disable auto-hide timer to prevent test hang
               ),
             ),
           ),
@@ -959,7 +1051,11 @@ void main() {
             SizedBox(
               width: 200,
               height: 150,
-              child: VideoPlayerControls(controller: controller, gestureConfig: const GestureConfig(enableGestures: false), forceMobileLayout: true),
+              child: VideoPlayerControls(
+                controller: controller,
+                gestureConfig: const GestureConfig(enableGestures: false),
+                forceMobileLayout: true,
+              ),
             ),
           ),
         );

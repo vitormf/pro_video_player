@@ -16,6 +16,7 @@ analyzer:
     - "**/generated_plugin_registrant.dart"
     - "shared_pigeon_sources/**"
     - "shared_apple_sources/**"
+    - "**/pigeons/**"
   errors:
     # Treat these as errors (not just warnings)
     missing_required_param: error

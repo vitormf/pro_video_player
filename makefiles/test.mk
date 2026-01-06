@@ -2,7 +2,7 @@
 # Includes Dart tests, native tests, E2E tests, and coverage
 
 .PHONY: test test-coverage analyze check-duplicates check quick-check test-makefiles \
-        test-interface test-main test-web test-web-all \
+        test-interface test-main test-web test-web-all test-compat \
         test-android-native test-android-native-coverage test-android-instrumented \
         test-android-instrumented-coverage test-android-full-coverage \
         test-ios-native test-ios-native-coverage \
@@ -37,6 +37,14 @@ test-unit:
 test-widget:
 	@printf "$(TEST) Running widget tests...\n"; \
 	(cd pro_video_player && ${FLUTTER} test --no-pub test/widget)
+
+# test-compat: Run video_player API compatibility verification tests
+# Use when: Verifying video_player drop-in replacement API compatibility
+# Note: Runs automatically in CI to catch any API breaking changes
+test-compat:
+	@printf "$(TEST) Running video_player API compatibility verification...\n"; \
+	(cd pro_video_player && ${FLUTTER} test --no-pub test/unit/compat/video_player_api_compatibility_test.dart) && \
+	echo "$(CHECK) video_player API compatibility verified"
 
 # test-coverage: Run tests with coverage for all packages in parallel
 # Use when: Checking test coverage
@@ -80,8 +88,8 @@ check-duplicates:
 check: format-check analyze check-duplicates test
 	@echo "$(CHECK) All checks passed!"
 
-# quick-check: Fast parallel compilation check for Dart, Kotlin, Swift, formatting, shared links, logging, and duplicates
-# Use when: Quick validation that code compiles without full test run
+# quick-check: Fast parallel check for Dart, Kotlin, Swift, formatting, logging, duplicates, and unit tests
+# Use when: Quick validation that code compiles and unit tests pass
 quick-check:
 	@echo "$(SEARCH) Running quick compilation checks in parallel..."
 	@echo ""
@@ -100,7 +108,7 @@ quick-check:
 	}; \
 	\
 	dart_log=$$(mktemp); kotlin_log=$$(mktemp); ios_log=$$(mktemp); macos_log=$$(mktemp); \
-	format_log=$$(mktemp); logging_log=$$(mktemp); duplicates_log=$$(mktemp); \
+	format_log=$$(mktemp); logging_log=$$(mktemp); duplicates_log=$$(mktemp); unit_log=$$(mktemp); \
 	\
 	( \
 		start=$$(date +%s); dart_pids=""; dart_pkg_logs=""; \
@@ -143,6 +151,7 @@ quick-check:
 			fi; \
 		fi \
 	) & \
+	( run_timed $$unit_log "cd pro_video_player && ${FLUTTER} test --no-pub test/unit" ) & \
 	\
 	parse_result() { cat $$1 2>/dev/null | cut -d: -f1; }; \
 	parse_time() { \
@@ -158,25 +167,25 @@ quick-check:
 		result=$$(parse_result "$$log"); time=$$(parse_time "$$log"); error_log=$$(parse_error_log "$$log"); \
 		[ -z "$$result" ] && return 1; \
 		case "$$id:$$result" in \
-			*:OK) printf "%d/7 $(CHECK) $$name: passed ($${time}s)\n" "$$count" ;; \
+			*:OK) printf "%d/8 $(CHECK) $$name: passed ($${time}s)\n" "$$count" ;; \
 			dart:FAILED) \
 				failed=$$(cat $$log | cut -d: -f2); \
-				printf "%d/7 $(CROSS) $$name: failed ($${time}s) - $$failed\n" "$$count"; \
+				printf "%d/8 $(CROSS) $$name: failed ($${time}s) - $$failed\n" "$$count"; \
 				if [ -f "$$error_log" ]; then \
 					echo "$$error_log" >> "$$collected_errors"; \
 				fi; \
 				ret=2 ;; \
-			format:FAILED) printf "%d/7 $(CROSS) $$name: failed ($${time}s) - run 'make format' to fix\n" "$$count"; ret=2 ;; \
-			logging:FAILED) printf "%d/7 $(CROSS) $$name: found unconditional log statements ($${time}s) - run ./makefiles/scripts/check-verbose-logging.sh for details\n" "$$count"; ret=2 ;; \
-			duplicates:SKIPPED) printf "%d/7 $(INFO) $$name: skipped ($${time}s) - jscpd not installed\n" "$$count" ;; \
+			format:FAILED) printf "%d/8 $(CROSS) $$name: failed ($${time}s) - run 'make format' to fix\n" "$$count"; ret=2 ;; \
+			logging:FAILED) printf "%d/8 $(CROSS) $$name: found unconditional log statements ($${time}s) - run ./makefiles/scripts/check-verbose-logging.sh for details\n" "$$count"; ret=2 ;; \
+			duplicates:SKIPPED) printf "%d/8 $(INFO) $$name: skipped ($${time}s) - jscpd not installed\n" "$$count" ;; \
 			duplicates:FAILED) \
-				printf "%d/7 $(CROSS) $$name: code duplication detected ($${time}s)\n" "$$count"; \
+				printf "%d/8 $(CROSS) $$name: code duplication detected ($${time}s)\n" "$$count"; \
 				if [ -f "$$error_log" ]; then \
 					echo "$$error_log" >> "$$collected_errors"; \
 				fi; \
 				ret=2 ;; \
 			*:FAILED) \
-				printf "%d/7 $(CROSS) $$name: failed ($${time}s)\n" "$$count"; \
+				printf "%d/8 $(CROSS) $$name: failed ($${time}s)\n" "$$count"; \
 				if [ -f "$$error_log" ]; then \
 					echo "$$error_log" >> "$$collected_errors"; \
 				fi; \
@@ -188,7 +197,7 @@ quick-check:
 	has_failures=0; completed=""; count=0; collected_errors=$$(mktemp); \
 	while true; do \
 		all_done=1; \
-		for check in "dart|Dart|$$dart_log" "kotlin|Kotlin|$$kotlin_log" "ios|iOS (Swift)|$$ios_log" "macos|macOS (Swift)|$$macos_log" "format|Format|$$format_log" "logging|Logging|$$logging_log" "duplicates|Duplicates|$$duplicates_log"; do \
+		for check in "dart|Dart|$$dart_log" "kotlin|Kotlin|$$kotlin_log" "ios|iOS (Swift)|$$ios_log" "macos|macOS (Swift)|$$macos_log" "format|Format|$$format_log" "logging|Logging|$$logging_log" "duplicates|Duplicates|$$duplicates_log" "unit|Unit Tests|$$unit_log"; do \
 			id=$$(echo "$$check" | cut -d'|' -f1); \
 			case "$$completed" in *"$$id"*) continue ;; esac; \
 			name=$$(echo "$$check" | cut -d'|' -f2); log=$$(echo "$$check" | cut -d'|' -f3-); \
@@ -207,7 +216,7 @@ quick-check:
 		[ $$all_done -eq 1 ] && break; \
 		sleep 0.1; \
 	done; \
-	rm -f $$dart_log $$kotlin_log $$ios_log $$macos_log $$format_log $$links_log $$logging_log $$duplicates_log; \
+	rm -f $$dart_log $$kotlin_log $$ios_log $$macos_log $$format_log $$links_log $$logging_log $$duplicates_log $$unit_log; \
 	\
 	if [ $$has_failures -eq 1 ] && [ -s "$$collected_errors" ]; then \
 		echo ""; echo "$(CROSS) Error Details:"; echo ""; \
